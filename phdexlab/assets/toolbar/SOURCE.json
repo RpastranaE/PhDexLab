@@ -1,0 +1,23 @@
+{
+  "repository": "https://github.com/lucide-icons/lucide",
+  "commit": "53fab88ff9d1b48f4704b5b5b560d6b4d560bf4c",
+  "icons": {
+    "new": "folder-plus",
+    "open": "folder-open",
+    "close": "folder-x",
+    "save": "save",
+    "excel": "sheet",
+    "refresh": "refresh-cw",
+    "rows": "list-plus",
+    "sample": "flask-conical",
+    "demo": "test-tubes",
+    "variant": "copy-plus",
+    "type": "tags",
+    "plots": "chart-column",
+    "help": "circle-question-mark",
+    "origin": "chart-scatter",
+    "log": "scroll-text",
+    "protocol": "book-plus"
+  },
+  "color_override": "#176E78"
+}

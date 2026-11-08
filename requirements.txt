@@ -1,0 +1,8 @@
+# Minimal Qt desktop runtime; WebEngine/PDF add-ons are unnecessary for this app.
+PySide6-Essentials==6.12.0
+openpyxl==3.1.5
+pywin32==312; sys_platform == 'win32'
+originpro==1.1.15; sys_platform == 'win32'
+OriginExt==1.2.6; sys_platform == 'win32'
+matplotlib==3.11.2
+SciencePlots==2.2.2

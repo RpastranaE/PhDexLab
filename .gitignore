@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.git-cache/
+Application/
+build-*/
+*.spec
+*.xlsx
+*.opju
+*.zip
+*.log
+examples/
+experiments/
+_internal/
