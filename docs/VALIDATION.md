@@ -15,6 +15,7 @@ Software verification with synthetic data is not analytical validation of a chem
 - All four resulting assay views matched the exact saved Excel values and displayed two verified Origin previews each. The compiled module inventory and bundled assets matched final source, and frozen GUI startup passed.
 - An isolated **0.9.3 → 0.10.0** update using the exact release ZIP passed frozen startup, retained 24 help images and preserved sentinel experiment/style files.
 - The exact installer passed an isolated installation with desktop/menu shortcuts pointing to the installed executable; its frozen GUI startup passed.
+- After publication, all four GitHub asset SHA-256 digests matched the tested local artifacts. The installed 0.10.0 executable verified HTTPS and reported itself current; the 0.9.3 executable detected 0.10.0 as newer. Isolated uninstallation removed the managed shortcuts and preserved sentinel experiment/style files.
 
 ## 0.9.3 calculation audit
 
