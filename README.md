@@ -1,51 +1,49 @@
 # PhDexLab
 
-**A personal, AI-assisted Windows application by [RpastranaE](https://github.com/RpastranaE).** Developed iteratively with OpenAI ChatGPT/Codex assistance. This is an independent personal project, not an official product of OpenAI, Microsoft, OriginLab, a university or a laboratory.
+PhDexLab es una aplicación para **Windows** que reúne los datos de varios ensayos de química en **un Excel maestro y un proyecto editable de OriginPro**. Permite introducir lecturas manualmente, conservar las condiciones del protocolo, recalcular resultados y exportar figuras por ensayo.
 
-PhDexLab coordinates manual experimental data entry, an auditable Excel workbook and editable OriginPro 2024 graphs. It runs independently of PhDex; its modules and API are intended for possible future integration.
+Es un **proyecto personal de [RpastranaE](https://github.com/RpastranaE), desarrollado con asistencia de IA —ChatGPT/Codex—**. Funciona de forma autónoma; la integración con PhDex queda como posibilidad futura. No es un producto oficial de OpenAI, Microsoft, OriginLab ni una institución académica.
 
-[Download Windows app](https://github.com/RpastranaE/PhDexLab/releases/latest) · [Guía en español](docs/GUIA_v0.9.md) · [Validation](docs/VALIDATION.md) · [Update design](docs/UPDATES.md)
+## Descargar e instalar
 
-![Illustrated first-use help](docs/help-v9.png)
+1. Abre la [última versión publicada](https://github.com/RpastranaE/PhDexLab/releases/latest).
+2. En **Assets**, descarga **`PhDexLab-Setup-X.Y.Z.exe`**. Es el instalador; sustituye X.Y.Z por la versión que aparezca en esa página.
+3. Ejecútalo y abre PhDexLab desde el acceso directo. No necesitas instalar Python para esta opción.
 
-## Use on Windows
+El cálculo necesita **Microsoft Excel de escritorio**. Para generar el proyecto y las figuras de Origin también necesitas **OriginPro 2024 instalado y con licencia**. Esas aplicaciones no están incluidas. La primera ejecución utiliza inglés y abre la ayuda; puedes elegir español y se recuerda tu preferencia. El instalador y el ejecutable no tienen firma de código.
 
-Download **PhDexLab-Setup-0.9.0.exe** from Releases and run it. The per-user installer creates a normal application folder, desktop/Start menu shortcuts and an uninstaller. No administrator account or separate Python installation is required. English is the default on first use; existing language preferences are preserved. A portable ZIP remains available for the updater and optional portable use. Desktop Microsoft Excel and a licensed OriginPro 2024 installation are needed for the complete workflow; Excel-only mode does not require Origin. These commercial applications are not bundled. The executable is unsigned.
+## Tu primer experimento
 
-The update button checks this repository's latest stable release. Automatic checking and verified background downloads are enabled by default in the installed app, with installation on normal exit. They can be disabled. Updates replace `Application` only, preserve experiments and personal settings, test startup and attempt rollback on failure. No experimental data are uploaded.
+**Nuevo ensayo → introducir datos y condiciones → guardar → cerrar el libro de Excel → actualizar y exportar.**
 
-## Capabilities
+La aplicación empieza sin un método seleccionado. Cada ensayo mantiene su calibración y sus resultados; distintas muestras pueden compartir la calibración de ese ensayo. El menú de datos sintéticos permite practicar sin utilizar mediciones reales.
 
-- A single experiment contains several assays, each with its own protocol, calibration, blanks, technical readings and biological units.
-- One workbook, organised by assay, with visible formulas, QC, summaries and original inputs.
-- One editable Origin project, organised by assay/Data/Graphs, plus PNG/PDF/SVG exports by assay.
-- Explicit Excel recalculation and Origin refresh; verified unchanged outputs are reused. Automatic Excel-to-Origin synchronisation is **not** claimed.
-- FRAP, ABTS, CUPRAC, TPC, TFC, kinetic DPPH/EC50, moisture, dry matter, ash and sieving engines; configurable, versioned protocol variants.
-- An empty initial workspace, explicit assay creation, Excel-style select-and-type editing, reusable input templates, Spanish/English interface and light/dark mode.
-- Illustrated help in both languages, opened automatically once on first real launch.
-- Workbook-open checks and actionable close-and-retry messages; no user Excel session is closed automatically.
-- Ten plot presets and separate palette/marker/line/font controls for results, calibration and dose curves; portable custom styles.
+![PhDexLab: inicio sin ensayos](docs/interface-v9.png)
 
-**Scientific scope:** protocol presets are starting points, not validated analytical methods for your matrix. Incomplete procedures remain blocked until their missing conditions are supplied. Numerical tests do not constitute experimental validation. Synthetic demonstrations are explicitly labelled. Review calibration, controls, units and replicate independence before interpreting any result. Private source snapshots, private workspace URLs and experiments are excluded from this repository.
+## Una documentación, según lo que necesites
 
-## Run from source
+| Quiero… | Leer |
+|---|---|
+| Instalar, aprender a usar la aplicación y resolver problemas | **[Manual de uso](docs/MANUAL.md)** |
+| Descargar el código, modificarlo, ejecutar pruebas o crear un instalador | **[Desarrollo y compilación](docs/DEVELOPMENT.md)** |
+| Consultar las publicaciones de los protocolos | [Fuentes de los métodos](docs/PROTOCOL_SOURCES.md) |
+| Saber qué se ha comprobado y cuáles son los límites | [Validación del software](docs/VALIDATION.md) |
+| Ver qué cambió entre versiones | [Historial de cambios](CHANGELOG.md) |
 
-Use 64-bit Python 3.12 on Windows. Double-click `PhDexLab.bat` to prepare the environment on first use and launch. Alternatively:
+La documentación principal está en español y utiliza los nombres de los controles en inglés/español para que puedas seguirla en ambos idiomas de la aplicación. Las guías por versión se conservan como archivo histórico; **no hace falta leerlas para empezar**.
 
-```powershell
-python -m venv .venv
-.venv/Scripts/python.exe -m pip install -r requirements.txt
-.venv/Scripts/python.exe -m phdexlab
-```
+## Qué incluye
 
-Run tests using `.venv/Scripts/python.exe -m pip install pytest`, then `.venv/Scripts/python.exe -m pytest`. Excel/Origin integration checks require the actual installed applications and are described separately in the validation notes. Source installations do not replace themselves with binary updates.
+- FRAP, ABTS, CUPRAC, TPC, TFC, DPPH cinético/EC50, humedad, materia seca, cenizas y granulometría, con variantes de protocolo.
+- Entrada y pegado de datos, réplicas técnicas/biológicas separadas y plantillas reutilizables.
+- Un Excel con hojas por ensayo, fórmulas visibles, resultados y controles de calidad.
+- Un proyecto Origin organizado por ensayo y exportaciones PNG/PDF/SVG; estilos de resultados, calibración y curvas de dosis personalizables.
+- Actualización explícita de resultados, interfaz español/inglés, modo claro/oscuro y ayuda ilustrada.
 
-`Build-Windows.ps1` builds the application. With the official Inno Setup 6 compiler installed, `Build-Installer.ps1 -Compiler <path-to-ISCC.exe>` creates the single-file installer. `tools/package_windows.py` adds redistribution notices and creates the exact hashed ZIP consumed by the updater. `tools/publish_release.ps1` publishes a versioned release using GitHub CLI after a reviewed build. See [release instructions](docs/UPDATES.md).
+Las plantillas son puntos de partida documentales: **no certifican que un método esté validado para tu muestra**. La aplicación no inventa condiciones faltantes ni declara independencia de las réplicas. Consulta el [alcance de validación](docs/VALIDATION.md).
 
-## Structure
+## Problemas, contribuciones y licencia
 
-`protocols` / `method_catalog`, `data_entry`, `calculations` / `assay_engine`, `excel` / `multi_excel`, `origin` / `multi_origin`, `interface` / `workspace`, and `integration` / `experiments` separate analytical definitions, input, calculation, presentation and orchestration. The updater does not receive experimental content.
+Para comunicar un fallo, abre una [incidencia](https://github.com/RpastranaE/PhDexLab/issues) con versión, pasos para reproducirlo y un ejemplo sintético. Revisa los archivos antes de compartirlos: las incidencias son públicas. Para proponer código, empieza por la [guía de desarrollo](docs/DEVELOPMENT.md).
 
-## Licence and contributions
-
-Original project code is MIT-licensed. Dependencies retain their own licences, including Qt/PySide under LGPLv3; notices and replacement/rebuild information accompany the Windows package. Contributions and bug reports are welcome. Do not attach private data to public issues. Software is provided as-is without warranty.
+El código original se distribuye bajo [licencia MIT](LICENSE). Las dependencias mantienen sus licencias y [avisos correspondientes](THIRD_PARTY_NOTICES.md).

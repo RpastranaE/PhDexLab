@@ -1,4 +1,8 @@
-# Validation scope — 0.9.0
+# Validation evidence — 0.9.0
+
+[Documentation index](README.md) · [Current user manual](MANUAL.md) · [Development](DEVELOPMENT.md)
+
+This page records checks performed for the stated release; it is not a second installation or usage guide.
 
 This is software verification with synthetic data, not analytical validation of a chemical method or matrix. Protocol conditions and independence of biological units remain the operator's responsibility.
 
@@ -27,7 +31,7 @@ Separate Windows executable fixtures exercise successful installation and forced
 ## Practical limits
 
 - Tests apply to the stated local installation, not every Windows/Office/Origin build. No automated Excel↔Origin synchronisation or portable relative connector paths are claimed.
-- Automatic updates require a writable installed or portable application, network access, PowerShell and a stable release with its SHA-256 digest. Version 0.7.0 users must install 0.8.0 once manually to repair its missing TLS-policy file.
+- Automatic updates require a writable installed or portable application, network access, PowerShell and a stable release with its SHA-256 digest. Version 0.7.0 users must install the latest version once manually to repair its missing TLS-policy file.
 - Hashes verify integrity, not publisher identity through Authenticode. The executable is unsigned.
 - Rollback cannot guarantee recovery from power loss, disk failure or external antivirus removal. Keep independent backups of experiments.
 - No automatic significance tests, outlier exclusion or declaration of experimental method validity are performed.
