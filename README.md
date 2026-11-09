@@ -35,7 +35,7 @@ La documentación principal está en español y utiliza los nombres de los contr
 ## Qué incluye
 
 - FRAP, ABTS, CUPRAC, TPC, TFC, DPPH cinético/EC50, humedad, materia seca, cenizas y granulometría, con variantes de protocolo.
-- Entrada y pegado de datos, réplicas técnicas/biológicas separadas y plantillas reutilizables.
+- Entrada guiada de lecturas individuales o medias, pegado de datos, réplicas técnicas/biológicas separadas y plantillas reutilizables.
 - Un Excel con hojas por ensayo, fórmulas visibles, resultados y controles de calidad.
 - Un proyecto Origin organizado por ensayo y exportaciones PNG/PDF/SVG; estilos de resultados, calibración y curvas de dosis personalizables.
 - Actualización explícita de resultados, interfaz español/inglés, modo claro/oscuro y ayuda ilustrada.

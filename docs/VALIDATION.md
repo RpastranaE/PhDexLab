@@ -4,6 +4,15 @@
 
 Software verification with synthetic data is not analytical validation of a chemical method or matrix. The operator must review conditions, units and biological independence.
 
+## 0.9.2 verification
+
+- **180 automated tests passed.** Coverage includes all 15 catalogue variants, context-specific fields, individual/mean exclusivity, optional known precision, meaningful unknown precision, variable counts, unused entry slots, legacy template/input activation, explicit blank modes, signal-change protection, calibration minimums and prevention of provenance loss through the legacy writer.
+- The explicit native Excel comparison covered **10 methods + 3 additional variants**, with **216 biological-summary comparisons** across individual readings, means with precision and means without precision. Independent expected means matched; supplied technical SD matched the individual-reading result; unknown n/SD remained `#N/A`. Direct ΔA matched paired FRAP results. The rerunnable case is `tests/native_reading_validation.py`.
+- The final **frozen 0.9.2 executable** processed four assays (FRAP, ABTS, DPPH and adapted TPC), including one calibration mean without n/SD and DPPH means without technical precision. It produced **24 Origin + 24 Publication exports**. Native values/styles were read back, no-marker options remained applied, expected biological means matched, unknown precision stayed unavailable, and captions retained mean provenance.
+- That four-assay frozen run took 82.82 s while packaging was also running; an integrity-verified unchanged repeat took **1.31 s**, including process startup. These are local fixture timings, not a general speed guarantee.
+- The exact installer passed isolated installation, desktop/menu shortcut and frozen-startup checks. An actual isolated 0.9.1 Application was replaced using the release ZIP; startup passed and sentinel experiment/preferences files were preserved. The compiled module inventory matched source.
+- Catalogue version 3 changes the new adapted TPC default to 760 nm, matching the available operating protocol. Older saved protocol snapshots remain unchanged. The 14 supplied operating protocols plus the existing TFC reference were reviewed for required entries; this is not experimental validation of their transfer to a matrix. TAPPI conditions remain pending.
+
 ## 0.9.1 verification
 
 - **141 automated tests passed.** New regressions cover clearing cells, cut/copy/paste, atomic rejection of invalid pasted roles, row insertion/deletion, fresh IDs for pasted rows, update timing choices, restart scheduling, unsaved-work cancellation, first-save choices, image zoom and credits.

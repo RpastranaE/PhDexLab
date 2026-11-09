@@ -76,6 +76,15 @@ class YesNoDelegate(QStyledItemDelegate):
     def setModelData(self,editor,model,index):model.setData(index,editor.currentData())
     def displayText(self,value,locale):return t(value)
 
+class BasisDelegate(QStyledItemDelegate):
+    def createEditor(self,parent,option,index):
+        editor=QComboBox(parent)
+        editor.addItem(t('Lectura individual'),'individual');editor.addItem(t('Media ya calculada'),'mean')
+        return editor
+    def setEditorData(self,editor,index):editor.setCurrentIndex(1 if index.data()=='mean' else 0)
+    def setModelData(self,editor,model,index):model.setData(index,editor.currentData())
+    def displayText(self,value,locale):return t('Media ya calculada' if value=='mean' else 'Lectura individual')
+
 class RawTable(QTableWidget):
     rows_edited=Signal()
     def __init__(self):
@@ -100,7 +109,7 @@ class RawTable(QTableWidget):
         self.cellClicked.connect(self.edit_kind)
         self.protocol=None
     def edit_kind(self,row,col):
-        if col==1:
+        if col==1 or self.columns[col]=='reading_basis':
             if self.item(row,col) is None:self.setItem(row,col,QTableWidgetItem(''))
             self.editItem(self.item(row,col))
     def add_role(self,label,kind):
@@ -127,8 +136,27 @@ class RawTable(QTableWidget):
         if 'concentration' in self.columns:self.horizontalHeaderItem(self.columns.index('concentration')).setText(t('Concentración\ndel patrón')+'\n'+p['concentration_unit'].replace('umol','µmol')+'  (?)')
         if 'expected' in self.columns:self.horizontalHeaderItem(self.columns.index('expected')).setText(t('Esperado del control')+'\n'+p['concentration_unit'].replace('umol','µmol')+'  (?)')
         if 'plateau' in self.columns:self.setItemDelegateForColumn(self.columns.index('plateau'),YesNoDelegate(self))
+        if 'reading_basis' in self.columns:self.setItemDelegateForColumn(self.columns.index('reading_basis'),BasisDelegate(self))
+        self.configure_view(p)
         self.horizontalHeader().viewport().update()
         for r in range(self.rowCount()):self.update_row(r)
+    def configure_view(self,p):
+        from .reading_design import signal,matrix_mode,enabled,PARAMETERS
+        from .assay_engine import engine
+        self.protocol=p
+        if 'A_end' not in self.columns:return
+        label='Incremento ΔA · AU' if signal(p)=='delta' else 'Absorbancia final · AU' if signal(p)=='paired' else 'Absorbancia · AU'
+        self.horizontalHeaderItem(self.columns.index('A_end')).setText(t(label)+'  (?)')
+        from .reading_design import field_help
+        self.horizontalHeaderItem(self.columns.index('A_end')).setToolTip(t(field_help('A_end',p)))
+        if 'A_initial' in self.columns:self.setColumnHidden(self.columns.index('A_initial'),signal(p)!='paired' or engine(p)!='colorimetric')
+        self.setColumnHidden(self.columns.index('matrix_blank_delta'),matrix_mode(p)=='none')
+        if enabled(p):
+            self.horizontalHeaderItem(self.columns.index('matrix_blank_delta')).setText(t('Blanco propio neto · AU')+'  (?)')
+            self.horizontalHeaderItem(self.columns.index('matrix_blank_delta')).setToolTip(t(PARAMETERS['matrix_mode'][1]))
+            has_mean=any(self.item(r,self.columns.index('reading_basis')) and self.item(r,self.columns.index('reading_basis')).text()=='mean' for r in range(self.rowCount()))
+            for field in ('technical_n','technical_sd'):self.setColumnHidden(self.columns.index(field),not has_mean)
+        self.horizontalHeader().viewport().update()
     def keyPressEvent(self,event):
         if event.matches(QKeySequence.StandardKey.Copy):self.copy_cells();return
         if event.matches(QKeySequence.StandardKey.Cut):self.copy_cells();self.clear_cells();return
@@ -240,6 +268,7 @@ class RawTable(QTableWidget):
                 item.setToolTip(t(FIELDS[key][1]));self.setItem(r,c,item)
         self.blockSignals(False)
         for r in range(len(rows)):self.update_row(r)
+        if self.protocol:self.configure_view(self.protocol)
     def records(self):
         records=[]
         for r in range(self.rowCount()):
@@ -260,9 +289,13 @@ class RawTable(QTableWidget):
         if not kind and item:kind=next((k for label,k in self.roles if label==item.text()),item.text())
         tint={'sample':'#E9F6F2','standard':'#EDF3FE','blank':'#F0F2F5','control':'#FFF3DF'}.get(kind,'#FFFFFF')
         irrelevant=set()
-        if kind in ('blank','sample'):irrelevant|={'concentration'}
+        if kind in ('blank','sample') or kind=='control' and (self.protocol or {}).get('reading_schema')==2:irrelevant|={'concentration'}
         if kind!='sample':irrelevant|={'dilution','extract_mL','mass_g'}
         if kind!='control':irrelevant|={'expected'}
+        if kind=='blank' and (self.protocol or {}).get('engine','colorimetric')=='colorimetric':irrelevant|={'matrix_blank_delta'}
+        if 'reading_basis' in self.columns:
+            basis=self.item(row,self.columns.index('reading_basis'))
+            if not basis or basis.text()!='mean':irrelevant|={'technical_n','technical_sd'}
         if self.protocol and self.protocol['response']=='endpoint':irrelevant|={'A_initial'}
         for c,key in enumerate(self.columns):
             cell=self.item(row,c)
@@ -271,5 +304,8 @@ class RawTable(QTableWidget):
                 dark_tint={'sample':'#24463F','standard':'#2A3F5C','blank':'#34404D','control':'#51452B'}.get(kind,'#20313D')
                 cell.setBackground(QColor((dark_tint if dark else tint) if key=='kind' else (('#293A46' if dark else '#F2F4F7') if key in irrelevant else ('#20313D' if dark else '#FFFFFF'))))
                 cell.setForeground(QColor(('#8295A2' if dark else '#87939D') if key in irrelevant else ('#E2EAF0' if dark else '#203944')))
-                cell.setToolTip(t(FIELDS[key][1])+ ('\n\n'+t('No se utiliza en esta categoría/protocolo.') if key in irrelevant else ''))
+                from .reading_design import PARAMETERS as ENTRY_PARAMETERS
+                from .reading_design import field_help
+                helptext=field_help(key,self.protocol or {})
+                cell.setToolTip(t(helptext)+ ('\n\n'+t('No se utiliza en esta categoría/protocolo.') if key in irrelevant else ''))
         self.blockSignals(was_blocked)

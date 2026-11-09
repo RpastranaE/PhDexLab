@@ -2,6 +2,18 @@
 
 Para instalar y utilizar PhDexLab, consulta el [manual vigente](docs/MANUAL.md). Esta página explica la evolución; las instrucciones actuales no están repartidas entre versiones.
 
+## 0.9.2
+
+[Versión y descargas](https://github.com/RpastranaE/PhDexLab/releases/tag/v0.9.2)
+
+- Entrada guiada visible con pipeta: varias lecturas o una media, sin duplicarlas ni crear réplicas ficticias.
+- n técnico y DE opcionales para medias, conservados en RAW y transformados en Excel cuando corresponde. La precisión desconocida no se inventa.
+- Selección explícita de absorbancia única, parejas inicial/final o ΔA ya medido; columnas y ayudas adaptadas al método.
+- Corrección de muestra opcional y explicada con un ejemplo; tratamiento explícito de lecturas ya puestas a cero, conservando controles radicales.
+- Número de lecturas y valores de entrada por defecto personalizables, mínimo de niveles de calibración configurable y concentración de control indicada una sola vez.
+- Revisión de las 15 variantes: TPC adaptado corregido a 760 nm en el catálogo nuevo; se conservan condiciones y limitaciones documentadas. Catálogo versión 3.
+- Activación explícita de opciones en experimentos anteriores y compatibilidad de plantillas antiguas. Ayuda y manual actualizados con capturas de ambos modos.
+
 ## 0.9.1
 
 [Versión y descargas](https://github.com/RpastranaE/PhDexLab/releases/tag/v0.9.1)

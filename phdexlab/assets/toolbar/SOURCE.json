@@ -17,7 +17,8 @@
     "help": "circle-question-mark",
     "origin": "chart-scatter",
     "log": "scroll-text",
-    "protocol": "book-plus"
+    "protocol": "book-plus",
+    "measure": "pipette"
   },
   "color_override": "#176E78",
   "original_application_icons": [

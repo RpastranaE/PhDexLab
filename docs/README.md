@@ -1,6 +1,6 @@
 # Documentación de PhDexLab
 
-Esta documentación describe el funcionamiento actual de la aplicación, tomando **0.9.1** como versión de referencia. La descarga vigente siempre está en [Releases / latest](https://github.com/RpastranaE/PhDexLab/releases/latest).
+Esta documentación describe el funcionamiento actual de la aplicación, tomando **0.9.2** como versión de referencia. La descarga vigente siempre está en [Releases / latest](https://github.com/RpastranaE/PhDexLab/releases/latest).
 
 - **Primera vez:** [Manual de uso](MANUAL.md), desde instalación hasta resultados.
 - **Quiero cambiar el programa:** [Desarrollo y compilación](DEVELOPMENT.md), desde descargar el código hasta probar y empaquetar cambios.

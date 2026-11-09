@@ -58,3 +58,28 @@ def multi_demo(extended=False):
         if method=='GRANULOMETRIA':p.update(time_min=5,sieve_amplitude='SYNTHETIC EXAMPLE — no real sieving conditions')
         assays.append(dict(id=f'A{i:02}_{method}',label=METHOD_NAMES[method],protocol=p,rows=generated(p)))
     return assays
+
+def mean_demo(extended=True,precision=True):
+    """Synthetic means only: demonstrate provenance without fabricating repeated rows."""
+    from collections import OrderedDict
+    from statistics import mean,stdev
+    from .reading_design import OPTICAL,signal
+    assays=multi_demo(extended)
+    for a in assays:
+        p=a['protocol']
+        if engine(p) not in OPTICAL:continue
+        p['default_entry_mode']='mean';groups=OrderedDict()
+        for row in a['rows']:
+            key=tuple(row.get(k) for k in ('kind','sample_id','bio_id','dose_mg_mL','time_min'))
+            groups.setdefault(key,[]).append(row)
+        rows=[]
+        for group in groups.values():
+            d=deepcopy(group[0]);d.update(record_id=f'MEAN{len(rows)+1:05}',tech_id='mean',reading_basis='mean',technical_n=len(group) if precision else '',technical_sd='')
+            for key in ('A_end','A_initial','matrix_blank_delta'):
+                values=[r[key] for r in group if r.get(key) not in ('',None)]
+                d[key]=mean(values) if values else ''
+            responses=[r['A_end']-(r.get('A_initial') or 0) if signal(p)=='paired' else r['A_end'] for r in group]
+            if precision and len(responses)>1:d['technical_sd']=stdev(responses)
+            d['notes']='SYNTHETIC — supplied mean; original replicates are not reconstructed';rows.append(d)
+        a['rows']=rows
+    return assays

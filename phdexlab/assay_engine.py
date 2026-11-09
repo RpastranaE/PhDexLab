@@ -8,10 +8,14 @@ IDENTITY=COLUMNS[:5]
 PHYSICAL=IDENTITY+['tare_g','initial_g','final_g','dry_fraction','notes','kind_label']
 SIEVE=IDENTITY+['lower_um','upper_um','retained_g','loaded_g','notes','kind_label']
 EC50=IDENTITY+['dose_mg_mL','time_min','A_end','matrix_blank_delta','plateau','notes','kind_label']
-NUMERIC_PARAMS={'version','wavelength_nm','temperature_C','time_min','aliquot_uL','reagent_uL','water_uL','reaction_total_uL','report_factor','r2_min','cv_max_percent','recovery_min_percent','recovery_max_percent','mass_recovery_min','mass_recovery_max'}
+NUMERIC_PARAMS={'version','wavelength_nm','temperature_C','time_min','aliquot_uL','reagent_uL','water_uL','reaction_total_uL','report_factor','r2_min','cv_max_percent','recovery_min_percent','recovery_max_percent','mass_recovery_min','mass_recovery_max','default_replicates','default_dilution','default_extract_mL','default_mass_g','minimum_calibration_levels'}
 
 def engine(p):return p.get('engine','colorimetric')
-def columns(p):return PHYSICAL if engine(p)=='gravimetric' else SIEVE if engine(p)=='sieve' else EC50 if engine(p)=='ec50' else COLUMNS
+def base_columns(p):return PHYSICAL if engine(p)=='gravimetric' else SIEVE if engine(p)=='sieve' else EC50 if engine(p)=='ec50' else COLUMNS
+
+def columns(p):
+    from .reading_design import enabled,META,OPTICAL
+    return base_columns(p)+META if enabled(p) and engine(p) in OPTICAL else base_columns(p)
 
 def yes(value):return str(value).strip().lower() in ('true','1','yes','sí','si')
 
@@ -19,10 +23,12 @@ def required(kind,p):
     keys={'kind','sample_id','bio_id','tech_id'};e=engine(p)
     if e=='gravimetric':return keys|{'tare_g','initial_g','final_g'}|({'dry_fraction'} if p.get('quantity')=='ash' and p.get('ash_basis')=='dry' else set())
     if e=='sieve':return keys|{'lower_um','retained_g','loaded_g'}
-    keys|={'A_end','matrix_blank_delta'}
+    from .reading_design import signal,matrix_mode
+    keys.add('A_end')
+    if matrix_mode(p)=='legacy' or matrix_mode(p)=='net' and kind in ('sample','control'):keys.add('matrix_blank_delta')
     if e=='ec50':return keys|{'time_min'}|({'dose_mg_mL','plateau'} if kind=='sample' else set())
-    if p['response']=='delta':keys.add('A_initial')
-    if kind in ('standard','control'):keys.add('concentration')
+    if signal(p)=='paired':keys.add('A_initial')
+    if kind=='standard' or kind=='control' and p.get('reading_schema')!=2:keys.add('concentration')
     if kind=='control':keys.add('expected')
     if kind=='sample':keys|={'dilution','extract_mL','mass_g'}
     return keys
@@ -34,6 +40,8 @@ def validate_protocol(p):
     if engine(p) not in ('colorimetric','inhibition','ec50','gravimetric','sieve'):raise ValueError('Motor de cálculo desconocido')
     if not p.get('name') or not p.get('source'):raise ValueError('Nombre y fuente del protocolo obligatorios')
     canonical(p)
+    from .reading_design import validate
+    validate(p)
     return p
 
 def ready_protocol(p):
@@ -67,10 +75,11 @@ def clean(rows,p):
     ready_protocol(p);e=engine(p)
     if e in ('colorimetric','inhibition'):
         result=normalize(rows,p)
-        if e=='inhibition' and any(d['A_end']-d['matrix_blank_delta']<=0 for d in result if d['kind']=='blank'):raise ValueError('El control radical corregido debe ser positivo')
-        if not any(d['kind']=='blank' for d in result):raise ValueError('Falta blanco o control radical sin antioxidante')
+        if e=='inhibition' and any(d['A_end']-(d['matrix_blank_delta'] or 0)<=0 for d in result if d['kind']=='blank'):raise ValueError('El control radical corregido debe ser positivo')
+        if p.get('blank_handling')!='zeroed' and not any(d['kind']=='blank' for d in result):raise ValueError('Falta blanco o control radical sin antioxidante')
         std=groups(result,{'standard'});concs={result[idx[0]-2]['concentration'] for idx in std.values()}
-        if len(concs)<3:raise ValueError('Se necesitan tres niveles distintos de calibración')
+        minimum=int(p.get('minimum_calibration_levels',3))
+        if len(concs)<minimum:raise ValueError('Se necesitan tres niveles distintos de calibración' if minimum==3 else f'Calibration requires at least {minimum} distinct levels')
         if len(std)!=len(concs):raise ValueError('Cada concentración debe tener un único nivel de patrón')
         return result
     result=[];ids=set();reps=set()
@@ -78,6 +87,9 @@ def clean(rows,p):
     for row in rows:
         if not any(str(v or '').strip() for k,v in row.items() if k not in ('record_id','kind_label')):continue
         d={k:row.get(k,'') for k in columns(p)}
+        if e=='ec50':
+            from .reading_design import prepare_row
+            d=prepare_row(d,p)
         for k in IDENTITY:
             d[k]=str(d[k] or '').strip()
             if not d[k]:raise ValueError(f'Falta {k}')
@@ -101,8 +113,10 @@ def clean(rows,p):
         if key in reps:raise ValueError('Lectura duplicada dentro de la misma unidad')
         reps.add(key);result.append(d)
     if not result:raise ValueError('Sin lecturas')
+    from .reading_design import validate_groups
+    validate_groups(result,p)
     if e=='ec50':
-        if any(d['A_end']-d['matrix_blank_delta']<=0 for d in result if d['kind']=='blank'):raise ValueError('El control radical corregido debe ser positivo')
+        if any(d['A_end']-(d['matrix_blank_delta'] or 0)<=0 for d in result if d['kind']=='blank'):raise ValueError('El control radical corregido debe ser positivo')
         controls={d['time_min'] for d in result if d['kind']=='blank'}
         levels={};finals=set()
         for d in result:
@@ -174,7 +188,12 @@ def cell_plan(rows,p):
             indices=curve_groups[key];d=rows[indices[0]-2]
             for col,k in (('A','sample_id'),('B','bio_id'),('C','dose_mg_mL')):put('DoseCurve',f'{col}{r}',raw(k,indices[0]))
             refs=','.join(f'Processing!C{i}' for i in indices)
-            put('DoseCurve',f'D{r}',f'AVERAGE({refs})');put('DoseCurve',f'E{r}',f'STDEV({refs})' if len(indices)>1 else 'NA()');put('DoseCurve',f'F{r}',f'COUNT({refs})')
+            put('DoseCurve',f'D{r}',f'AVERAGE({refs})')
+            from .reading_design import stats
+            time_column=raw('time_min',2).split('!')[1][:-1]
+            control=f'AVERAGEIFS(Processing!$B$2:$B${n},RAW!$B$2:$B${n},"blank",RAW!${time_column}$2:${time_column}${n},{raw("time_min",indices[0])})'
+            count,sd=stats(rows,indices,p,refs,f'100/({control})')
+            put('DoseCurve',f'E{r}',sd);put('DoseCurve',f'F{r}',count)
             nextrow=r+1
             if r<len(curves)+1 and curves[r-1][:2]==key[:2]:
                 put('DoseCurve',f'G{r}',f'IF(AND(D{r}<=50,D{nextrow}>=50,D{nextrow}>D{r}),C{r}+(50-D{r})*(C{nextrow}-C{r})/(D{nextrow}-D{r}),"" )')

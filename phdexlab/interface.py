@@ -86,7 +86,7 @@ class Window(QMainWindow):
         bottom=QHBoxLayout();layout.addLayout(bottom)
         self.row_count=QSpinBox();self.row_count.setRange(1,10000);self.row_count.setValue(10);self.row_count.setSuffix(' filas');self.row_count.setToolTip('Número de filas vacías que añadir');bottom.addWidget(self.row_count)
         button("Añadir el número de filas indicado",self.add_rows,'rows',bottom)
-        button("Preparar una muestra y sus réplicas",self.add_sample,'sample',bottom)
+        button("Añadir lecturas o una media",self.add_sample,'measure',bottom)
         self.demo_button=button("Datos sintéticos: elegir una muestra o tres variedades",lambda:None,'demo',bottom)
         self.demo_menu=QMenu(self.demo_button)
         self.demo_menu.addAction('Una muestra · dos unidades biológicas',lambda:self.guard(self.load_demo))

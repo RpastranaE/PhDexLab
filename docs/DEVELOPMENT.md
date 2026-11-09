@@ -121,3 +121,19 @@ El reemplazo se prepara aparte, espera a que cierre el proceso, conserva respald
 El README es la entrada; el manual explica el uso; esta guía cubre desarrollo; VALIDATION contiene evidencias; PROTOCOL_SOURCES conserva las fuentes científicas y CHANGELOG el historial. Las guías anteriores quedan en `docs/archive`. Evita duplicar instrucciones actuales en varios documentos.
 
 Proyecto personal de RpastranaE, creado con asistencia de ChatGPT/Codex. Contacto: **rpe10@alu.ua.es**. El código utiliza [MIT](../LICENSE); respeta [los avisos de terceros](../THIRD_PARTY_NOTICES.md), incluidas las obligaciones de redistribución de Qt/PySide6 y sus bibliotecas. Excel y OriginPro mantienen sus propias licencias.
+
+
+## Contrato de entrada desde 0.9.2
+
+`reading_design.configure(protocol, legacy=True)` permite activar explícitamente las opciones en una copia de un protocolo anterior, manteniendo su señal y corrección. El catálogo nuevo ya incorpora el diseño. `assay_engine.columns(protocol)` es la autoridad del esquema RAW: las columnas de procedencia se añaden a continuación de las existentes, conservando las referencias históricas de las fórmulas.
+
+`reading_basis` distingue `individual` de `mean`; `technical_n` y `technical_sd` son metadatos opcionales de una media. No expandas una media a filas ficticias. No mezcles ambos orígenes en la misma unidad/condición. En DPPH, la condición incluye dosis y tiempo. El motor genera las referencias y conversiones de SD en Excel; no se añade un segundo motor numérico de producción.
+
+La selección `reading_signal` distingue `endpoint`, `paired` y `delta`; `response` se conserva como valor derivado para compatibilidad. Un cambio manual de señal no convierte las medidas existentes. Las pruebas nativas adicionales pueden ejecutarse con Excel real:
+
+```powershell
+$env:PYTHONPATH = (Get-Location).Path
+.\.venv\Scripts\python.exe tests/native_reading_validation.py ..\PhDexLab-reading-test
+```
+
+El destino debe ser nuevo o vacío. La prueba compara diez métodos y tres variantes, lecturas individuales, medias con/sin precisión y ΔA directo, usando valores esperados independientes; guarda `validation.json`. No requiere Origin para esta comparación numérica. La generación completa del proyecto se comprueba por separado.

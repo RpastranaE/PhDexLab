@@ -30,7 +30,7 @@ TPC=make('TPC','tpc-folin','TPC · Folin–Ciocalteu · 120 min',equivalent='Gal
     source=URL+'personal-reference-met-04',standard_range='50–2500 µmol/L antes de reacción; seleccionar tramo lineal',
     reagents='100 µL muestra + 200 µL Folin 10% v/v + 800 µL Na2CO3 700 mM. Folin ANTES del álcali. Lectura de 200 µL transferidos a placa.',
     notes='Conversión de µmol/L a mg/L: 170,12/1000 para ácido gálico. La transferencia a placa no añade dilución. Folin responde a otros reductores; TPC operacional.')
-TPC_ADAPT=deepcopy(TPC);TPC_ADAPT.update(id='tpc-adapted',name='TPC · adaptado · 30 min',
+TPC_ADAPT=deepcopy(TPC);TPC_ADAPT.update(id='tpc-adapted',name='TPC · adaptado · 30 min',wavelength_nm=760,
     time_min=30,temperature_C=None,aliquot_uL=200,reagent_uL=600,water_uL=500,reaction_total_uL=1300,
     concentration_unit='mg/L',report_factor=100,result_unit='mg GAE/100 g',source=URL+'personal-reference-met-05',
     standard_range='No especificado; definir experimentalmente',
@@ -76,3 +76,12 @@ for _protocol in EXTRA:
 # ALL holds the same EXTRA objects, and independent copies of the two existing FRAP variants.
 from .protocol_texts import apply_builtin
 for _builtin in ALL:apply_builtin(_builtin)
+
+# New acquisitions expose explicit input choices; old experiment snapshots are unchanged.
+from .reading_design import configure
+ALL[:]=[configure(p) for p in ALL]
+
+for _p in ALL:
+    _p["version"]=max(3,_p.get("version",1))
+    if _p["id"]=="tpc-folin":_p["default_replicates"]=2
+    if _p.get("engine")=="gravimetric":_p["default_replicates"]=1

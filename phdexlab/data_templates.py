@@ -5,7 +5,7 @@ from datetime import datetime,timezone
 from .assay_engine import columns,engine
 from .integration import dump
 
-MEASUREMENTS={'A_end','A_initial','matrix_blank_delta','mass_g','tare_g','initial_g','final_g','retained_g','loaded_g','dry_fraction'}
+MEASUREMENTS={'technical_sd','A_end','A_initial','matrix_blank_delta','mass_g','tare_g','initial_g','final_g','retained_g','loaded_g','dry_fraction'}
 
 def user_data_dir():return Path(os.environ.get('PHDEXLAB_DATA_DIR',Path.home()/'Documents'/'PhDexLab'))
 
@@ -34,10 +34,16 @@ def catalog(folder=None):
     return sorted(result,key=lambda x:x['name'].casefold())
 
 def instantiate(template,protocol):
-    if template['method']!=protocol['method'] or template['engine']!=engine(protocol) or template['columns']!=list(columns(protocol)):
+    target=list(columns(protocol));source=template['columns']
+    from .reading_design import META,enabled
+    compatible=source==target or enabled(protocol) and target[-len(META):]==META and source==target[:-len(META)]
+    if template['method']!=protocol['method'] or template['engine']!=engine(protocol) or not compatible:
         raise ValueError('La plantilla no es compatible con el método seleccionado')
     if engine(protocol) in ('colorimetric','inhibition') and template.get('calibration_context')!={key:protocol.get(key) for key in ('equivalent','concentration_unit','calibration_basis')}:
         raise ValueError('La plantilla usa otro patrón, unidad o base de concentración. Crear una plantilla compatible.')
     rows=copy.deepcopy(template['rows'])
-    for row in rows:row['record_id']=uuid.uuid4().hex
+    for row in rows:
+        row['record_id']=uuid.uuid4().hex
+        for key in target:
+            if key not in row:row[key]='individual' if key=='reading_basis' else ''
     return rows

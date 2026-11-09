@@ -75,6 +75,17 @@ def write_master(path,assays,experiment_id,calculated=False):
                 overall.append([assay['id'],p['method'],f"='{summ.title}'!A{r}",f"='{summ.title}'!B{r}",f"='{summ.title}'!C{r}",f"='{summ.title}'!D{r}",p['result_unit']])
             add_charts(wb,names,p,clean)
         readme=wb[names['ReadMe']]
+        if p.get('reading_schema')==2 and engine(p) in ('gravimetric','sieve'):
+            readme.append(('Data entry','Raw weighings or mass fractions; no absorbance or precomputed percentage substitution. Independent aliquots/runs need distinct biological-unit IDs.'))
+        if p.get('reading_schema')==2 and engine(p) in ('colorimetric','inhibition','ec50'):
+            from .reading_design import signal,mean
+            for pair in [('Entered signal',signal(p)),('Reference signal',p.get('reference_signal','not applicable')),('Signal adaptation','Operator-selected adaptation; document compatibility' if signal(p)!=p.get('reference_signal',signal(p)) else 'Reference signal retained'),('Sample background',p.get('matrix_mode','not applicable')),('Reagent blank',p.get('blank_handling','measured radical control' if engine(p) in ('inhibition','ec50') else 'not applicable')),('Data entry','Individual readings OR one supplied mean per biological unit/condition. No artificial replicates.'),('Supplied means',sum(mean(d) for d in rows)),('Technical precision','For supplied means, n and response SD are operator-reported and optional. Unknown n/SD remain NA; paired SD is SD of paired differences. Biological n counts independent units only.')]:readme.append(pair)
+            if engine(p) in ('colorimetric','inhibition','ec50'):
+                rawws=wb[names['RAW']];schema=columns(p)
+                if 'A_initial' in schema:rawws.column_dimensions['H'].hidden=signal(p)!='paired'
+                from openpyxl.utils import get_column_letter
+                rawws.column_dimensions[get_column_letter(schema.index('matrix_blank_delta')+1)].hidden=p.get('matrix_mode')=='none'
+
         for pair in [('Experiment',experiment_id),('Assay',assay['id']),('Protocol',p['name']),('State',p.get('status')),('Source',p.get('source')),('Notes',p.get('notes')),('Reagents',p.get('reagents')),('Mass basis',p.get('mass_basis')),('Calculation','Excel is the sole production calculation engine; Origin imports saved values.'),('Draft',issue),('Replicates','Average technical readings within each biological unit first. Different sample IDs remain separate.'),('Editing','Edit RAW and Parameters only; save and close Excel, then update. Worksheet names and column keys are managed.'),('Limitations','Draft method transfer; no inferred independence, metrological uncertainty or automatic significance test.')]:readme.append(pair)
         index.cell(index.max_row,2).hyperlink=f"#'{names['RAW']}'!A1";index.cell(index.max_row,2).style='Hyperlink'
     for c,label in enumerate(('RAW','Conditions','Calibration / balance','Results','Summary','Method'),8):index.cell(1,c,label)
@@ -106,6 +117,10 @@ def write_master(path,assays,experiment_id,calculated=False):
         ws=wb[sheet_name(assay,'RAW')];e=engine(assay['protocol'])
         choices='sample' if e in ('gravimetric','sieve') else 'blank,sample' if e=='ec50' else 'blank,standard,control,sample'
         dv=DataValidation(type='list',formula1='"'+choices+'"',allow_blank=True);dv.showErrorMessage=True;dv.error='Seleccionar un tipo válido para este ensayo';ws.add_data_validation(dv);dv.add('B2:B10001')
+        if 'reading_basis' in columns(assay['protocol']):
+            from openpyxl.utils import get_column_letter
+            for key,type_,formula1,formula2 in [('reading_basis','list','"individual,mean"',None),('technical_n','whole','1','1000000'),('technical_sd','decimal','0','1E+100')]:
+                validation=DataValidation(type=type_,operator='between' if type_!='list' else None,formula1=formula1,formula2=formula2,allow_blank=True);validation.showErrorMessage=True;ws.add_data_validation(validation);col=get_column_letter(columns(assay['protocol']).index(key)+1);validation.add(f'{col}2:{col}10001')
     meta.sheet_state='veryHidden';wb.calculation=CalcProperties(calcId=0,fullCalcOnLoad=True);wb.save(path);wb.close();return report
 
 def add_charts(wb,names,p,rows):
@@ -146,6 +161,7 @@ def read_master(path):
                 try:p[key]=number(p[key])
                 except (TypeError,ValueError):pass
             if 'operational_confirmed' in p:p['operational_confirmed']=yes(p['operational_confirmed'])
+            if p.get('reading_schema')==2 and engine(p)=='colorimetric':p['response']='endpoint' if p.get('reading_signal')=='endpoint' else 'delta'
             keys=columns(p)
             if list(next(rws.values))!=keys:raise ValueError('No cambiar nombres ni orden de columnas RAW')
             rows=[dict(zip(keys,r)) for r in rws.iter_rows(min_row=2,values_only=True) if any(v is not None and str(v).strip() for v in r)]

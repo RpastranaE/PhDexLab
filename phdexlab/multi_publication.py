@@ -32,11 +32,19 @@ def payload(folder,assay):
     if engine(p) in ('colorimetric','inhibition'):
         c=values(l.master,sheet_name(assay,'Calibration'));result.update(calibration=sorted([r for r in c[1:] if finite(r[0])],key=lambda r:r[0]),slope=c[2][9],intercept=c[3][9],r2=c[4][9])
     if engine(p)=='ec50':result['curve']=values(l.master,sheet_name(assay,'DoseCurve'))[1:]
+    from .reading_design import enabled
+    if enabled(p) and engine(p) in ('colorimetric','inhibition','ec50'):
+        from .assay_engine import columns
+        rows=[dict(zip(columns(p),r)) for r in values(l.master,sheet_name(assay,'RAW'))[1:]]
+        means=[r for r in rows if r.get('reading_basis')=='mean']
+        result['input_provenance']=dict(mean_records=len(means),unknown_n=sum(r.get('technical_n') in (None,'') for r in means),unknown_sd=sum(r.get('technical_sd') in (None,'') for r in means))
     return result
 
 def captions(data,show_markers=True):
     points='dots are individual biological units.' if show_markers else 'individual biological-unit markers are hidden by the selected style.'
-    p=data['protocol'];return (f"{p['method']}. Source: {p['source']}. Protocol: {p['name']}.\n"
+    supplied=data.get('input_provenance',{})
+    provenance=(f"Supplied mean records: {supplied.get('mean_records',0)}; unknown technical n: {supplied.get('unknown_n',0)}; unknown technical SD: {supplied.get('unknown_sd',0)}. Original readings are not reconstructed; reported technical precision is distinct from biological replication. " if supplied.get('mean_records') else '')
+    p=data['protocol'];return (provenance+f"{p['method']}. Source: {p['source']}. Protocol: {p['name']}.\n"
         'Results: biological-unit means after averaging technical measurements. Error bars are biological SD; '+points+' '
         'No significance test or automatic exclusion. Missing estimates remain explicit; SD is not invented for n<2. '
         'Calibration (where used): technical means ± SD and unweighted OLS with free intercept, computed in Excel. '

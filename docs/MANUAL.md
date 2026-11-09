@@ -44,7 +44,28 @@ Para continuar un trabajo, abre su carpeta raíz desde la aplicación. **Cerrar 
 
 ## 5. Introducir datos
 
-Cada fila representa una lectura original. El tipo de lectura se elige de una lista: patrón, blanco, control o muestra, según el método. Puedes añadir nombres personalizados vinculados a esas categorías. Los identificadores internos se generan automáticamente.
+### Lecturas individuales o una media
+
+Pulsa **Añadir lecturas o una media / Add readings or a mean**, el botón de pipeta sobre la tabla. Elige tipo de lectura, muestra/patrón y unidad biológica. Puedes introducir 3, 5 o más absorbancias, o elegir **Media ya calculada / Precomputed mean** y escribir solo esa media. Las casillas vacías que sobren no se cuentan como medidas; una pareja parcialmente rellenada sigue pendiente.
+
+![Entrada de lecturas individuales](readings-en-v092.png)
+
+Para una media, n técnico y DE de respuesta son opcionales: déjalos vacíos si no los conoces. La aplicación conserva un único registro identificado como media; no inventa réplicas ni una dispersión. La DE corresponde a la respuesta efectiva utilizada; para parejas es la DE de las diferencias, no la DE final aislada. Las incertidumbres de blancos no se propagan como incertidumbre metrológica.
+
+![Entrada de una media](mean-en-v092.png)
+
+Usa un modo por unidad biológica y condición: no mezcles una media con sus propias lecturas. Puedes tener una unidad con lecturas individuales y otra con una media. Una media global de 27 lecturas no se convierte en 27 unidades biológicas. El menú sintético incluye **Demo con medias ya calculadas** para practicar.
+
+### Qué significa la señal
+
+- **Lectura única:** una absorbancia por lectura, al tiempo del protocolo. No hay campo inicial.
+- **Incremento ΔA ya medido:** introduce el incremento que entrega el equipo. No vuelvas a restar una inicial.
+- **Pareja inicial/final:** introduce ambas medidas de cada pareja; Excel calcula su diferencia. Solo este modo requiere una inicial.
+
+El FRAP Fe(II) de referencia conserva el incremento definido en el protocolo original. Si eliges lectura única, el programa registra una adaptación respecto a la referencia. No reinterpreta automáticamente los números ya introducidos: crea otro ensayo o borra explícitamente esas medidas antes de cambiar de señal. ABTS y DPPH utilizan absorbancias y un control radical; ese control no es una inicial de la muestra.
+
+
+En RAW, cada fila representa una lectura original o una media aportada identificada como tal. Las pesadas y fracciones usan sus campos específicos. El tipo de lectura se elige de una lista: patrón, blanco, control o muestra, según el método. Puedes añadir nombres personalizados vinculados a esas categorías. Los identificadores internos se generan automáticamente.
 
 Un clic selecciona la celda. Escribir sustituye su contenido; F2 o doble clic permite editar el texto existente. Supr deja vacías las celdas seleccionadas. Ctrl+C, Ctrl+X y Ctrl+V permiten copiar, cortar y pegar. El menú con clic derecho permite insertar una cantidad de filas, eliminar las seleccionadas, copiar filas completas y pegarlas como filas nuevas; estas reciben identificadores internos nuevos. Puedes pegar una tabla de Excel con tabulaciones desde la celda seleccionada. Añade las filas necesarias con el control de cantidad de filas. Los asteriscos rojos indican campos obligatorios para la categoría y el protocolo de esa fila. Las columnas atenuadas no se utilizan en ese contexto.
 
@@ -69,13 +90,25 @@ Las réplicas técnicas se agrupan antes de resumir las biológicas. Tres lectur
 
 ## 6. Protocolos y plantillas
 
-En **Protocolo y condiciones / Protocol and conditions** revisa unidades, concentraciones, diluciones y demás parámetros. Guardar una variante crea una versión para reutilizar esas condiciones; el experimento conserva la versión que utilizó. No cambia retrospectivamente todos los experimentos anteriores.
+En **Protocolo y condiciones / Protocol and conditions** revisa unidades, concentraciones, diluciones y demás parámetros. Los primeros controles permiten elegir señal, entrada preferida, número de lecturas propuesto, corrección de muestra, tratamiento del blanco y valores por defecto de dilución, volumen de extracción y masa. También puedes configurar el mínimo de niveles de calibración (3 por defecto; mínimo matemático de 2). Dos puntos no demuestran linealidad.
+
+El número de lecturas prepara el formulario y es editable por entrada; no impone triplicados. El TPC base propone duplicados; en gravimetría se propone una fila por unidad para no presentar alícuotas independientes como técnicas de la misma unidad.
+
+Para activar estas opciones en un experimento anterior, pulsa la flecha de la pipeta → **Configurar entrada en Protocolo y condiciones**. Se conservan sus lecturas y señal; guarda para conservar la activación. Las plantillas de datos antiguas compatibles se pueden cargar sin copiar medidas ni inventar precisión. Los experimentos con el diseño nuevo requieren 0.9.2 o posterior para abrirse; las versiones anteriores no conocen sus columnas de procedencia. Guardar una variante crea una versión para reutilizar esas condiciones; el experimento conserva la versión que utilizó. No cambia retrospectivamente todos los experimentos anteriores.
 
 La ficha de metodología incluye las fuentes originales. Una adaptación bibliográfica no implica que las condiciones hayan sido validadas para tu matriz. Los métodos con condiciones pendientes requieren completarlas. No interpretes un resultado de equivalentes, un porcentaje de inhibición y un EC50 como magnitudes intercambiables. En dosis-respuesta, revisa la definición de dosis y la cobertura del intervalo: no fuerces una extrapolación fuera de los datos.
 
 Las **plantillas de datos** reutilizan el diseño: nombres de muestras, patrones y réplicas. Comprueba si al guardarlas has elegido incluir medidas. En una plantilla para nuevas medidas conviene dejar absorbancias y masas medidas vacías. Al cargarla, revisa su compatibilidad con el método seleccionado.
 
 Crear una variante desde la interfaz sirve para modificar condiciones de un cálculo existente. Incorporar un motor de cálculo distinto requiere modificar el código; se explica en [Desarrollo](DEVELOPMENT.md).
+
+### Blanco de reactivos y corrección de muestra
+
+El blanco de reactivos representa la señal de reactivos/disolvente y se aplica una sola vez. El fondo propio de muestra es otra medida: su color o turbidez sin el cromóforo correspondiente, bajo condiciones equivalentes. Solo activa **Blanco propio de muestra (neto)** si lo has medido y puedes justificar su uso. Introduce su contribución adicional neta, ya corregida frente a su propio blanco; para ΔA debe corresponder al incremento.
+
+Ejemplo de lectura única: 0,620 de muestra − 0,020 de reactivos − 0,030 de fondo neto = 0,570 AU. No introduzcas 0,020 otra vez como fondo de muestra. Por defecto, los protocolos nuevos usan **Sin corrección adicional** y ocultan ese campo: no necesitas rellenar ceros.
+
+Si el instrumento ya puso a cero las lecturas con el blanco de reactivos, los métodos colorimétricos permiten declararlo expresamente. No se inventa una medida de blanco y no se vuelve a restar. ABTS y DPPH siguen necesitando su control radical. Si hay correcciones no nulas guardadas, desactivarlas no elimina ni ignora esos valores: debes revisarlos.
 
 ## 7. Guardar, recalcular y exportar
 

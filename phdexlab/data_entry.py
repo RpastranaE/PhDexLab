@@ -24,6 +24,10 @@ def normalize(rows, protocol):
         if not any(v is not None and str(v).strip() for v in row.values()):
             continue
         d = {k: number(row.get(k)) if k in NUMERIC else str(row.get(k) or "").strip() for k in COLUMNS}
+        from .reading_design import enabled,prepare_row,signal,matrix_mode
+        if not enabled(protocol) and any(row.get(k) not in ('',None) for k in ('reading_basis','technical_n','technical_sd')):raise ValueError('Enable explicit reading options before importing mean provenance')
+        if enabled(protocol):
+            d.update({k:row.get(k,'') for k in ('reading_basis','technical_n','technical_sd')});d=prepare_row(d,protocol)
         rid = d["record_id"]
         if not rid or rid in seen:
             raise ValueError(f"Fila {index}: record_id vacío o duplicado")
@@ -37,11 +41,11 @@ def normalize(rows, protocol):
         if rep in reps:
             raise ValueError(f"{rid}: réplica técnica duplicada en la misma unidad biológica")
         reps.add(rep)
-        if d["A_end"] is None or (protocol["response"] == "delta" and d["A_initial"] is None):
+        if d["A_end"] is None or (signal(protocol) == "paired" and d["A_initial"] is None):
             raise ValueError(f"{rid}: faltan lecturas requeridas (A_end / A_initial)")
-        if d["matrix_blank_delta"] is None:
+        if d["matrix_blank_delta"] is None and (matrix_mode(protocol)=="legacy" or matrix_mode(protocol)=="net" and d["kind"] in ("sample","control")):
             raise ValueError(f"{rid}: indicar matrix_blank_delta explícito (0 si no se aplica)")
-        if d["kind"] in ("standard", "control") and (d["concentration"] is None or d["concentration"] < 0):
+        if (d["kind"]=="standard" or d["kind"]=="control" and not enabled(protocol)) and (d["concentration"] is None or d["concentration"] < 0):
             raise ValueError(f"{rid}: concentración nominal obligatoria no negativa")
         if d["kind"] == "control" and (d["expected"] is None or d["expected"] <= 0):
             raise ValueError(f"{rid}: expected debe ser la concentración equivalente positiva en el eje del calibrado")
@@ -57,6 +61,8 @@ def normalize(rows, protocol):
         clean.append(d)
     if len(clean) > 10000:
         raise ValueError("Límite del prototipo: 10000 lecturas")
+    from .reading_design import validate_groups
+    validate_groups(clean,protocol)
     return clean
 
 def parse_tsv(text):

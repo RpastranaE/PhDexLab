@@ -30,6 +30,7 @@ def text_cell(cell, value):
         cell.data_type = "s"  # IDs/notes beginning '=' remain text, never injected formulas.
 
 def write_book(path, rows, protocol, experiment_id):
+    if protocol.get('reading_schema')==2:raise ValueError('Use experiments.create for the explicit reading design; the legacy workbook cannot retain mean provenance')
     p = validate(protocol); rows = normalize(rows,p)
     wb = Workbook(); wb.remove(wb.active)
     for name, headers in HEADERS.items():

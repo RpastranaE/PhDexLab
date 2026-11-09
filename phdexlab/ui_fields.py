@@ -96,3 +96,6 @@ PARAMETERS['concentration_unit']=('Unidad de concentración','Unidad de los patr
 ENUMS['response'].append(('inhibition','Inhibición en cada tiempo (DPPH)'))
 PARAMETERS['time_min']=('Tiempo de reacción / lectura · min','Tiempo de la variante. Para DPPH se registran los tiempos reales por fila y se confirma la meseta; no se impone un tiempo fijo. En secado a masa constante puede quedar vacío si el punto final se documenta por criterio.')
 PARAMETERS['source_retrieved']=('Fecha de consulta de la fuente','Día en que se consultó Notion o la referencia publicada para preparar este catálogo. No equivale a la fecha de edición de la fuente ni a la validación del método.')
+
+from .reading_design import FIELDS as READING_FIELDS,PARAMETERS as READING_PARAMETERS,ENUMS as READING_ENUMS
+FIELDS.update(READING_FIELDS);PARAMETERS.update(READING_PARAMETERS);ENUMS.update(READING_ENUMS)

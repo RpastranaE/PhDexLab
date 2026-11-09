@@ -2,7 +2,7 @@
 import copy,html,json,os
 from pathlib import Path
 from PySide6.QtCore import Qt,QTimer
-from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QSplitter,QListWidget,QListWidgetItem,QLabel,QDialog,QFormLayout,QLineEdit,QComboBox,QDialogButtonBox,QInputDialog,QMessageBox,QFileDialog,QTextBrowser,QTableWidgetItem,QSizePolicy,QStackedWidget,QPushButton)
+from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QSplitter,QListWidget,QListWidgetItem,QLabel,QDialog,QFormLayout,QLineEdit,QComboBox,QDialogButtonBox,QInputDialog,QMessageBox,QFileDialog,QTextBrowser,QTableWidgetItem,QSizePolicy,QStackedWidget,QPushButton,QMenu,QToolButton)
 from .interface import Window as SingleAssayWindow
 from .protocols import FE,digest,save_variant
 from .method_catalog import ALL,METHOD_NAMES
@@ -69,12 +69,16 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
             if button.toolTip()=='Guardar / generar Excel':button.setToolTip('Guardar las entradas de todos los ensayos en el Excel maestro')
         self.save_variant_button=self.make_button('Guardar protocolo como nueva variante versionada',self.save_variant,'protocol-save',bar)
         bar.removeWidget(self.save_variant_button);bar.insertWidget(bar.count()-1,self.save_variant_button)
+        self.measure_button=next(b for b in self.buttons if b.property('iconName')=='measure')
+        layout.itemAt(3).layout().removeWidget(self.measure_button);self.measure_button.setText('Añadir lecturas o una media');self.measure_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon);self.measure_button.setFixedWidth(250);self.tabs.setCornerWidget(self.measure_button,Qt.Corner.TopRightCorner)
+        entry_menu=QMenu(self.measure_button);entry_menu.addAction(t('Configurar entrada en Protocolo y condiciones'),lambda:self.guard(self.configure_input_options));self.measure_button.setMenu(entry_menu);self.measure_button.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
         self.method_guide=QTextBrowser();self.method_guide.setOpenExternalLinks(True);self.tabs.addTab(self.method_guide,'3   Metodología')
         self.help_dialog.close();self.help_dialog.deleteLater();self.help_dialog=HelpDialog(self)
         self.demo_menu.clear()
         self.demo_menu.addAction('FRAP · una muestra',lambda:self.guard(self.load_demo))
         self.demo_menu.addAction('FRAP · tres variedades y un calibrado',lambda:self.guard(lambda:self.load_demo(True)))
         self.demo_menu.addAction('Experimento con cinco métodos y tres variedades',lambda:self.guard(lambda:self.load_multi_demo(False)))
+        self.demo_menu.addAction(t('Demo con medias ya calculadas'),lambda:self.guard(self.load_mean_demo))
         self.demo_menu.addAction('Demo extendida: DPPH, pesadas y tamizado',lambda:self.guard(lambda:self.load_multi_demo(True)))
         self.status_timer=QTimer(self);self.status_timer.setInterval(300);self.status_timer.setSingleShot(True);self.status_timer.timeout.connect(self.update_current_state)
         self.metrics.setSizePolicy(QSizePolicy.Policy.Ignored,QSizePolicy.Policy.Fixed);self.metrics.setMinimumWidth(0)
@@ -100,6 +104,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
                 except (ValueError,TypeError):pass  # Preserve incomplete/invalid draft entry for correction.
                 if key=='version' and isinstance(value,(int,float)):value=int(value)
             p[key]=value
+        if p.get('reading_schema')==2 and engine(p)=='colorimetric':p['response']='endpoint' if p.get('reading_signal')=='endpoint' else 'delta'
         if p.get('method')=='TFC':
             p['result_unit']='mg RE/g' if p['equivalent']=='Rutin' else 'mg QE/g'
             if p['equivalent']=='Rutin' and not any(s in str(p.get('notes','')) for s in ('Variante manual con rutina','Manual rutin variant')):p['notes']=str(p.get('notes',''))+' Manual rutin variant: the reference uses quercetin; do not attribute this modification to the original article.'
@@ -124,9 +129,13 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
             if item and not self.parameters.cellWidget(r,1):
                 raw=p[key];shown=display_value(key,raw);shown='' if shown is None else str(shown)
                 item.setText(shown);item.setData(VALUE_ROLE,[raw,shown])
-            label=PARAMETERS.get(key,(key,''))[0];widget=self.parameters.cellWidget(r,0)
+            label=PARAMETERS.get(key,(key,''))[0]
+            if key=='default_replicates' and engine(p) in ('gravimetric','sieve'):label='Filas por defecto'
+            widget=self.parameters.cellWidget(r,0)
             if isinstance(widget,QLabel):widget.setText(html.escape(label)+(' <span style="color:#C73542">*</span>' if key in mandatory and key not in locked else ''))
-            hidden={'id','engine','quantity'}
+            hidden={'id','engine','quantity','reading_schema','reference_signal'}
+            if p.get('reading_schema')==2:hidden.add('response')
+            if engine(p) in ('inhibition','ec50'):hidden.add('reading_signal')
             if engine(p) in ('gravimetric','sieve'):hidden|={'response','equivalent','concentration_unit','calibration_basis','wavelength_nm','aliquot_uL','reagent_uL','water_uL','reaction_total_uL','report_factor','standard_range','r2_min','cv_max_percent','recovery_min_percent','recovery_max_percent','reagents'}
             if not p.get('blocked_reason'):hidden|={'blocked_reason','operational_confirmed','standard_reference'}
             self.parameters.setRowHidden(r,key in hidden)
@@ -143,7 +152,48 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
             else:
                 help_button.setToolTip(t('Ayuda')+': '+t(label));help_button.clicked.connect(lambda checked=False,k=key:self.parameter_help(k))
             help_button.setAccessibleName(help_button.toolTip())
+        if p.get('reading_schema')==2:
+            for r in range(self.parameters.rowCount()):
+                key=self.parameters.item(r,0).data(Qt.ItemDataRole.UserRole)
+                if key=='reading_signal':
+                    editor=self.parameters.cellWidget(r,1)
+                    editor.currentIndexChanged.connect(lambda index,e=editor:self.signal_changed(e))
         self.loading=previous_loading;localize(self.parameters);self.update_guide(p)
+    def signal_changed(self,editor):
+        if self.loading:return
+        from .reading_design import signal
+        previous=signal(self.raw.protocol or {})
+        if editor.currentData()!=previous and any(d.get('A_end') not in ('',None) for d in self.raw.records()):
+            editor.blockSignals(True);editor.setCurrentIndex(editor.findData(previous));editor.blockSignals(False)
+            QMessageBox.information(self,'PhDexLab',t('Ya hay lecturas: para cambiar su significado, crea otro ensayo o borra explícitamente las medidas primero.'))
+        else:self.raw.configure_view(self.protocol())
+    def configure_input_options(self):
+        from .reading_design import configure,enabled
+        p=self.protocol()
+        if not enabled(p):
+            rows=self.raw.records();self.loading=True;self.set_protocol(configure(p,legacy=True));self.raw.load(rows);self.loading=False;self.mark_dirty()
+        self.tabs.setCurrentWidget(self.parameters)
+        for r in range(self.parameters.rowCount()):
+            if self.parameters.item(r,0).data(Qt.ItemDataRole.UserRole) in ('reading_signal','default_replicates'):
+                self.parameters.scrollToItem(self.parameters.item(r,0));break
+    def add_sample(self):
+        from .measurement_entry import MeasurementDialog
+        from .reading_design import validate_groups,unit_key
+        rows=self.raw.records();dialog=MeasurementDialog(self.protocol(),self,existing_rows=rows,roles=self.raw.roles)
+        if any(d.get('A_end') not in ('',None) for d in rows):dialog.signal.setEnabled(False)
+        if dialog.exec()!=QDialog.DialogCode.Accepted:return
+        p,new=dialog.result_protocol,dialog.result_rows
+        validate_groups(rows+new,p)
+        # Continue numbering technical readings within this unit/condition, never duplicate IDs.
+        for row in new:
+            scope=lambda d:unit_key(d,p)==unit_key(row,p)
+            used={str(d.get('tech_id')) for d in rows if scope(d)}
+            if row.get('reading_basis')!='mean':
+                number=1
+                while str(number) in used:number+=1
+                row['tech_id']=str(number)
+            rows.append(row)
+        self.loading=True;self.set_protocol(p);self.raw.load(rows);self.loading=False;self.mark_dirty();self.update_current_state()
     def parameter_help(self,key):
         label,explanation=PARAMETERS.get(key,(key,'Parámetro específico del protocolo.'));QMessageBox.information(self,t(label),t(explanation))
     def open_reference(self,row):
@@ -161,7 +211,14 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
             'gravimetric':'Humedad = 100(m1−m2)/(m1−m0). Materia seca = 100(m2−m0)/(m1−m0). Cenizas = 100(m2−m0)/masa neta inicial; la base seca exige la fracción seca correspondiente.',
             'sieve':'Retenido (%) = 100 × masa de fracción / masa cargada. Recuperación = 100 × suma de fracciones / masa cargada. No se normaliza al 100%.'}
         value=lambda key:html.escape(str(display_value(key,p.get(key,''))))
-        self.method_guide.setHtml('<h2>'+value('name')+'</h2><h3>'+t('Qué se calcula')+'</h3><p>'+t(equations[e])+'</p><h3>'+t('Condiciones y reactivos')+'</h3><p>'+value('reagents')+'<br>'+value('notes')+'</p><h3>'+t('Estado')+'</h3><p>'+value('status')+'<br>'+value('blocked_reason')+'</p><h3>'+t('Referencia bibliográfica')+'</h3><p><a href="'+source+'">'+source+'</a></p>')
+        entry=''
+        if p.get('reading_schema')==2:
+            from .reading_design import signal,PARAMETERS as ENTRY_PARAMETERS
+            label={'endpoint':'Lectura única de absorbancia','delta':'Incremento ΔA ya medido','paired':'Pareja inicial/final (ΔA)'}[signal(p)]
+            entry='<h3>'+t('Entrada de datos')+'</h3><p>'+t(label)+'</p><p>'+t('No se inventan lecturas ni una DE a partir de una media. n técnico no es n biológico.')+'</p>' if e in ('colorimetric','inhibition','ec50') else ''
+            if e in ('colorimetric','inhibition','ec50') and p.get('matrix_mode')=='net':entry+='<p>'+t(ENTRY_PARAMETERS['matrix_mode'][1])+'</p>'
+            if e=='colorimetric' and signal(p)!=p.get('reference_signal',signal(p)):entry+='<p><b>'+t('Señal adaptada respecto a la referencia: documentar y comprobar compatibilidad.')+'</b></p>'
+        self.method_guide.setHtml(entry+'<h2>'+value('name')+'</h2><h3>'+t('Qué se calcula')+'</h3><p>'+t(equations[e])+'</p><h3>'+t('Condiciones y reactivos')+'</h3><p>'+value('reagents')+'<br>'+value('notes')+'</p><h3>'+t('Estado')+'</h3><p>'+value('status')+'<br>'+value('blocked_reason')+'</p><h3>'+t('Referencia bibliográfica')+'</h3><p><a href="'+source+'">'+source+'</a></p>')
     def commit_active(self):
         if not self._workspace_ready or self.active_id is None:return
         a=next((a for a in self.assays if a['id']==self.active_id),None)
@@ -184,7 +241,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         active=bool(self.active_id);busy=bool(self.proc)
         for button in self.buttons:
             icon=button.property('iconName')
-            needs=icon in ('save','refresh','rows','type','excel','origin','plots','protocol','protocol-save','template','variant','close') or (icon=='sample' and button is not self.add_assay_button)
+            needs=icon in ('measure','save','refresh','rows','type','excel','origin','plots','protocol','protocol-save','template','variant','close') or (icon=='sample' and button is not self.add_assay_button)
             if needs:button.setEnabled(active and not busy)
         self.variant.setEnabled(active and not busy);self.origin_mode.setEnabled(active and not busy);self.row_count.setEnabled(active and not busy)
         if hasattr(self,'templates_button'):self.templates_button.setEnabled(active and not busy)
@@ -216,13 +273,19 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         if not self._workspace_ready or self.loading or self.proc:return
         self.commit_active();index=self.assay_list.currentRow()
         if 0<=index<len(self.assays):
-            a=self.assays[index];self.update_guide(a['protocol']);status,issue,_=state(a);item=self.assay_list.item(index);item.setText(self.item_text(a));item.setToolTip(t(issue or 'Entradas completas. Guardar y actualizar para calcular.'))
+            a=self.assays[index];self.raw.configure_view(a['protocol']);self.update_guide(a['protocol']);status,issue,_=state(a);item=self.assay_list.item(index);item.setText(self.item_text(a));item.setToolTip(t(issue or 'Entradas completas. Guardar y actualizar para calcular.'))
             super().update_metrics();self.metrics.setText(a['id']+' · '+self.metrics.text()+('   |   '+issue if issue else '   |   Listo para calcular'))
             self.metrics.setToolTip(issue)
             localize(self) if hasattr(self,'language_selector') else None
     def field_popup(self,column):
         if 0<=column<len(self.raw.columns):
-            title,text=FIELDS[self.raw.columns[column]];QMessageBox.information(self,title.replace('\n',' '),text)
+            title,text=FIELDS[self.raw.columns[column]]
+            from .reading_design import field_help
+            text=field_help(self.raw.columns[column],self.protocol())
+            if self.raw.columns[column]=='matrix_blank_delta':
+                from .reading_design import PARAMETERS as ENTRY_PARAMETERS
+                text=ENTRY_PARAMETERS['matrix_mode'][1]
+            QMessageBox.information(self,t(title.replace('\n',' ')),t(text))
     def add_assay(self):
         self.commit_active();dialog=QDialog(self);dialog.setWindowTitle('Añadir ensayo al experimento');layout=QVBoxLayout(dialog);form=QFormLayout();layout.addLayout(form)
         method=QComboBox()
@@ -258,6 +321,11 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
     def load_multi_demo(self,extended=False):
         if not self.confirm_discard():return
         self.next_assay_number=1;self.saved_states={};self.folder=None;self.open_hash=None;self.active_id=None;self.set_assays(multi_demo(extended));self.pathlabel.setText(t('Experimento multimétodo · SINTÉTICO'));self.dirty=False;self.log.appendPlainText('Demostración sintética con varios ensayos y las mismas tres variedades. Un Excel y un Origin; cada ensayo mantiene su propia calibración y unidad.')
+    def load_mean_demo(self):
+        if not self.confirm_discard():return
+        from .demonstrations import mean_demo
+        self.next_assay_number=1;self.saved_states={};self.folder=None;self.open_hash=None;self.active_id=None;self.set_assays(mean_demo());self.dirty=False
+        self.pathlabel.setText(t('Demostración de medias · SINTÉTICO'))
     def load_folder(self,path):
         from .graph_styles import selection
         self.graph_style=selection(read_presentation(path))
