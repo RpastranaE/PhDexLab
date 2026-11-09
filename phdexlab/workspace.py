@@ -266,7 +266,13 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         if not self._workspace_ready:return super().select_variant(index)
         global_index=self.variant.itemData(index)
         if global_index is None or self.loading or not self.active_id:return
-        self.commit_active();self.loading=True;self.set_protocol(copy.deepcopy(self.variants[global_index]));self.loading=False;self.mark_dirty();self.update_current_state()
+        from .reading_design import configure,enabled,signal
+        current=self.protocol();rows=self.raw.records();target=copy.deepcopy(self.variants[global_index])
+        if any(d.get('A_end') not in ('',None) for d in rows) and signal(target)!=signal(current):
+            self.populate_variants(current)
+            QMessageBox.information(self,'PhDexLab',t('Ya hay lecturas: para cambiar su significado, crea otro ensayo o borra explícitamente las medidas primero.'));return
+        if enabled(current) and not enabled(target):target=configure(target,legacy=True)
+        self.commit_active();self.loading=True;self.set_protocol(target);self.raw.load(rows);self.loading=False;self.mark_dirty();self.update_current_state()
     def select_method(self,method):
         if not self._workspace_ready:return super().select_method(method)
     def update_current_state(self):

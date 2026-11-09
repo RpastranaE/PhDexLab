@@ -178,3 +178,17 @@ def test_legacy_book_writer_cannot_discard_mean_provenance(tmp_path):
     from phdexlab.excel import write_book
     a=mean_demo()[0]
     with pytest.raises(ValueError,match='experiments.create'):write_book(tmp_path/'legacy.xlsx',a['rows'],a['protocol'],'TEST')
+
+def test_variant_change_preserves_legacy_readings_and_mean_provenance():
+    from phdexlab.workspace import Window
+    from phdexlab.protocols import FE
+    q=app();w=Window();w.load_demo();original=w.raw.records()
+    w.select_variant(w.variant.findData(0))
+    assert w.protocol()['reading_schema']==2
+    assert len(w.raw.records())==len(original)
+    assert all(all(old[k]==new[k] for k in old) for old,new in zip(original,w.raw.records()))
+    w.dirty=False;w.load_mean_demo();original=w.raw.records();w.variants.append(copy.deepcopy(FE));w.populate_variants(w.protocol())
+    w.select_variant(w.variant.findData(len(w.variants)-1))
+    assert len(w.raw.records())==len(original)
+    assert all(all(old[k]==new[k] for k in old) for old,new in zip(original,w.raw.records()))
+    w.dirty=False;w.close()
