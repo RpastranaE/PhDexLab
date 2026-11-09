@@ -79,6 +79,8 @@ def test_figures_button_opens_root_for_multiple_and_assay_for_one(tmp_path):
     q=app();w=Window();w.load_multi_demo();w.folder=tmp_path
     with patch('phdexlab.workspace.os.startfile') as opened:w.open_location('origin');assert opened.call_args.args[0]==Layout(tmp_path).figures
     w.assays=w.assays[:1]
+    with patch('phdexlab.workspace.os.startfile') as opened:w.open_location('origin');assert opened.call_args.args[0]==Layout(tmp_path).figures
+    exported=Layout(tmp_path).figures/w.assays[0]['id'];exported.mkdir();(exported/'result.svg').write_text('<svg/>')
     with patch('phdexlab.workspace.os.startfile') as opened:w.open_location('origin');assert opened.call_args.args[0]==Layout(tmp_path).figures/w.assays[0]['id']
     w.dirty=False;w.close()
 

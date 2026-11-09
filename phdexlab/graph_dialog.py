@@ -23,7 +23,7 @@ Un color por muestra|One colour per sample
 Barras de error|Error bars
 Tipo de línea|Line type
 Grosor de línea (pt)|Line width (pt)
-Fuente|Font
+Fuente tipográfica|Font family
 Títulos de ejes (pt)|Axis titles (pt)
 Etiquetas de ejes (pt)|Tick labels (pt)
 Guardar como estilo|Save as style
@@ -33,39 +33,48 @@ Nombre del estilo|Style name
 Estilo personalizado|Custom style
 Patrones · Ajuste OLS|Standards · OLS fit
 Aplicar paleta|Apply palette
+Editar color|Edit colour
 Añadir color|Add colour
 Quitar último color|Remove last colour
 Vista previa ilustrativa · datos sintéticos|Illustrative preview · synthetic data
 Los colores siguen el orden de muestras. La calibración tiene colores independientes para patrones y ajuste. Actualiza el experimento para aplicar los cambios.|Colours follow sample order. Calibration has independent colours for standards and fit. Update the experiment to apply changes.
 El estilo no es válido.|The style is not valid.'''.splitlines():add(*pair.split('|',1))
 
-def draw_marker(p,x,y,s,color):
-    r=s['size'];p.setPen(QPen(QColor(color),1.2));p.setBrush(QColor('white') if s['open'] else QColor(color));marker=s['marker']
-    if marker=='o':p.drawEllipse(QPointF(x,y),r,r)
-    elif marker=='s':p.drawRect(int(x-r),int(y-r),int(2*r),int(2*r))
-    else:
-        coords=[(0,-r),(r,0),(0,r),(-r,0)] if marker=='D' else [(-r,r),(0,-r),(r,r)] if marker=='^' else [(-r,-r),(0,r),(r,-r)]
-        p.drawPolygon(QPolygonF([QPointF(x+dx,y+dy) for dx,dy in coords]))
-
-def preview(style,width=420,height=180,role='results'):
+def preview(style,width=300,height=200,role='results'):
+    """Same setting semantics as Publication, using its actual Matplotlib renderer."""
+    import io,math
+    import matplotlib
+    from matplotlib.figure import Figure
+    from matplotlib.backends.backend_agg import FigureCanvasAgg
     if role not in style:style=resolved(next((k for k,v in STYLES.items() if v==style),'classic'))
-    s=style[role];pix=QPixmap(width,height);pix.fill(QColor('white'));p=QPainter(pix);p.setRenderHint(QPainter.RenderHint.Antialiasing);p.setFont(QFont(style.get('typography',{}).get('font','Arial'),8))
-    left,bottom,right,top=45,height-35,width-16,25;p.setPen(QPen(QColor('#30343B'),1.2));p.drawLine(left,top,left,bottom);p.drawLine(left,bottom,right,bottom)
-    p.drawText(9,18,'FRAP' if role=='results' else 'Response');p.drawText(width//2-20,height-8,'Sample' if role=='results' else 'Concentration')
-    if role=='results':
-        for i,value in enumerate((.4,.65,.82)):
-            x=left+(right-left)*(i+.5)/3;y=bottom-value*(bottom-top-10);color=s['colors'][i%len(s['colors'])] if s['per_sample'] else s['colors'][0]
-            p.setPen(QPen(QColor(color),1));p.setBrush(QColor(color if s['per_sample'] else s['fill']));p.drawRect(int(x-23),int(y),46,int(bottom-y))
-            p.setPen(QPen(QColor(s['error']),1.2));p.drawLine(QPointF(x,y-10),QPointF(x,y+10));p.drawLine(QPointF(x-5,y-10),QPointF(x+5,y-10));p.drawLine(QPointF(x-5,y+10),QPointF(x+5,y+10))
-            for dx,dy in ((-10,5),(0,0),(10,-5)):draw_marker(p,x+dx,y+dy,s,color)
-            p.setPen(QColor('#30343B'));p.drawText(int(x-16),bottom+17,chr(65+i))
-    else:
-        p.setPen(QPen(QColor(s['colors'][1]),s['width'],{'-':Qt.PenStyle.SolidLine,'--':Qt.PenStyle.DashLine,':':Qt.PenStyle.DotLine,'-.':Qt.PenStyle.DashDotLine}[s['line']]))
-        p.drawLine(QPointF(left+18,bottom-10),QPointF(right-15,top+10))
-        for i in range(5):
-            x=left+18+i*(right-left-33)/4;y=bottom-10-i*(bottom-top-20)/4+(-2 if i%2 else 2)
-            p.setPen(QPen(QColor(s['error']),1));p.drawLine(QPointF(x,y-5),QPointF(x,y+5));draw_marker(p,x,y,s,s['colors'][0])
-    p.end();return pix
+    s=style[role];typography=style['typography']
+    with matplotlib.rc_context({'font.family':typography['font'],'axes.labelsize':typography['label_size'],
+        'xtick.labelsize':typography['tick_size'],'ytick.labelsize':typography['tick_size'],
+        'axes.spines.top':False,'axes.spines.right':False,'axes.linewidth':.8,
+        'xtick.top':False,'ytick.right':False,'text.usetex':False}):
+        fig=Figure(figsize=(width/110,height/110),dpi=110);FigureCanvasAgg(fig);ax=fig.subplots()
+        if role=='results':
+            for i,mean in enumerate((16,24,32)):
+                color=s['colors'][i%len(s['colors'])] if s['per_sample'] else s['colors'][0]
+                ax.bar(i,mean,width=.55,color=color if s['per_sample'] else s['fill'],edgecolor=color,lw=.8)
+                ax.errorbar(i,mean,yerr=2,fmt='none',ecolor=s['error'],capsize=3,lw=1,zorder=3)
+                ax.scatter([i-.12,i,i+.12],[mean-2,mean,mean+2],s=s['size']**2,marker=s['marker'],
+                    facecolors='white' if s['open'] else color,edgecolors=color if s['open'] else 'white',linewidths=.6,zorder=4)
+            ax.set_xticks([0,1,2],['A','B','C']);ax.set_xlabel('Sample');ax.set_ylabel('Response');ax.set_ylim(0,40)
+        elif role=='calibration':
+            xs=[0,.25,.5,.75,1];ys=[.05+.8*x for x in xs]
+            ax.errorbar(xs,ys,yerr=[.025]*5,fmt=s['marker'],color=s['colors'][0],mfc='white' if s['open'] else s['colors'][0],
+                ecolor=s['error'],capsize=2,ms=s['size'])
+            ax.plot(xs,ys,color=s['colors'][1],ls=s['line'],lw=s['width']);ax.set_xlabel('Concentration');ax.set_ylabel('Response');ax.margins(.12)
+        else:
+            xs=[0,.15,.35,.6,1]
+            for i,color in enumerate(s['colors']):
+                ys=[100*(1-math.exp(-x*(2+i*.3))) for x in xs]
+                ax.errorbar(xs,ys,yerr=[3]*5,fmt=s['marker'],ls=s['line'],color=color,mfc='white' if s['open'] else color,
+                    ecolor=s['error'],capsize=2,ms=s['size'],lw=s['width'])
+            ax.axhline(50,color='#777777',ls='--',lw=.7);ax.set_xlabel('Dose');ax.set_ylabel('Inhibition (%)');ax.set_ylim(0,108)
+        fig.tight_layout(pad=.45);buffer=io.BytesIO();fig.savefig(buffer,format='png',dpi=110,facecolor='white')
+    pix=QPixmap();pix.loadFromData(buffer.getvalue());return pix
 
 class GraphDialog(QDialog):
     def __init__(self,key='classic',parent=None):
@@ -75,13 +84,15 @@ class GraphDialog(QDialog):
         for id,s in STYLES.items():self.presets.addItem(s['en'] if i18n.LANGUAGE=='en' else s['name'],id)
         self.presets.setCurrentIndex(self.presets.findData(self.selected['style']));self.presets.activated.connect(self.load_preset)
         self.personal=QComboBox();top.addWidget(QLabel(t('Mis estilos')));top.addWidget(self.personal,1);self.reload_personal();self.personal.activated.connect(self.load_personal)
-        previews=QHBoxLayout();layout.addLayout(previews);self.result_preview=QLabel();self.cal_preview=QLabel();previews.addWidget(self.result_preview);previews.addWidget(self.cal_preview)
+        previews=QHBoxLayout();layout.addLayout(previews);self.result_preview=QLabel();self.cal_preview=QLabel();self.dose_preview=QLabel()
+        for label,view in [('Resultados',self.result_preview),('Calibración',self.cal_preview),('Curvas de dosis',self.dose_preview)]:
+            column=QVBoxLayout();title=QLabel(t(label));title.setAlignment(Qt.AlignmentFlag.AlignCenter);column.addWidget(title);column.addWidget(view);previews.addLayout(column)
         note=QLabel(t('Vista previa ilustrativa · datos sintéticos'));note.setAlignment(Qt.AlignmentFlag.AlignCenter);layout.addWidget(note)
         self.tabs=QTabWidget();layout.addWidget(self.tabs,1);self.forms={};self.controls={};self.color_buttons={};self.palette_rows={}
         for role,label in [('results','Resultados'),('calibration','Calibración'),('dose','Curvas de dosis'),('typography','Tipografía')]:
             widget=QWidget();form=QFormLayout(widget);form.setSpacing(9);scroll=QScrollArea();scroll.setWidgetResizable(True);scroll.setWidget(widget);self.tabs.addTab(scroll,t(label));self.forms[role]=form
             if role=='typography':
-                font=QComboBox();font.addItems(['Arial','Calibri','Times New Roman','DejaVu Sans']);self.bind(role,'font',font,'Fuente')
+                font=QComboBox();font.addItems(['Arial','Calibri','Times New Roman','DejaVu Sans']);self.bind(role,'font',font,'Fuente tipográfica')
                 for field,label in [('label_size','Títulos de ejes (pt)'),('tick_size','Etiquetas de ejes (pt)')]:
                     spin=QDoubleSpinBox();spin.setRange(7,14);spin.setSingleStep(.5);self.bind(role,field,spin,label)
                 continue
@@ -124,7 +135,7 @@ class GraphDialog(QDialog):
         self.populate()
     @staticmethod
     def paint_color(button,color,number=None):
-        ink='#FFFFFF' if QColor(color).lightness()<140 else '#172A30';button.setStyleSheet(f'background:{color};color:{ink};border:1px solid #75848A;border-radius:4px;padding:4px;');button.setText(str(number) if number else color);button.setToolTip(color)
+        ink='#FFFFFF' if QColor(color).lightness()<140 else '#172A30';button.setStyleSheet(f'background:{color};color:{ink};border:1px solid #75848A;border-radius:4px;padding:4px;');button.setText(str(number) if number else color);button.setToolTip(t('Editar color')+(' '+str(number) if number else '')+': '+color)
     def populate(self):
         self.loading=True
         for (role,field),control in self.controls.items():
@@ -139,7 +150,7 @@ class GraphDialog(QDialog):
                 button=QPushButton(str(i+1));button.setMinimumHeight(29);self.paint_color(button,color,i+1);button.clicked.connect(lambda checked=False,r=role,index=i:self.choose_color(r,'colors',index));row.addWidget(button)
         self.loading=False;self.redraw()
     def redraw(self):
-        style=resolved(self.selected);self.result_preview.setPixmap(preview(style));self.cal_preview.setPixmap(preview(style,role='calibration'))
+        style=resolved(self.selected);self.result_preview.setPixmap(preview(style));self.cal_preview.setPixmap(preview(style,role='calibration'));self.dose_preview.setPixmap(preview(style,role='dose'))
     def load_preset(self,index):self.selected=selection(self.presets.itemData(index));self.populate()
     def reload_personal(self):
         self.personal.clear();self.personal.addItem('—',None)

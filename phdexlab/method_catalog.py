@@ -74,3 +74,5 @@ for _protocol in EXTRA:
     _protocol['source_updated']=('2023 (artículo)' if _protocol['method']=='TFC' else '2026-11-02' if 'adapted' in _protocol['id'] else '2026-10-28' if _protocol['method'] in ('ABTS','CUPRAC','DPPH') else '2026-10-29')
     _protocol['source_retrieved']='2026-11-08'
 # ALL holds the same EXTRA objects, and independent copies of the two existing FRAP variants.
+from .protocol_texts import apply_builtin
+for _builtin in ALL:apply_builtin(_builtin)

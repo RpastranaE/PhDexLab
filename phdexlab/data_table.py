@@ -46,7 +46,11 @@ class KindDelegate(QStyledItemDelegate):
         text=index.data(Qt.ItemDataRole.DisplayRole) or ''
         editor.setCurrentIndex(max(0,editor.findText(t(text))))
     def setModelData(self,editor,model,index):
-        if editor.currentData() is None:return
+        if editor.currentData() is None:
+            # Choosing the placeholder explicitly clears the entire reading, including its ID.
+            # A half-filled orphan reading must never silently participate in calculations.
+            for column in range(self.table.columnCount()):self.table.setItem(index.row(),column,QTableWidgetItem(''))
+            self.table.update_row(index.row());return
         display=editor.currentData(Qt.ItemDataRole.UserRole+1);model.setData(index,display)
         model.setData(index,editor.currentData(),Qt.ItemDataRole.UserRole)
         label='' if display==self.table.kind_names[editor.currentData()] else display

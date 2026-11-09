@@ -122,6 +122,12 @@ class Window(QMainWindow):
     def set_protocol(self,p):
         previous_loading=self.loading;self.loading=True
         self._protocol=copy.deepcopy(p)
+        # Hide replaced cell widgets immediately; Qt destroys them later.
+        for row in range(self.parameters.rowCount()):
+            for column in range(self.parameters.columnCount()):
+                old=self.parameters.cellWidget(row,column)
+                if old:old.hide()
+        self.parameters.clearContents()
         self.parameters.setRowCount(len(p))
         for r,(key,value) in enumerate(p.items()):
             label,helptext=PARAMETERS.get(key,(key,'Parámetro específico del protocolo.'))

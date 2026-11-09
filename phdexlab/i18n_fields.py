@@ -71,6 +71,14 @@ PARAMETERS_EN={
 }
 
 def register():
+    from .i18n import add
+    for es,en in {
+        'Editar las condiciones del protocolo de este ensayo':'Edit this assay’s protocol conditions',
+        'Referencia bibliográfica':'Source reference',
+        'Abrir artículo original / fuente':'Open original article / source',
+        'Introduce un enlace web para la fuente.':'Enter a web link for the source.',
+        'Custom protocol':'Custom protocol',
+    }.items():add(es,en)
     from .ui_fields import FIELDS,PARAMETERS
     from .i18n import add
     for source,target in ((FIELDS,FIELDS_EN),(PARAMETERS,PARAMETERS_EN)):

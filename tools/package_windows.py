@@ -5,7 +5,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from phdexlab import __version__
-from phdexlab.updater import REPOSITORY
+from phdexlab.updater import REPOSITORY,REPO_URL,ASSET_NAME
 
 def package(application,output):
     application=Path(application).resolve();output=Path(output).resolve()
@@ -47,6 +47,9 @@ def package(application,output):
         if z.testzip():raise ValueError('Archive verification failed')
     checksum=hashlib.sha256(output.read_bytes()).hexdigest()
     output.with_name('SHA256SUMS.txt').write_text(checksum+'  '+output.name+'\n',encoding='utf-8')
+    release=dict(schema=1,repository=REPOSITORY,tag_name='v'+__version__,html_url=REPO_URL+'/releases/tag/v'+__version__,draft=False,prerelease=False,
+        assets=[dict(name=ASSET_NAME,size=output.stat().st_size,digest='sha256:'+checksum,browser_download_url=REPO_URL+'/releases/download/v'+__version__+'/'+ASSET_NAME)])
+    output.with_name('latest.json').write_text(json.dumps(release,indent=2),encoding='utf-8')
     print(json.dumps(dict(version=__version__,file=output.name,sha256=checksum,files=len(files),bytes=output.stat().st_size)))
 
 if __name__=='__main__':

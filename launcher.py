@@ -4,6 +4,18 @@ import sys
 from pathlib import Path
 
 def main():
+    if '--check-updates' in sys.argv:
+        import ssl,traceback
+        result={}
+        try:
+            ssl.create_default_context();result['tls_initialized']=True
+            from phdexlab.updater import latest
+            result['release']=latest();result['ok']=True
+        except Exception:
+            result['ok']=False;result['error']=traceback.format_exc()
+        path=Path(sys.argv[sys.argv.index('--check-updates')+1]);path.parent.mkdir(parents=True,exist_ok=True)
+        path.write_text(json.dumps(result,indent=2),encoding='utf-8')
+        return 0 if result['ok'] else 1
     if '--worker' in sys.argv:
         from phdexlab.worker import run
         index=sys.argv.index('--worker')

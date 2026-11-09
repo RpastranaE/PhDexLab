@@ -1,10 +1,10 @@
-# Validation scope — 0.7.0
+# Validation scope — 0.8.0
 
 This is software verification with synthetic data, not analytical validation of a chemical method or matrix. Protocol conditions and independence of biological units remain the operator's responsibility.
 
 ## Automated checks
 
-**93 tests passed** in the curated public source checkout. The final frozen FRAP/DPPH refresh completed in 41.22 seconds on the test machine; a verified unchanged repeat took 1.05 seconds including process startup. These are local measurements for this two-assay fixture, not a general performance guarantee.
+**119 tests passed** in the release source. The final frozen FRAP/DPPH refresh completed in 84.50 seconds on the test machine; a verified unchanged repeat took 0.94 seconds including process startup. These are local measurements for this two-assay fixture, not a general performance guarantee.
 
 The pytest suite checks analytical input rules, formula generation, independent expected results, traceability, workbook round trips, assay isolation, incomplete protocols, technical/biological replicates, data templates, language/theme changes, graphical settings and cache invalidation. Update checks cover numeric version ordering, the expected GitHub release/repository, digests, download corruption, unsafe/duplicate paths, symlinks, manifest/version mismatch, disabled automatic downloads and unsaved-work cancellation.
 
@@ -27,7 +27,15 @@ Separate Windows executable fixtures exercise successful installation and forced
 ## Practical limits
 
 - Tests apply to the stated local installation, not every Windows/Office/Origin build. No automated Excel↔Origin synchronisation or portable relative connector paths are claimed.
-- Automatic updates require a writable portable installation, network access, PowerShell and a stable release with its SHA-256 digest. The first public version must be installed once manually.
+- Automatic updates require a writable installed or portable application, network access, PowerShell and a stable release with its SHA-256 digest. Version 0.7.0 users must install 0.8.0 once manually to repair its missing TLS-policy file.
 - Hashes verify integrity, not publisher identity through Authenticode. The executable is unsigned.
 - Rollback cannot guarantee recovery from power loss, disk failure or external antivirus removal. Keep independent backups of experiments.
 - No automatic significance tests, outlier exclusion or declaration of experimental method validity are performed.
+
+## Version 0.8.0 regressions
+
+New checks cover first-run English and saved preferences, protocol translation without input mutation, original DOI links, empty reading-type deletion, one Save variant action, visible hover descriptions, and image differences for result/calibration/dose controls and typography. Protocol widgets are also inspected visually after switching methods. The frozen module inventory matches all release Python modules.
+
+The single-file Inno installer was installed into a disposable workspace folder. Desktop and Start menu shortcut targets were checked, and the installed executable passed its isolated GUI health check. The exact update ZIP then replaced Application successfully and passed the frozen health check while preserving sentinel experiment and personal-style files. Installer tests redirect shortcuts into disposable test folders.
+
+The 0.7.0 frozen TLS failure was reproduced independently. Its Python runtime expected `codex-rejected-cas.pem` adjacent to ssl.py, but the previous build omitted the file. The release conditionally bundles this public CA-policy sidecar without removing certificate checks or changing that runtime’s trust policy. Anonymous API quota failure has a separately validated public-release-metadata fallback.

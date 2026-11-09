@@ -7,7 +7,7 @@ def preferences():
     path=user_data_dir()/'preferences.json'
     try:data=json.loads(path.read_text(encoding='utf-8'))
     except (OSError,ValueError):data={}
-    return dict(language=data.get('language','es') if data.get('language') in ('es','en') else 'es',theme=data.get('theme','light') if data.get('theme') in ('light','dark') else 'light')
+    return dict(language=data.get('language','en') if data.get('language') in ('es','en') else 'en',theme=data.get('theme','light') if data.get('theme') in ('light','dark') else 'light')
 
 def save_preferences(language,theme):
     user_data_dir().mkdir(parents=True,exist_ok=True);dump(user_data_dir()/'preferences.json',dict(language=language,theme=theme))

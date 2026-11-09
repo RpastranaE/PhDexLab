@@ -7,6 +7,7 @@ import hashlib,json,os,re,shutil,subprocess,sys,uuid,zipfile
 from pathlib import Path,PurePosixPath
 from urllib.request import Request,urlopen
 from urllib.parse import urlsplit
+from urllib.error import HTTPError
 from . import __version__
 from .data_templates import user_data_dir
 
@@ -14,6 +15,7 @@ REPOSITORY='RpastranaE/PhDexLab'
 REPO_URL='https://github.com/'+REPOSITORY
 API_URL='https://api.github.com/repos/'+REPOSITORY+'/releases/latest'
 ASSET_NAME='PhDexLab-Windows-x64.zip'
+PUBLIC_METADATA=REPO_URL+'/releases/latest/download/latest.json'
 MAX_ARCHIVE=600*1024*1024
 MAX_EXPANDED=1800*1024*1024
 
@@ -44,17 +46,43 @@ def request(url,api=False):
     trusted_url(url,api);return Request(url,headers={'User-Agent':'PhDexLab/'+__version__,'Accept':'application/vnd.github+json' if api else 'application/octet-stream'})
 
 def latest(opener=urlopen):
+    try:return _api_latest(opener)
+    except HTTPError as error:
+        if error.code not in (403,429):raise
+        # Anonymous API quota is shared on many laboratory networks. The same
+        # public release carries its metadata as an HTTPS asset, without tokens.
+        try:return _public_latest(opener)
+        except Exception as fallback:
+            raise RuntimeError('GitHub temporarily limited update checks. Please try again later or open the releases page.') from fallback
+
+def _public_latest(opener):
+    req=Request(PUBLIC_METADATA,headers={'User-Agent':'PhDexLab/'+__version__})
+    with opener(req,timeout=20) as response:
+        redirected=urlsplit(response.geturl())
+        if redirected.scheme!='https' or redirected.hostname not in ('github.com','release-assets.githubusercontent.com','objects.githubusercontent.com'):
+            raise ValueError('Untrusted metadata redirect')
+        raw=response.read(65537)
+        if len(raw)>65536:raise ValueError('Release metadata too large')
+        data=json.loads(raw)
+    if data.get('repository')!=REPOSITORY or data.get('schema')!=1:raise ValueError('Wrong release metadata')
+    return _validate_release(data)
+
+def _api_latest(opener):
     with opener(request(API_URL,True),timeout=20) as response:
         if urlsplit(response.geturl()).hostname!='api.github.com':raise ValueError('Unexpected API redirect')
         raw=response.read(2*1024*1024+1)
         if len(raw)>2*1024*1024:raise ValueError('Release response too large')
         data=json.loads(raw)
+    return _validate_release(data)
+
+def _validate_release(data):
     if data.get('draft') or data.get('prerelease'):raise ValueError('Release is not stable')
     tag=data['tag_name'];version(tag)
     if data.get('html_url')!=REPO_URL+'/releases/tag/'+tag:raise ValueError('Unexpected release repository')
     asset=next((a for a in data.get('assets',[]) if a.get('name')==ASSET_NAME),None)
     if asset is None:raise ValueError('No compatible Windows package in latest release')
     trusted_url(asset['browser_download_url'])
+    if asset['browser_download_url']!=REPO_URL+'/releases/download/'+tag+'/'+ASSET_NAME:raise ValueError('Asset version mismatch')
     checksum=asset.get('digest') or ''
     if not re.fullmatch(r'sha256:[0-9a-f]{64}',checksum):raise ValueError('Release has no SHA-256 digest; update refused')
     if type(asset.get('size')) is not int or not 0<asset['size']<=MAX_ARCHIVE:raise ValueError('Invalid update size')

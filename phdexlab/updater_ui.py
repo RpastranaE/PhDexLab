@@ -17,7 +17,7 @@ Actualización preparada: se instalará al cerrar.|Update ready: it will install
 Tienes la versión más reciente.|You have the latest version.
 Actualización disponible. Activa las actualizaciones automáticas para descargarla.|Update available. Enable automatic updates to download it.
 No se pudo comprobar o descargar la actualización. Puedes volver a intentarlo.|Could not check or download the update. You can try again.
-La actualización automática está disponible en el ejecutable portátil de Windows.|Automatic updates are available in the portable Windows executable.
+La actualización automática está disponible en el ejecutable portátil de Windows.|Automatic updates are available in the installed Windows application.
 Esperando a que termine la comprobación para cerrar…|Waiting for the update check to finish before closing…
 Versión instalada|Installed version
 Ver repositorio y versiones|View repository and releases

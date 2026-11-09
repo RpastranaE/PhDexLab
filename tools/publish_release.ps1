@@ -8,6 +8,9 @@ if (& git -C $taskRepo status --porcelain --untracked-files=no) {throw 'Commit r
 $taskPackage=Get-Item -LiteralPath $Package
 if ($taskPackage.Name -ne 'PhDexLab-Windows-x64.zip') {throw 'Incorrect asset name'}
 $taskChecksums=Join-Path $taskPackage.Directory.FullName 'SHA256SUMS.txt'
+$taskMetadata=Join-Path $taskPackage.Directory.FullName 'latest.json'
+$taskSetup=Join-Path $taskPackage.Directory.FullName "PhDexLab-Setup-$Version.exe"
+if (-not (Test-Path -LiteralPath $taskMetadata) -or -not (Test-Path -LiteralPath $taskSetup)) {throw 'Missing release metadata or installer'}
 if (-not (Test-Path -LiteralPath $taskChecksums)) {throw 'Missing checksum file'}
 $taskExpected=((Get-Content -LiteralPath $taskChecksums -Raw).Trim() -split '\s+')[0]
 if ((Get-FileHash -LiteralPath $taskPackage.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $taskExpected) {throw 'Package checksum mismatch'}
@@ -24,5 +27,5 @@ try {
 if ($LASTEXITCODE -ne 0) {throw 'Could not tag release'}
 & git -C $taskRepo push origin "v$Version"
 if ($LASTEXITCODE -ne 0) {throw 'Could not push tag'}
-& gh release create "v$Version" $taskPackage.FullName $taskChecksums --repo RpastranaE/PhDexLab --title "PhDexLab $Version" --notes-file $Notes --verify-tag
+& gh release create "v$Version" $taskPackage.FullName $taskChecksums $taskMetadata $taskSetup --repo RpastranaE/PhDexLab --title "PhDexLab $Version" --notes-file $Notes --verify-tag
 if ($LASTEXITCODE -ne 0) {throw 'Release creation failed'}

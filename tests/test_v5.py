@@ -18,8 +18,8 @@ def app():return QApplication.instance() or QApplication([])
 
 def test_catalog_covers_notion_and_published_tfc():
     assert len(ALL)==15
-    assert len({p['source'] for p in ALL if p['source'].startswith('Local protocol reference: ')})==14
-    assert '10.1038/s41598-023-42418-1' in TFC['source'] and TFC['equivalent']=='Quercetin'
+    assert all(p['source'].startswith('https://doi.org/') for p in ALL)
+    assert '10.38212/2224-6614.2748' in TFC['source'] and '10.1038/s41598-023-42418-1' in TFC['notes'] and TFC['equivalent']=='Quercetin'
     assert state(dict(protocol=CUPRAC,rows=generated(CUPRAC)))[0]=='draft'
     for p in (MOISTURE_ADAPT,ASH_ADAPT):assert state(dict(protocol=p,rows=generated(p)))[0]=='draft'
 

@@ -80,3 +80,6 @@ def validate(p):
     if p.get('method')=='FRAP' and not p.get('engine'):return _legacy_validate(p)
     from .assay_engine import validate_protocol
     return validate_protocol(p)
+
+from .protocol_texts import apply_builtin
+for _builtin in BUILTINS:apply_builtin(_builtin)

@@ -18,6 +18,7 @@ from .demonstrations import multi_demo
 from .workspace_features import WorkspaceFeatures
 from .i18n import t,localize
 from .graph_styles import DEFAULT,read_presentation,save_presentation,presentation_hash
+from .protocol_texts import display_value,input_value,VALUE_ROLE
 
 class Window(WorkspaceFeatures,SingleAssayWindow):
     def closeEvent(self,event):
@@ -52,9 +53,15 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         for i in range(bar.count()):
             w=bar.itemAt(i).widget()
             if isinstance(w,QLabel) and w.text()=='Método':w.hide()
-        for button in self.buttons:
-            if 'Crear protocolo FRAP' in button.toolTip():button.setToolTip('Crear una variante manual del protocolo de este ensayo');button.setAccessibleName(button.toolTip())
+        for button in list(self.buttons):
+            if 'Crear protocolo FRAP' in button.toolTip():
+                button.setToolTip('Editar las condiciones del protocolo de este ensayo');button.setAccessibleName(button.toolTip())
+            if button.property('iconName')=='variant' and button.toolTip()=='Guardar protocolo como nueva variante versionada':
+                # One visible save action, next to Variant. The old bottom duplicate is retired.
+                bottom=layout.itemAt(3).layout();bottom.removeWidget(button);button.setParent(None);self.buttons.remove(button);button.deleteLater()
             if button.toolTip()=='Guardar / generar Excel':button.setToolTip('Guardar las entradas de todos los ensayos en el Excel maestro')
+        self.save_variant_button=self.make_button('Guardar protocolo como nueva variante versionada',self.save_variant,'variant',bar)
+        bar.removeWidget(self.save_variant_button);bar.insertWidget(bar.count()-1,self.save_variant_button)
         self.method_guide=QTextBrowser();self.method_guide.setOpenExternalLinks(True);self.tabs.addTab(self.method_guide,'3   Metodología')
         self.help_dialog.close();self.help_dialog.deleteLater();self.help_dialog=HelpDialog(self)
         self.demo_menu.clear()
@@ -79,7 +86,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         p={}
         for r in range(self.parameters.rowCount()):
             key=self.parameters.item(r,0).data(Qt.ItemDataRole.UserRole);editor=self.parameters.cellWidget(r,1)
-            value=editor.currentData() if isinstance(editor,QComboBox) else self.parameters.item(r,1).text()
+            value=editor.currentData() if isinstance(editor,QComboBox) else input_value(self.parameters.item(r,1))
             if key in NUMERIC_PARAMS:
                 try:value=number(value)
                 except (ValueError,TypeError):pass  # Preserve incomplete/invalid draft entry for correction.
@@ -87,7 +94,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
             p[key]=value
         if p.get('method')=='TFC':
             p['result_unit']='mg RE/g' if p['equivalent']=='Rutin' else 'mg QE/g'
-            if p['equivalent']=='Rutin' and 'Variante manual con rutina' not in str(p.get('notes','')):p['notes']=str(p.get('notes',''))+' Variante manual con rutina: la referencia base utiliza quercetina; no atribuirle esta modificación.'
+            if p['equivalent']=='Rutin' and not any(s in str(p.get('notes','')) for s in ('Variante manual con rutina','Manual rutin variant')):p['notes']=str(p.get('notes',''))+' Manual rutin variant: the reference uses quercetin; do not attribute this modification to the original article.'
             for r in range(self.parameters.rowCount()):
                 if self.parameters.item(r,0).data(Qt.ItemDataRole.UserRole)=='result_unit' and self.parameters.item(r,1).text()!=p['result_unit']:
                     self.parameters.blockSignals(True);self.parameters.item(r,1).setText(p['result_unit']);self.parameters.blockSignals(False)
@@ -95,6 +102,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
     def set_protocol(self,p):
         super().set_protocol(p)
         if not self._workspace_ready:return
+        previous_loading=self.loading;self.loading=True
         locked={'method','id','engine','quantity','concentration_unit','report_factor','result_unit','blocked_reason'}
         if p.get('method')!='TFC':locked.add('equivalent')
         mandatory={'name','source'}
@@ -102,6 +110,10 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         if p.get('blocked_reason'):mandatory|={'operational_confirmed','standard_reference','endpoint_note','temperature_C'}
         for r in range(self.parameters.rowCount()):
             key=self.parameters.item(r,0).data(Qt.ItemDataRole.UserRole)
+            item=self.parameters.item(r,1)
+            if item and not self.parameters.cellWidget(r,1):
+                raw=p[key];shown=display_value(key,raw);shown='' if shown is None else str(shown)
+                item.setText(shown);item.setData(VALUE_ROLE,[raw,shown])
             label=PARAMETERS.get(key,(key,''))[0];widget=self.parameters.cellWidget(r,0)
             if isinstance(widget,QLabel):widget.setText(html.escape(label)+(' <span style="color:#C73542">*</span>' if key in mandatory and key not in locked else ''))
             hidden={'id','engine','quantity'}
@@ -113,8 +125,23 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
                 if isinstance(widget,QComboBox):widget.setEnabled(False)
             if key in locked and self.parameters.item(r,1):self.parameters.item(r,1).setFlags(self.parameters.item(r,1).flags() & ~Qt.ItemFlag.ItemIsEditable)
             if key=='equivalent' and p.get('method')=='TFC':
-                editor=QComboBox();editor.addItem('Quercetina (QE)','Quercetin');editor.addItem('Rutina (RE) · variante manual','Rutin');editor.setCurrentIndex(max(0,editor.findData(p['equivalent'])));editor.currentIndexChanged.connect(lambda _:self.mark_dirty());self.parameters.setCellWidget(r,1,editor)
-        self.update_guide(p)
+                editor=QComboBox();editor.addItem(t('Quercetina (QE)'),'Quercetin');editor.addItem(t('Rutina (RE) · variante manual'),'Rutin');editor.setCurrentIndex(max(0,editor.findData(p['equivalent'])));editor.currentIndexChanged.connect(lambda _:self.mark_dirty());self.parameters.setCellWidget(r,1,editor)
+            from .ui_icons import icon
+            help_button=self.parameters.cellWidget(r,2);help_button.clicked.disconnect();help_button.setIcon(icon('link' if key=='source' else 'help'));help_button.setProperty('iconName','link' if key=='source' else 'help')
+            if key=='source':
+                help_button.setToolTip(t('Abrir artículo original / fuente'));help_button.clicked.connect(lambda checked=False,row=r:self.guard(lambda:self.open_reference(row)))
+            else:
+                help_button.setToolTip(t('Ayuda')+': '+t(label));help_button.clicked.connect(lambda checked=False,k=key:self.parameter_help(k))
+            help_button.setAccessibleName(help_button.toolTip())
+        self.loading=previous_loading;localize(self.parameters);self.update_guide(p)
+    def parameter_help(self,key):
+        label,explanation=PARAMETERS.get(key,(key,'Parámetro específico del protocolo.'));QMessageBox.information(self,t(label),t(explanation))
+    def open_reference(self,row):
+        from PySide6.QtCore import QUrl
+        from PySide6.QtGui import QDesktopServices
+        value=self.parameters.item(row,1).text().strip()
+        if not value.startswith(('https://','http://')):raise ValueError(t('Introduce un enlace web para la fuente.'))
+        QDesktopServices.openUrl(QUrl(value))
     def update_guide(self,p):
         if not hasattr(self,'method_guide'):return
         source=html.escape(str(p.get('source','')));e=engine(p)
@@ -123,7 +150,8 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
             'ec50':'Mesetas confirmadas por el operador → media técnica por dosis y unidad → interpolación local alrededor de 50% → media y DE biológica de EC50. Sin extrapolación ni meseta automática.',
             'gravimetric':'Humedad = 100(m1−m2)/(m1−m0). Materia seca = 100(m2−m0)/(m1−m0). Cenizas = 100(m2−m0)/masa neta inicial; la base seca exige la fracción seca correspondiente.',
             'sieve':'Retenido (%) = 100 × masa de fracción / masa cargada. Recuperación = 100 × suma de fracciones / masa cargada. No se normaliza al 100%.'}
-        self.method_guide.setHtml('<h2>'+html.escape(p['name'])+'</h2><h3>'+t('Qué se calcula')+'</h3><p>'+t(equations[e])+'</p><h3>'+t('Condiciones y reactivos')+'</h3><p>'+html.escape(str(p.get('reagents','')))+'<br>'+html.escape(str(p.get('notes','')))+'</p><h3>'+t('Estado')+'</h3><p>'+html.escape(str(p.get('status','')))+'<br>'+html.escape(str(p.get('blocked_reason','')))+'</p><h3>'+t('Fuente')+'</h3><p><a href="'+source+'">'+source+'</a></p><p>'+t('La información del protocolo se conserva en el idioma de la fuente.')+'</p>')
+        value=lambda key:html.escape(str(display_value(key,p.get(key,''))))
+        self.method_guide.setHtml('<h2>'+value('name')+'</h2><h3>'+t('Qué se calcula')+'</h3><p>'+t(equations[e])+'</p><h3>'+t('Condiciones y reactivos')+'</h3><p>'+value('reagents')+'<br>'+value('notes')+'</p><h3>'+t('Estado')+'</h3><p>'+value('status')+'<br>'+value('blocked_reason')+'</p><h3>'+t('Referencia bibliográfica')+'</h3><p><a href="'+source+'">'+source+'</a></p>')
     def commit_active(self):
         if not self._workspace_ready or self.active_id is None:return
         a=next((a for a in self.assays if a['id']==self.active_id),None)
@@ -148,9 +176,9 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         self.variant.blockSignals(True);self.variant.clear();selected=-1
         for idx,v in enumerate(self.variants):
             if v['method']==p['method']:
-                self.variant.addItem(v['name']+' · v'+str(v['version']),idx)
+                self.variant.addItem(display_value('name',v['name'])+' · v'+str(v['version']),idx)
                 if v==p:selected=self.variant.count()-1
-        if selected<0:self.variant.addItem(p['name']+' · en este ensayo',None);selected=self.variant.count()-1
+        if selected<0:self.variant.addItem(display_value('name',p['name'])+t(' · en este ensayo'),None);selected=self.variant.count()-1
         self.variant.setCurrentIndex(selected);self.variant.blockSignals(False)
     def select_variant(self,index):
         if not self._workspace_ready:return super().select_variant(index)
@@ -178,7 +206,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         def fill():
             variant.clear()
             for index,p in enumerate(self.variants):
-                if p['method']==method.currentData():variant.addItem(p['name'],index)
+                if p['method']==method.currentData():variant.addItem(display_value('name',p['name']),index)
             name.setText(t(METHOD_NAMES[method.currentData()]))
         method.currentIndexChanged.connect(fill);fill();note=QLabel('Cada ensayo conserva sus datos y calibración. Puedes añadir otro ensayo del mismo método para una variante o lote distinto.');note.setWordWrap(True);layout.addWidget(note)
         buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Ok|QDialogButtonBox.StandardButton.Cancel);buttons.button(QDialogButtonBox.StandardButton.Ok).setText('Añadir ensayo');buttons.accepted.connect(dialog.accept);buttons.rejected.connect(dialog.reject);layout.addWidget(buttons);dialog.resize(680,240)
@@ -227,12 +255,11 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         else:experiments.save(self.folder,self.assays,self.open_hash);save_presentation(self.folder,self.graph_style);self.load_folder(self.folder)
         self.log.appendPlainText('Guardadas las entradas de todos los ensayos. Actualizar para calcular y exportar los completos.')
     def new_protocol(self):
-        p=self.protocol();name,ok=QInputDialog.getText(self,'Nueva variante del protocolo','Nombre para una variante manual de '+p['method'],text=p['name']+' · variante')
-        if not ok or not name.strip():return
-        self.prepare_protocol(name.strip(),next((i for i,v in enumerate(self.variants) if v['id']==p['id']),0))
+        self.tabs.setCurrentWidget(self.parameters)
+        self.log.appendPlainText(t('Edita las condiciones de este ensayo. Guarda una variante solo si quieres reutilizarla en otros ensayos.'))
     def prepare_protocol(self,name,index):
         import uuid
-        p=copy.deepcopy(self.variants[index]);p.update(name=name,id='custom-'+uuid.uuid4().hex,version=0,status='BORRADOR — variante manual pendiente de validar');self.loading=True;self.set_protocol(p);self.populate_variants(p);self.loading=False;self.tabs.setCurrentWidget(self.parameters);self.mark_dirty()
+        p=copy.deepcopy(self.variants[index]);p.update(name=name,id='custom-'+uuid.uuid4().hex,version=0,status='Custom protocol');self.loading=True;self.set_protocol(p);self.populate_variants(p);self.loading=False;self.tabs.setCurrentWidget(self.parameters);self.mark_dirty()
         self.log.appendPlainText('Edita las condiciones y guarda la variante con copiar/+ para añadirla al catálogo.')
     def save_variant(self):
         p=self.protocol();validate_protocol(p);name,ok=QInputDialog.getText(self,'Guardar variante','Nombre de la nueva variante',text=p['name'])
@@ -249,7 +276,9 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
     def open_location(self,which):
         if not self.folder:raise ValueError('Guardar o abrir un experimento primero')
         path=Layout(self.folder).figures
-        if len(self.assays)==1:path=path/self.assays[0]['id']
+        if len(self.assays)==1:
+            candidate=path/self.assays[0]['id']
+            if candidate.exists() and any(p.is_file() and p.suffix.lower() in ('.png','.svg','.pdf') for p in candidate.rglob('*')):path=candidate
         path.mkdir(parents=True,exist_ok=True);os.startfile(path)
     def poll_progress(self):
         super().poll_progress()

@@ -4,15 +4,15 @@
 
 PhDexLab coordinates manual experimental data entry, an auditable Excel workbook and editable OriginPro 2024 graphs. It runs independently of PhDex; its modules and API are intended for possible future integration.
 
-[Download Windows app](https://github.com/RpastranaE/PhDexLab/releases/latest) · [Guía en español](docs/GUIA_v0.7.md) · [Validation](docs/VALIDATION.md) · [Update design](docs/UPDATES.md)
+[Download Windows app](https://github.com/RpastranaE/PhDexLab/releases/latest) · [Guía en español](docs/GUIA_v0.8.md) · [Validation](docs/VALIDATION.md) · [Update design](docs/UPDATES.md)
 
-![Plot customisation](docs/styles-v7.png)
+![Plot customisation](docs/styles-v8.png)
 
 ## Use on Windows
 
-Download **PhDexLab-Windows-x64.zip** from Releases, extract it into a writable folder, and open **Application/PhDexLab.exe**. Keep `_internal` beside the executable. Python is bundled. Desktop Microsoft Excel and a licensed OriginPro 2024 installation are needed for the complete workflow; Excel-only mode does not require Origin. These commercial applications are not bundled. The executable is unsigned.
+Download **PhDexLab-Setup-0.8.0.exe** from Releases and run it. The per-user installer creates a normal application folder, desktop/Start menu shortcuts and an uninstaller. No administrator account or separate Python installation is required. English is the default on first use; existing language preferences are preserved. A portable ZIP remains available for the updater and optional portable use. Desktop Microsoft Excel and a licensed OriginPro 2024 installation are needed for the complete workflow; Excel-only mode does not require Origin. These commercial applications are not bundled. The executable is unsigned.
 
-The update button checks this repository's latest stable release. Automatic checking and verified background downloads are enabled by default in the portable app, with installation on normal exit. They can be disabled. Updates replace `Application` only, preserve experiments and personal settings, test startup and attempt rollback on failure. No experimental data are uploaded.
+The update button checks this repository's latest stable release. Automatic checking and verified background downloads are enabled by default in the installed app, with installation on normal exit. They can be disabled. Updates replace `Application` only, preserve experiments and personal settings, test startup and attempt rollback on failure. No experimental data are uploaded.
 
 ## Capabilities
 
@@ -24,7 +24,7 @@ The update button checks this repository's latest stable release. Automatic chec
 - Fast table entry/paste, reusable input templates, Spanish/English interface and light/dark mode.
 - Ten plot presets and separate palette/marker/line/font controls for results, calibration and dose curves; portable custom styles.
 
-**Scientific scope:** protocol presets are starting points, not validated analytical methods for your matrix. Incomplete methods remain drafts. Numerical tests do not constitute experimental validation. Synthetic demonstrations are explicitly labelled. Review calibration, controls, units and replicate independence before interpreting any result. Private source snapshots, private workspace URLs and experiments are excluded from this repository.
+**Scientific scope:** protocol presets are starting points, not validated analytical methods for your matrix. Incomplete procedures remain blocked until their missing conditions are supplied. Numerical tests do not constitute experimental validation. Synthetic demonstrations are explicitly labelled. Review calibration, controls, units and replicate independence before interpreting any result. Private source snapshots, private workspace URLs and experiments are excluded from this repository.
 
 ## Run from source
 
@@ -38,7 +38,7 @@ python -m venv .venv
 
 Run tests using `.venv/Scripts/python.exe -m pip install pytest`, then `.venv/Scripts/python.exe -m pytest`. Excel/Origin integration checks require the actual installed applications and are described separately in the validation notes. Source installations do not replace themselves with binary updates.
 
-`Build-Windows.ps1` builds the portable application. `tools/package_windows.py` adds redistribution notices and creates the exact hashed ZIP consumed by the updater. `tools/publish_release.ps1` publishes a versioned release using GitHub CLI after a reviewed build. See [release instructions](docs/UPDATES.md).
+`Build-Windows.ps1` builds the application. With the official Inno Setup 6 compiler installed, `Build-Installer.ps1 -Compiler <path-to-ISCC.exe>` creates the single-file installer. `tools/package_windows.py` adds redistribution notices and creates the exact hashed ZIP consumed by the updater. `tools/publish_release.ps1` publishes a versioned release using GitHub CLI after a reviewed build. See [release instructions](docs/UPDATES.md).
 
 ## Structure
 
