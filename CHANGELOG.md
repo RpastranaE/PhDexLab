@@ -4,6 +4,8 @@ Para instalar y utilizar PhDexLab, consulta el [manual vigente](docs/MANUAL.md).
 
 ## 0.9.3
 
+[Versión y descargas](https://github.com/RpastranaE/PhDexLab/releases/tag/v0.9.3)
+
 - Auditoría dimensional y metodológica de las 15 variantes, con fuentes, adaptaciones y límites explicados en la documentación vigente.
 - Excel desglosa la normalización por concentración, dilución, volumen total en litros, masa en gramos y factor de expresión. Cada resultado indica su unidad; recuperación de controles y capacidad por masa se distinguen expresamente.
 - Se impide que un control ignore silenciosamente masa, volumen y dilución y devuelva un porcentaje. Las muestras individuales permiten varias diluciones de una misma extracción, corregidas antes de promediar, sin aumentar el n biológico.

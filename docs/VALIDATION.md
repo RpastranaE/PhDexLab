@@ -18,6 +18,10 @@ Software verification with synthetic data is not analytical validation of a chem
 - A separate frozen four-assay test (FRAP, ABTS, DPPH, adapted TPC) generated **24 Origin + 24 Publication exports**, preserved unknown precision and no-marker styles, and completed in 63.33 s locally. An integrity-verified unchanged repeat took 1.03 s. These fixture timings are not a general performance guarantee.
 - The exact installer passed isolated desktop/menu shortcuts and startup checks. The installed executable, bundled resources and compiled modules matched the final source/build.
 
+- An isolated **0.9.2 → 0.9.3** update installed the exact release ZIP, passed frozen startup, retained 24 help images and preserved sentinel experiment/style files.
+
+- After publication, all four GitHub asset digests matched the tested local artifacts. The installed 0.9.3 binary verified HTTPS and reported itself current; the 0.9.2 binary detected 0.9.3 as newer. The isolated installer was then removed; its managed shortcuts were removed and sentinel user files were retained.
+
 ## 0.9.2 verification
 
 - **181 automated tests passed.** Coverage includes all 15 catalogue variants, context-specific fields, individual/mean exclusivity, optional known precision, meaningful unknown precision, variable counts, unused entry slots, legacy template/input activation, explicit blank modes, signal-change protection, lossless switching between old/new variants, calibration minimums and prevention of provenance loss through the legacy writer.
