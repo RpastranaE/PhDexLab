@@ -84,7 +84,8 @@ def test_excel_style_click_then_type_and_f2():
     w.dirty=False;w.close()
 
 def test_pending_shell_open_blocks_worker_before_it_starts(tmp_path):
-    q=app();w=Window();w.load_demo();w.folder=tmp_path;Layout(tmp_path).prepare();Layout(tmp_path).master.write_bytes(b'workbook')
+    from phdexlab.experiments import create
+    q=app();w=Window();w.load_demo();w.load_folder(create(tmp_path/'EXP-shell-lock',w.assays))
     with patch('phdexlab.interface.os.startfile') as opened:w.open_excel();assert opened.called
     with patch('phdexlab.interface.Window.start') as started:
         with pytest.raises(WorkbookInUseError,match='Excel'):w.start('refresh')

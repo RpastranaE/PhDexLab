@@ -14,7 +14,7 @@ El cálculo necesita **Microsoft Excel de escritorio**. Para generar el proyecto
 
 ## Tu primer experimento
 
-**Nuevo ensayo → introducir datos y condiciones → guardar → cerrar el libro de Excel → actualizar y exportar.**
+**Nuevo ensayo → introducir datos y condiciones → cerrar el libro de Excel → actualizar y exportar → Resultados finales.** La actualización guarda primero las entradas actuales; si el experimento es nuevo, pide su carpeta. También puedes guardar un borrador sin calcular.
 
 La aplicación empieza sin un método seleccionado. Cada ensayo mantiene su calibración y sus resultados; distintas muestras pueden compartir la calibración de ese ensayo. El menú de datos sintéticos permite practicar sin utilizar mediciones reales.
 
@@ -39,6 +39,7 @@ La documentación principal está en español y utiliza los nombres de los contr
 - Un Excel con hojas por ensayo, fórmulas visibles, resultados y controles de calidad.
 - Un proyecto Origin organizado por ensayo y exportaciones PNG/PDF/SVG; estilos de resultados, calibración y curvas de dosis personalizables.
 - Actualización explícita de resultados, interfaz español/inglés, modo claro/oscuro y ayuda ilustrada.
+- Pestaña de resultados finales con valores guardados, calibrado y figuras reales de Origin ampliables. Validación con avisos por ensayo/fila/campo y celdas pendientes resaltadas solo tras intentar actualizar.
 
 Las plantillas son puntos de partida documentales: **no certifican que un método esté validado para tu muestra**. La aplicación no inventa condiciones faltantes ni declara independencia de las réplicas. Consulta el [alcance de validación](docs/VALIDATION.md).
 

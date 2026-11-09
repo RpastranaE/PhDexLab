@@ -27,7 +27,7 @@ def create(folder,assays):
     dump(l.meta/'experiment.json',m);l.prepare();dump(l.meta/'protocol.initial.json',config(assays));dump(l.meta/'raw.initial.json',raw(assays))
     for a in assays:dump(l.meta/'revisions'/(digest(a['protocol'])+'.json'),a['protocol'])
     states=write_master(l.master,assays,m['experiment_id']);audit(folder,'created_multi',workbook_sha256=file_hash(l.master),assays=config(assays))
-    dump(l.meta/'status.json',dict(state='pending',assays=states));return folder
+    dump(l.meta/'status.json',dict(state='draft' if any(s['state']=='draft' for s in states.values()) else 'pending',assays=states));return folder
 
 def read(folder):
     verify(folder);l=migrate_legacy(folder);return read_master(l.master)
@@ -54,7 +54,7 @@ def save(folder,assays,expected_hash):
         for old in l.generated():
             target=h/'previous'/old.relative_to(l.root);target.parent.mkdir(parents=True,exist_ok=True);shutil.move(str(old),str(target))
         audit(folder,'saved_inputs',run=run,assays=config(assays),raw_hash=digest(raw(assays)),workbook_sha256=file_hash(l.master))
-        dump(l.meta/'status.json',dict(state='pending',assays=states));return states
+        dump(l.meta/'status.json',dict(state='draft' if any(s['state']=='draft' for s in states.values()) else 'pending',assays=states));return states
 
 @value_session
 def refresh(folder,origin_mode='connector',edited_rows=None,edited_protocol=None,expected_hash=None,progress=None,edited_assays=None,force=False):

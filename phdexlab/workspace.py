@@ -32,7 +32,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         event.accept()
 
     def __init__(self):
-        self._workspace_ready=False;self.assays=[];self.active_id=None;self.saved_states={};self.next_assay_number=1
+        self._workspace_ready=False;self.assays=[];self.active_id=None;self.saved_states={};self.next_assay_number=1;self._validation_requested=False
         super().__init__()
         self.variants=copy.deepcopy(ALL)
         if self.variant_folder.exists():
@@ -87,9 +87,20 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         self.dirty=False
         self.setup_features();self.sync_assay_controls()
         self.raw.rows_edited.connect(lambda:self.raw_changed(None))
+        from .results_view import ResultsView
+        self.results_view=ResultsView(self);self.tabs.addTab(self.results_view,'4   Resultados finales');localize(self)
+        self.tabs.currentChanged.connect(lambda index:self.refresh_result_context())
     def mark_dirty(self):
         super().mark_dirty()
         if self._workspace_ready and not self.loading:self.status_timer.start()
+        self.refresh_result_context()
+    def refresh_result_context(self,force=False):
+        view=getattr(self,'results_view',None)
+        if view is None:return
+        if force:view._key=None
+        if self.tabs.currentWidget() is not view:return
+        assay=next((a for a in self.assays if a['id']==self.active_id),None)
+        view.set_context(self.folder,assay,self.dirty,bool(self.proc),getattr(self,'theme_dark',False),force)
     def raw_changed(self,item):
         if self.loading:return
         self.mark_dirty();super().update_metrics()
@@ -227,6 +238,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         try:a['protocol']=self.protocol();a['rows']=self.raw.records()
         finally:self.loading=was
     def set_assays(self,assays,active=0):
+        if not self.folder:self._validation_requested=False;self.raw.set_validation_visible(False)
         self.status_timer.stop();self.loading=True;self.assays=copy.deepcopy(assays);self.next_assay_number=max(self.next_assay_number,max([int(a['id'].split('_')[0][1:]) for a in assays]+[0])+1);self.active_id=None
         self.assay_list.blockSignals(True);self.assay_list.clear()
         for a in self.assays:self.assay_list.addItem(self.item_text(a))
@@ -252,7 +264,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         return a['label']+'\n'+t(label)+' · '+a['id']
     def switch_assay(self,index):
         if not self._workspace_ready or not 0<=index<len(self.assays):return
-        self.assay_pages.setCurrentWidget(self.tabs);self.commit_active();self.loading=True;a=self.assays[index];self.active_id=a['id'];p=a['protocol'];self.set_protocol(p);self.raw.load(a.get('rows',[]));self.populate_variants(p);self.loading=False;super().update_metrics();self.update_current_state()
+        self.assay_pages.setCurrentWidget(self.tabs);self.commit_active();self.loading=True;a=self.assays[index];self.active_id=a['id'];p=a['protocol'];self.set_protocol(p);self.raw.load(a.get('rows',[]));self.raw.set_validation_visible(self._validation_requested);self.populate_variants(p);self.loading=False;super().update_metrics();self.update_current_state()
     def populate_variants(self,p):
         if not p:return
         self.variant.blockSignals(True);self.variant.clear();selected=-1
@@ -283,6 +295,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
             super().update_metrics();self.metrics.setText(a['id']+' · '+self.metrics.text()+('   |   '+issue if issue else '   |   Listo para calcular'))
             self.metrics.setToolTip(issue)
             localize(self) if hasattr(self,'language_selector') else None
+        self.refresh_result_context()
     def field_popup(self,column):
         if 0<=column<len(self.raw.columns):
             title,text=FIELDS[self.raw.columns[column]]
@@ -333,6 +346,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         self.next_assay_number=1;self.saved_states={};self.folder=None;self.open_hash=None;self.active_id=None;self.set_assays(mean_demo());self.dirty=False
         self.pathlabel.setText(t('Demostración de medias · SINTÉTICO'))
     def load_folder(self,path):
+        self._validation_requested=False;self.raw.set_validation_visible(False)
         from .graph_styles import selection
         self.graph_style=selection(read_presentation(path))
         assays=experiments.read(path);self.next_assay_number=json.loads((Layout(path).meta/'experiment.json').read_text(encoding='utf-8')).get('next_assay_number',1);self.saved_states={};self.dirty=False
@@ -344,9 +358,10 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
             report=json.loads(status.read_text(encoding='utf-8'));self.log.appendPlainText({'complete':'Todos los ensayos calculados. Revisar QC.','partial':'Actualización parcial: revisar estados de cada ensayo.','draft':'Borradores guardados; faltan datos.','pending':'Entradas guardadas; cálculo pendiente.','failed':'No se completó la actualización.'}.get(report['state'],report['state']))
             for i,a in enumerate(self.assays):
                 s=report.get('assays',{}).get(a['id'],{});self.assay_list.item(i).setToolTip(t(s.get('issue','')))
-    def save(self):
+    def save(self,prompt_after_create=True):
         if not self.assays:raise ValueError(t('Añade un ensayo antes de guardar.'))
         self.commit_active()
+        was_validating=self._validation_requested
         created=self.folder is None
         if created:
             parent=QFileDialog.getExistingDirectory(self,'Carpeta que contendrá el experimento')
@@ -356,8 +371,9 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
             if not name or name in ('.','..') or any(c in name for c in '<>:"/\\|?*'):raise ValueError('Nombre de carpeta inválido')
             path=experiments.create(Path(parent)/name,self.assays);save_presentation(path,self.graph_style);self.load_folder(path)
         else:experiments.save(self.folder,self.assays,self.open_hash);save_presentation(self.folder,self.graph_style);self.load_folder(self.folder)
+        if was_validating:self._validation_requested=True;self.raw.set_validation_visible(True)
         self.log.appendPlainText('Guardadas las entradas de todos los ensayos. Actualizar para calcular y exportar los completos.')
-        if created:
+        if created and prompt_after_create:
             dialog=QMessageBox(self);dialog.setWindowTitle(t('Experimento guardado'))
             dialog.setText(t('¿Quieres calcular y exportar los resultados ahora o seguir editando?'))
             run=dialog.addButton(t('Actualizar y exportar ahora'),QMessageBox.ButtonRole.AcceptRole)
@@ -383,11 +399,49 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         try:super().open_excel()
         except Exception:
             self._excel_launch=None;self._excel_launch_timer.stop();raise
+    def update(self,force=False):
+        if self.proc:raise RuntimeError(t('Ya hay una actualización en curso'))
+        from PySide6.QtWidgets import QApplication
+        focus=QApplication.focusWidget()
+        if focus and any(table.isAncestorOf(focus) for table in (self.raw,self.parameters)):focus.clearFocus()
+        self.commit_active()
+        if self.folder:
+            from .excel_launch import check
+            from .file_access import assert_available
+            check(self);assert_available(Layout(self.folder).master)
+        if self.dirty or not self.folder:
+            self.save(prompt_after_create=False)
+            if not self.folder:return  # Folder/name selection cancelled.
+        payload=None
+        if force:
+            from .integration import dump
+            payload=Layout(self.folder).meta/'force-refresh.json';dump(payload,dict(force=True))
+        self.start('refresh',payload)
+    def prepare_export(self):
+        from .input_validation import diagnose
+        assays=experiments.read(self.folder);issues=diagnose(assays)
+        if not issues:
+            self._validation_requested=False;self.raw.set_validation_visible(False);return True
+        # Read the same saved Excel as the worker, including external changes.
+        self.load_folder(self.folder);self._validation_requested=True;self.raw.set_validation_visible(True)
+        from .validation_dialog import ValidationDialog
+        ready_count=len(assays)-len({issue['assay_id'] for issue in issues})
+        self.validation_dialog=ValidationDialog(self,issues,self.locate_validation_issue,ready_count)
+        self.validation_dialog.exec();return self.validation_dialog.proceed_partial
+    def locate_validation_issue(self,issue):
+        index=next(i for i,a in enumerate(self.assays) if a['id']==issue['assay_id']);self.assay_list.setCurrentRow(index)
+        if issue['field'] is None:self.tabs.setCurrentWidget(self.parameters);return
+        self.tabs.setCurrentIndex(0)
+        if issue['row'] is not None and issue['field'] in self.raw.columns:
+            row=issue['row']-1;col=self.raw.columns.index(issue['field']);self.raw.setCurrentCell(row,col)
+            if self.raw.item(row,col):self.raw.scrollToItem(self.raw.item(row,col))
+        self.raw.setFocus()
     def start(self,action,payload=None):
         if self.folder:
             from .excel_launch import check
             check(self)
-        return super().start(action,payload)
+            if action=='refresh' and not self.prepare_export():return
+        result=super().start(action,payload);self.refresh_result_context();return result
     def open_origin(self):
         if not self.folder:raise ValueError('Guardar o abrir un experimento primero')
         report=json.loads((Layout(self.folder).meta/'status.json').read_text(encoding='utf-8'))

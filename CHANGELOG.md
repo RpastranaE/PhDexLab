@@ -2,6 +2,14 @@
 
 Para instalar y utilizar PhDexLab, consulta el [manual vigente](docs/MANUAL.md). Esta página explica la evolución; las instrucciones actuales no están repartidas entre versiones.
 
+## 0.10.0
+
+- Actualizar y exportar guarda primero las entradas y condiciones actuales en el Excel maestro, incluida la celda en edición. Se conserva la protección contra cambios externos del libro.
+- Validación previa con aviso por ensayo, fila y campo; los campos obligatorios mantienen su asterisco inicial y solo se resaltan en rojo tras intentar actualizar. Se conserva el borrador. El cálculo parcial requiere una elección explícita.
+- Pestaña Resultados finales con valores exactos guardados, unidades, DE/n biológico, calibración y detalle por unidad.
+- Previsualizaciones ampliables de exportaciones reales de Origin, incluidas curvas de dosis. Se comprueba su procedencia e integridad y se ocultan resultados obsoletos.
+- Ayuda y manual vigente actualizados para el flujo de guardado, validación y consulta de resultados.
+
 ## 0.9.3
 
 [Versión y descargas](https://github.com/RpastranaE/PhDexLab/releases/tag/v0.9.3)

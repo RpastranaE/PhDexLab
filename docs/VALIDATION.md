@@ -4,6 +4,18 @@
 
 Software verification with synthetic data is not analytical validation of a chemical method or matrix. The operator must review conditions, units and biological independence.
 
+## 0.10.0 input validation and final results
+
+- **204 automated tests passed**, including delayed missing-cell highlighting, clearing highlights after correction, multi-assay issue locations, zero/false values, optional mean precision, autosave of dirty tables and the active cell editor, cancellation of first-save dialogs, protection against external workbook changes, explicit partial-export choice and stale-result/figure checks. The GUI test harness now destroys test windows between cases so old Qt event filters/timers cannot be collected inside a later modal loop.
+- The **24 native Excel equation cases covering all 15 catalogue variants** were repeated successfully. No chemistry equations were added to the results view.
+- A source GUI integration test saved an incomplete draft, displayed the real issue dialog without starting a worker, corrected the field, and exported through real Excel and Origin. An active cell editor's text persisted in the workbook before native processing. The final cards exactly matched saved Excel values, with **3 sample cards and 2 verified Origin previews**.
+- Bilingual results/validation screens, dark appearance and DPPH dose-response previews were captured with synthetic data. Updated help screenshots render at 3000 × 2000; figure previews retain device pixel density and the enlargement viewer reads original files.
+- After the final visual cleanup/high-DPI changes, all **13 focused 0.10.0 regressions passed**. Switching assays hides old widgets immediately, before deferred destruction, so previous figures cannot remain behind new results.
+- The exact frozen executable generated FRAP, ABTS, DPPH and adapted TPC through real Excel/Origin, producing **24 Origin + 24 Publication exports** with expected means, unknown precision and no-marker styles preserved. The local fixture took 72.39 s while packaging was also running; an unchanged integrity-verified repeat took 1.42 s. These are fixture measurements, not performance guarantees.
+- All four resulting assay views matched the exact saved Excel values and displayed two verified Origin previews each. The compiled module inventory and bundled assets matched final source, and frozen GUI startup passed.
+- An isolated **0.9.3 → 0.10.0** update using the exact release ZIP passed frozen startup, retained 24 help images and preserved sentinel experiment/style files.
+- The exact installer passed an isolated installation with desktop/menu shortcuts pointing to the installed executable; its frozen GUI startup passed.
+
 ## 0.9.3 calculation audit
 
 - **191 automated tests passed** after the calculation/validation changes. Additional regressions cover several dilutions within one independent extraction, rejection of ambiguous mass-bearing control rows, dimensional unit guards, the TFC mass basis, explicit DPPH adaptation and the visible normalisation chain.

@@ -1,6 +1,6 @@
 import uuid
 from PySide6.QtCore import Qt,QTimer,QSignalBlocker,Signal
-from PySide6.QtGui import QColor,QKeySequence
+from PySide6.QtGui import QColor,QKeySequence,QPen
 from PySide6.QtWidgets import QTableWidget,QTableWidgetItem,QStyledItemDelegate,QComboBox,QHeaderView,QAbstractItemView,QApplication,QStyleOptionComboBox,QStyle,QMenu,QInputDialog,QMessageBox
 from .data_entry import COLUMNS
 from .ui_fields import FIELDS,KIND_LABELS
@@ -37,6 +37,8 @@ class RequiredDelegate(QStyledItemDelegate):
         table=self.parent();item=table.item(index.row(),1);kind=item.data(Qt.ItemDataRole.UserRole) if item else None
         if kind and not index.data() and table.columns[index.column()] in required_fields(kind,table.protocol):
             painter.save();painter.setPen(QColor('#C73542'));painter.drawText(option.rect.adjusted(8,0,-8,0),Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignVCenter,'*');painter.restore()
+        if index.data(Qt.ItemDataRole.UserRole+5):
+            painter.save();painter.setPen(QPen(QColor('#D74A55'),2));painter.drawRect(option.rect.adjusted(1,1,-2,-2));painter.restore()
 
 class KindDelegate(QStyledItemDelegate):
     def __init__(self,table):super().__init__(table);self.table=table
@@ -52,6 +54,8 @@ class KindDelegate(QStyledItemDelegate):
         painter.save();style=option.widget.style()
         style.drawComplexControl(QStyle.ComplexControl.CC_ComboBox,combo,painter,option.widget)
         style.drawControl(QStyle.ControlElement.CE_ComboBoxLabel,combo,painter,option.widget);painter.restore()
+        if index.data(Qt.ItemDataRole.UserRole+5):
+            painter.save();painter.setPen(QPen(QColor('#D74A55'),2));painter.drawRect(option.rect.adjusted(1,1,-2,-2));painter.restore()
     def setEditorData(self,editor,index):
         text=index.data(Qt.ItemDataRole.DisplayRole) or ''
         editor.setCurrentIndex(max(0,editor.findText(t(text))))
@@ -90,7 +94,7 @@ class RawTable(QTableWidget):
     def __init__(self):
         self.columns=list(COLUMNS);self.kind_names=dict(KIND_LABELS)
         super().__init__(24,len(self.columns))
-        self.protocol=None
+        self.protocol=None;self.show_validation=False;self._validation_rules=None
         self.setHorizontalHeader(RequiredHeader(Qt.Orientation.Horizontal,self))
         self.setItemDelegate(RequiredDelegate(self))
         self.currentCellChanged.connect(lambda *args:self.horizontalHeader().viewport().update())
@@ -144,6 +148,11 @@ class RawTable(QTableWidget):
         from .reading_design import signal,matrix_mode,enabled,PARAMETERS
         from .assay_engine import engine
         self.protocol=p
+        rules=tuple(p.get(k) for k in ('engine','quantity','ash_basis','reading_signal','response','matrix_mode','blank_handling','reading_schema'))
+        if rules!=self._validation_rules:
+            self._validation_rules=rules
+            if self.show_validation:
+                for r in range(self.rowCount()):self.update_row(r)
         if 'A_end' not in self.columns:return
         label='Incremento ΔA · AU' if signal(p)=='delta' else 'Absorbancia final · AU' if signal(p)=='paired' else 'Absorbancia · AU'
         self.horizontalHeaderItem(self.columns.index('A_end')).setText(t(label)+'  (?)')
@@ -282,11 +291,20 @@ class RawTable(QTableWidget):
             if item and item.text()!=self.kind_names.get(d['kind']):d['kind_label']=item.text()
             records.append(d)
         return records
+    def set_validation_visible(self,visible):
+        if self.show_validation==visible:return
+        self.show_validation=visible
+        for row in range(self.rowCount()):self.update_row(row)
+        self.viewport().update()
     def update_row(self,row):
         if row>=self.rowCount():return
         was_blocked=self.blockSignals(True)
         item=self.item(row,1);kind=item.data(Qt.ItemDataRole.UserRole) if item else None
         if not kind and item:kind=next((k for label,k in self.roles if label==item.text()),item.text())
+        from .input_validation import missing_fields
+        record={key:self.item(row,c).text() if self.item(row,c) else '' for c,key in enumerate(self.columns)}
+        record['kind']=kind or ''
+        missing=missing_fields(record,self.protocol or {}) if self.show_validation else set()
         tint={'sample':'#E9F6F2','standard':'#EDF3FE','blank':'#F0F2F5','control':'#FFF3DF'}.get(kind,'#FFFFFF')
         irrelevant=set()
         if kind in ('blank','sample') or kind=='control' and (self.protocol or {}).get('reading_schema')==2:irrelevant|={'concentration'}
@@ -299,6 +317,8 @@ class RawTable(QTableWidget):
         if self.protocol and self.protocol['response']=='endpoint':irrelevant|={'A_initial'}
         for c,key in enumerate(self.columns):
             cell=self.item(row,c)
+            if cell is None and key in missing:
+                cell=QTableWidgetItem('');self.setItem(row,c,cell)
             if cell:
                 dark=getattr(self,'dark',False)
                 dark_tint={'sample':'#24463F','standard':'#2A3F5C','blank':'#34404D','control':'#51452B'}.get(kind,'#20313D')
@@ -308,4 +328,8 @@ class RawTable(QTableWidget):
                 from .reading_design import field_help
                 helptext=field_help(key,self.protocol or {})
                 cell.setToolTip(t(helptext)+ ('\n\n'+t('No se utiliza en esta categoría/protocolo.') if key in irrelevant else ''))
+                cell.setData(Qt.ItemDataRole.UserRole+5,key in missing)
+                if key in missing:
+                    cell.setBackground(QColor('#522F37' if dark else '#FDE7E9'));cell.setForeground(QColor('#FFD9DD' if dark else '#9B2435'))
+                    cell.setToolTip(t('Obligatorio: completa este campo antes de actualizar y exportar.')+'\n\n'+t(helptext))
         self.blockSignals(was_blocked)

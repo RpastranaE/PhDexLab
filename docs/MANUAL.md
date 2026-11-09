@@ -128,7 +128,11 @@ Si el instrumento ya puso a cero las lecturas con el blanco de reactivos, los m�
 
 ## 7. Guardar, recalcular y exportar
 
-**Guardar** conserva los datos y condiciones del experimento. Tras crear una carpeta nueva, puedes elegir calcular y exportar inmediatamente o seguir editando. **Actualizar y exportar** recalcula mediante Excel, comprueba los resultados, actualiza Origin si está habilitado y exporta las figuras. Son operaciones diferentes.
+**Guardar** conserva los datos y condiciones del experimento, incluso incompletos. Tras crear una carpeta nueva, puedes elegir calcular y exportar inmediatamente o seguir editando. **Actualizar y exportar** guarda primero las entradas y condiciones actuales en el Excel maestro, incluida una celda que esté en edición; si el experimento es nuevo, pide su carpeta. Después valida los datos, recalcula mediante Excel, comprueba los resultados, actualiza Origin si está habilitado y exporta las figuras.
+
+Las celdas obligatorias empiezan con asterisco y sin fondo rojo. Si faltan datos al intentar actualizar, el borrador queda guardado y aparece un aviso con ensayo, fila, campo y problema. Las celdas pendientes se resaltan en rojo y se limpian al corregirlas. **Ir al primer problema** o doble clic en el aviso lleva a su posición. Por defecto no se exporta hasta corregirlo; si hay ensayos completos, puedes elegir expresamente calcular solo esos ensayos. Los ensayos incompletos siguen como borrador.
+
+![Aviso de entradas pendientes](validation-es-v010.png)
 
 Cierra el libro del experimento en Excel y su proyecto en Origin antes de actualizar. Si estás abriendo el Excel, espera, guarda y ciérralo. El programa evita sobrescribir un libro en uso. La barra integrada muestra las fases; el registro aporta detalles cuando una fase falla.
 
@@ -143,6 +147,16 @@ Los modos de Origin son:
 | Sin Origin | Permite trabajar sin crear el proyecto nativo. Las figuras alternativas utilizan los resultados disponibles. |
 
 No se promete sincronización permanente al escribir en Excel. La acción fiable es **Actualizar y exportar**. Revisa los controles de calidad y avisos antes de usar los resultados. Un archivo generado correctamente puede contener datos insuficientes o un ensayo pendiente de revisión.
+
+### Ver los resultados en la aplicación
+
+Selecciona un ensayo y abre **4 Resultados finales / Final results**. Cada cuadro muestra la media guardada en Excel, su unidad, DE y n biológico. Puedes seleccionar y copiar el valor exacto del cuadro. El calibrado muestra pendiente, intercepto y R²; pasa el ratón para consultar el coeficiente completo. Despliega **Resultados por unidad biológica** para consultar el detalle. Una precisión desconocida no se sustituye por cero.
+
+Debajo aparecen las figuras PNG realmente exportadas por Origin, incluido calibrado y curva de dosis cuando corresponde. Pulsa una imagen para ampliar su resolución original. El proyecto continúa editable en Origin; esta vista es una previsualización de sus exportaciones. Sin exportaciones de Origin no se presenta una figura alternativa como si procediera de Origin.
+
+La pestaña lee el Excel ya calculado y no repite las ecuaciones. Si editas entradas o cambia el Excel externamente, oculta los valores antiguos hasta actualizar. Si cambian el estilo, el proyecto o las imágenes, pide renovar las figuras. Revisa también los controles de calidad en el Excel y el registro.
+
+![Resultados finales con figuras de Origin](results-en-v010.png)
 
 ## 8. Dónde están los archivos
 

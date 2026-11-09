@@ -49,10 +49,7 @@ class WorkspaceFeatures:
     def rebuild_menu(self,button,point):
         menu=QMenu(self);menu.addAction(t('Regenerar todos los archivos'),lambda:self.guard(self.force_rebuild));menu.exec(button.mapToGlobal(point))
     def force_rebuild(self):
-        if not self.folder:raise ValueError(t('Guardar o abrir un experimento primero'))
-        if self.dirty:raise ValueError(t('Hay cambios en la ventana. Guarda primero para aplicarlos; Actualizar utiliza el Excel guardado.'))
-        from .integration import dump
-        path=Layout(self.folder).meta/'force-refresh.json';dump(path,dict(force=True));self.start('refresh',path)
+        self.update(force=True)
     def retranslate_ui(self):
         if not getattr(self,'language_selector',None):return
         self.pathlabel.setProperty('userData',bool(self.folder))
@@ -61,6 +58,7 @@ class WorkspaceFeatures:
             for action in menu.actions():
                 cache=getattr(action,'_source_text',action.text());action._source_text=cache;action.setText(t(cache))
         self.help_dialog.retranslate()
+        self.refresh_result_context(force=True)
         self.log.retranslate()
     def change_language(self,*args):
         self.commit_active();was_dirty=self.dirty;rows=self.raw.records();p=self.protocol();i18n.set_language(self.language_selector.currentData())
@@ -80,6 +78,7 @@ class WorkspaceFeatures:
             if name:button.setIcon(ui_icons.icon(name))
         self.theme_button.setToolTip(t('Cambiar a modo claro' if self.theme_dark else 'Cambiar a modo oscuro'))
         self.help_dialog.retranslate()
+        self.refresh_result_context(force=True)
     def toggle_theme(self):
         self.theme_dark=not self.theme_dark;self.apply_appearance();save_preferences(i18n.LANGUAGE,'dark' if self.theme_dark else 'light')
     def customize_graphs(self):

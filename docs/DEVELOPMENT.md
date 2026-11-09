@@ -132,6 +132,12 @@ El README es la entrada; el manual explica el uso; esta guía cubre desarrollo; 
 Proyecto personal de RpastranaE, creado con asistencia de ChatGPT/Codex. Contacto: **rpe10@alu.ua.es**. El código utiliza [MIT](../LICENSE); respeta [los avisos de terceros](../THIRD_PARTY_NOTICES.md), incluidas las obligaciones de redistribución de Qt/PySide6 y sus bibliotecas. Excel y OriginPro mantienen sus propias licencias.
 
 
+## Validación y vista de resultados desde 0.10.0
+
+`input_validation` reutiliza los campos requeridos del motor; `validation_dialog` presenta los problemas sin iniciar el proceso de cálculo salvo elección explícita de continuar con ensayos completos. `workspace.update` confirma el editor activo y guarda antes de validar/iniciar el worker; el guardado mantiene la comprobación del hash del Excel abierto.
+
+`results_view` lee únicamente los valores calculados del Excel (`data_only`) y los PNG de Origin registrados con sus hashes en el estado de generación. No contiene ecuaciones químicas. La lectura de hojas se limita al ensayo seleccionado; el monitor solo está activo mientras la pestaña está visible. Cambios de entradas/libro impiden mostrar resultados viejos; cambios de estilo/proyecto/figuras invalidan las previsualizaciones. Las pruebas GUI mantienen un único QApplication durante la sesión, como la aplicación real.
+
 ## Contrato de entrada desde 0.9.2
 
 `reading_design.configure(protocol, legacy=True)` permite activar explícitamente las opciones en una copia de un protocolo anterior, manteniendo su señal y corrección. El catálogo nuevo ya incorpora el diseño. `assay_engine.columns(protocol)` es la autoridad del esquema RAW: las columnas de procedencia se añaden a continuación de las existentes, conservando las referencias históricas de las fórmulas.
