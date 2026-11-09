@@ -95,7 +95,7 @@ def sync(folder,assays,states,mode='connector',notify=lambda *args:None,force=Fa
                 for key in graph_keys:
                     report['graphs'][key]=old_status['graphs'][key];report['reused_graphs'].append(key);report['exports'].extend(old_status['graphs'][key]['files'])
                 page_paths.update({name:path for name,path in old_paths.items() if name.startswith(short)})
-                dest=l.figures/aid/'Origin';dest.mkdir(parents=True,exist_ok=True);(dest/(l.stem+'_'+aid+'_captions.txt')).write_text(captions(payload(folder,a)),encoding='utf-8')
+                dest=l.figures/aid/'Origin';dest.mkdir(parents=True,exist_ok=True);(dest/(l.stem+'_'+aid+'_captions.txt')).write_text(captions(payload(folder,a),style['results']['marker']!='none'),encoding='utf-8')
                 continue
             assay_path,data_path,graphs_path=prepare_assay_folders(op,managed,aid)
             ar=report['assays'][aid]={'folder':assay_path,'state':states[aid]['state'],'readback':{}};sheets={}
@@ -231,7 +231,7 @@ def sync(folder,assays,states,mode='connector',notify=lambda *args:None,force=Fa
                         graph_files.append(str(path.relative_to(l.root)))
                     except Exception as error:report['errors'].append(f'{aid}/{ext}: {error}')
                 if len(graph_files)==3:report['graphs'][key]=dict(signature=signature,dose_layout=dose_layout,files=store(folder,graph_files))
-            dest=l.figures/aid/'Origin';(dest/(l.stem+'_'+aid+'_captions.txt')).write_text(captions(data),encoding='utf-8')
+            dest=l.figures/aid/'Origin';(dest/(l.stem+'_'+aid+'_captions.txt')).write_text(captions(data,style['results']['marker']!='none'),encoding='utf-8')
         report['removed_empty_default_books']=remove_empty_default_book(op);report['removed_empty_starter_folders']=remove_empty_starter_folders(op);op.pe.cd(managed);op.save(str(l.project));report['project_saved']=l.project.exists()
         report['root_folders']=[child.GetPath() for child in op.pe.root_folder().obj.GetFolders()]
         saved_root=op.pe.root_folder().path

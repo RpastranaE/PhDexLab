@@ -49,8 +49,9 @@ def write_master(path,assays,experiment_id,calculated=False):
         for role,name in names.items():
             ws=wb.create_sheet(name);ws.append(columns(p) if role=='RAW' else HEADERS[role]);ws.sheet_properties.tabColor=COLORS.get(p['method'],'657D89')
         ws=wb[names['RAW']]
-        for d in rows:
-            for c,key in enumerate(columns(p),1):text_cell(ws.cell(ws.max_row+1 if c==1 else r,c),d.get(key,''));r=ws.max_row
+        raw_columns=columns(p)
+        for r,d in enumerate(rows,2):
+            for c,key in enumerate(raw_columns,1):text_cell(ws.cell(r,c),d.get(key,''))
             if d.get('kind')=='sample':sample_ids.setdefault(str(d.get('sample_id','')),set()).add(assay['id'])
         for key,val in p.items():
             ws=wb[names['Parameters']];r=ws.max_row+1;text_cell(ws.cell(r,1),key);text_cell(ws.cell(r,2),val)

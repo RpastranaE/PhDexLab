@@ -15,6 +15,7 @@ Calibración|Calibration
 Curvas de dosis|Dose curves
 Tipografía|Typography
 Paleta|Palette
+Sin símbolos|No markers
 Símbolo|Marker
 Símbolos abiertos|Open markers
 Tamaño del símbolo (pt)|Marker size (pt)
@@ -58,7 +59,7 @@ def preview(style,width=300,height=200,role='results'):
                 color=s['colors'][i%len(s['colors'])] if s['per_sample'] else s['colors'][0]
                 ax.bar(i,mean,width=.55,color=color if s['per_sample'] else s['fill'],edgecolor=color,lw=.8)
                 ax.errorbar(i,mean,yerr=2,fmt='none',ecolor=s['error'],capsize=3,lw=1,zorder=3)
-                ax.scatter([i-.12,i,i+.12],[mean-2,mean,mean+2],s=s['size']**2,marker=s['marker'],
+                if s['marker']!='none':ax.scatter([i-.12,i,i+.12],[mean-2,mean,mean+2],s=s['size']**2,marker=s['marker'],
                     facecolors='white' if s['open'] else color,edgecolors=color if s['open'] else 'white',linewidths=.6,zorder=4)
             ax.set_xticks([0,1,2],['A','B','C']);ax.set_xlabel('Sample');ax.set_ylabel('Response');ax.set_ylim(0,40)
         elif role=='calibration':
@@ -70,7 +71,7 @@ def preview(style,width=300,height=200,role='results'):
             xs=[0,.15,.35,.6,1]
             for i,color in enumerate(s['colors']):
                 ys=[100*(1-math.exp(-x*(2+i*.3))) for x in xs]
-                ax.errorbar(xs,ys,yerr=[3]*5,fmt=s['marker'],ls=s['line'],color=color,mfc='white' if s['open'] else color,
+                ax.errorbar(xs,ys,yerr=[3]*5,fmt='',marker=('None' if s['marker']=='none' else s['marker']),ls=s['line'],color=color,mfc='white' if s['open'] else color,
                     ecolor=s['error'],capsize=2,ms=s['size'],lw=s['width'])
             ax.axhline(50,color='#777777',ls='--',lw=.7);ax.set_xlabel('Dose');ax.set_ylabel('Inhibition (%)');ax.set_ylim(0,108)
         fig.tight_layout(pad=.45);buffer=io.BytesIO();fig.savefig(buffer,format='png',dpi=110,facecolor='white')
@@ -101,7 +102,7 @@ class GraphDialog(QDialog):
             if role!='calibration':
                 row=QHBoxLayout();plus=QPushButton(t('Añadir color'));minus=QPushButton(t('Quitar último color'));row.addWidget(plus);row.addWidget(minus);plus.clicked.connect(lambda checked=False,r=role:self.resize_palette(r,1));minus.clicked.connect(lambda checked=False,r=role:self.resize_palette(r,-1));form.addRow('',row)
             shape=QComboBox()
-            for text,marker in [('●  Circle','o'),('■  Square','s'),('▲  Triangle up','^'),('▼  Triangle down','v'),('◆  Diamond','D')]:shape.addItem(text,marker)
+            for text,marker in [('●  Circle','o'),('■  Square','s'),('▲  Triangle up','^'),('▼  Triangle down','v'),('◆  Diamond','D'),(t('Sin símbolos'),'none')]:shape.addItem(text,marker)
             self.bind(role,'marker',shape,'Símbolo');self.bind(role,'open',QCheckBox(),'Símbolos abiertos');size=QDoubleSpinBox();size.setRange(2,12);size.setSingleStep(.5);self.bind(role,'size',size,'Tamaño del símbolo (pt)');self.color_control(role,'error','Barras de error')
             if role=='results':self.color_control(role,'fill','Color de barras');self.bind(role,'per_sample',QCheckBox(),'Un color por muestra')
             else:

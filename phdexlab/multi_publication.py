@@ -34,9 +34,10 @@ def payload(folder,assay):
     if engine(p)=='ec50':result['curve']=values(l.master,sheet_name(assay,'DoseCurve'))[1:]
     return result
 
-def captions(data):
+def captions(data,show_markers=True):
+    points='dots are individual biological units.' if show_markers else 'individual biological-unit markers are hidden by the selected style.'
     p=data['protocol'];return (f"{p['method']}. Source: {p['source']}. Protocol: {p['name']}.\n"
-        'Results: biological-unit means after averaging technical measurements. Error bars are biological SD; dots are individual biological units. '
+        'Results: biological-unit means after averaging technical measurements. Error bars are biological SD; '+points+' '
         'No significance test or automatic exclusion. Missing estimates remain explicit; SD is not invented for n<2. '
         'Calibration (where used): technical means ± SD and unweighted OLS with free intercept, computed in Excel. '
         'DPPH EC50 (where used): technical plateau means by dose followed by local linear interpolation around 50%; no extrapolation. '
@@ -77,7 +78,7 @@ def export(folder,assays,states,force=False):
             fig,ax=plt.subplots(figsize=(6.8,3.8));fig.subplots_adjust(right=.68);keys=sorted({tuple(r[:2]) for r in data['curve']})
             for curve_index,key in enumerate(keys):
                 levels=[r for r in data['curve'] if tuple(r[:2])==key]
-                ax.errorbar([r[2] for r in levels],[r[3] for r in levels],yerr=[r[4] if finite(r[4]) else float('nan') for r in levels],fmt=dose['marker'],ls=dose['line'],ms=dose['size'],lw=dose['width'],color=dose['colors'][curve_index%len(dose['colors'])],mfc='white' if dose['open'] else dose['colors'][curve_index%len(dose['colors'])],ecolor=dose['error'],capsize=2,label=' / '.join(map(str,key)))
+                ax.errorbar([r[2] for r in levels],[r[3] for r in levels],yerr=[r[4] if finite(r[4]) else float('nan') for r in levels],fmt='',marker=('None' if dose['marker']=='none' else dose['marker']),ls=dose['line'],ms=dose['size'],lw=dose['width'],color=dose['colors'][curve_index%len(dose['colors'])],mfc='white' if dose['open'] else dose['colors'][curve_index%len(dose['colors'])],ecolor=dose['error'],capsize=2,label=' / '.join(map(str,key)))
             ax.axhline(50,color='#777777',ls='--',lw=.7);ax.set_xlabel(print_text(xlab));ax.set_ylabel(print_text(ylab));ax.legend(frameon=False,fontsize=max(7,typography['tick_size']-1),loc='upper left',bbox_to_anchor=(1.02,1));save(fig,'dose_response')
         summary=[r for r in data['summary'] if r[0] is not None];width=max(3.9,min(12,len(summary)*.7+1.8));fig,ax=plt.subplots(figsize=(width,3.1))
         for i,r in enumerate(summary,1):
@@ -87,11 +88,11 @@ def export(folder,assays,states,force=False):
             if finite(r[3]):ax.errorbar(i,r[2],yerr=r[3],fmt='none',ecolor=resstyle['error'],capsize=3,lw=1,zorder=3)
             pts=[t[4] for t in data['results'] if t[0]=='sample' and t[1]==r[0] and finite(t[4])]
             offsets=[0] if len(pts)==1 else [-.13+.26*j/(len(pts)-1) for j in range(len(pts))]
-            ax.scatter([i+v for v in offsets],pts,s=resstyle['size']**2,marker=resstyle['marker'],facecolors='white' if resstyle['open'] else color,edgecolors=color if resstyle['open'] else 'white',linewidths=.6,zorder=4)
+            if resstyle['marker']!='none':ax.scatter([i+v for v in offsets],pts,s=resstyle['size']**2,marker=resstyle['marker'],facecolors='white' if resstyle['open'] else color,edgecolors=color if resstyle['open'] else 'white',linewidths=.6,zorder=4)
         ax.set_xticks(range(1,len(summary)+1),[str(r[0])+'\n'+f'n = {int(r[1])}' for r in summary]);ax.set_ylabel(print_text(reslab));ax.set_xlabel('Sample / sieve fraction' if engine(p)=='sieve' else 'Sample');ax.set_xlim(.45,len(summary)+.55);ax.margins(y=.2)
         if len(summary)>5:plt.setp(ax.get_xticklabels(),rotation=35,ha='right')
         if not any(finite(r[2]) for r in summary):ax.text(.5,.5,'No estimable result — review workbook',ha='center',transform=ax.transAxes,fontsize=8)
-        save(fig,'results');(dest/(l.stem+'_'+assay['id']+'_captions.txt')).write_text(captions(data),encoding='utf-8')
+        save(fig,'results');(dest/(l.stem+'_'+assay['id']+'_captions.txt')).write_text(captions(data,resstyle['marker']!='none'),encoding='utf-8')
         report['assays'][assay['id']]=dict(signature=signature,files=store(folder,report['exports'][start:]+[str((dest/(l.stem+'_'+assay['id']+'_captions.txt')).relative_to(l.root))]))
     status.write_text(json.dumps(report,indent=2,ensure_ascii=False),encoding='utf-8')
     return report

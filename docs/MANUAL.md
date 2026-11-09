@@ -32,7 +32,7 @@ Abre el menú de datos sintéticos y elige una demostración con varios ensayos 
 
 Elige el modo de Origin que corresponda: conexión con Excel, valores copiados o sin Origin. Al terminar, revisa el estado, el registro, el Excel y las figuras. Esta prueba sirve para comprobar tu instalación, sin interpretar sus números como medidas reales.
 
-![Interfaz de trabajo](interface-v9.png)
+![Interfaz de trabajo](interface-v091.png)
 
 ## 4. Crear, abrir y cerrar experimentos
 
@@ -46,7 +46,7 @@ Para continuar un trabajo, abre su carpeta raíz desde la aplicación. **Cerrar 
 
 Cada fila representa una lectura original. El tipo de lectura se elige de una lista: patrón, blanco, control o muestra, según el método. Puedes añadir nombres personalizados vinculados a esas categorías. Los identificadores internos se generan automáticamente.
 
-Un clic selecciona la celda. Escribir sustituye su contenido; F2 o doble clic permite editar el texto existente. Puedes pegar una tabla de Excel con tabulaciones desde la celda seleccionada. Añade las filas necesarias con el control de cantidad de filas. Los asteriscos rojos indican campos obligatorios para la categoría y el protocolo de esa fila. Las columnas atenuadas no se utilizan en ese contexto.
+Un clic selecciona la celda. Escribir sustituye su contenido; F2 o doble clic permite editar el texto existente. Supr deja vacías las celdas seleccionadas. Ctrl+C, Ctrl+X y Ctrl+V permiten copiar, cortar y pegar. El menú con clic derecho permite insertar una cantidad de filas, eliminar las seleccionadas, copiar filas completas y pegarlas como filas nuevas; estas reciben identificadores internos nuevos. Puedes pegar una tabla de Excel con tabulaciones desde la celda seleccionada. Añade las filas necesarias con el control de cantidad de filas. Los asteriscos rojos indican campos obligatorios para la categoría y el protocolo de esa fila. Las columnas atenuadas no se utilizan en ese contexto.
 
 Las ayudas de las cabeceras explican qué introducir. No confundas un campo vacío con un cero medido. Usa valores numéricos y las unidades indicadas; el programa admite coma o punto decimal en la entrada manual.
 
@@ -79,7 +79,7 @@ Crear una variante desde la interfaz sirve para modificar condiciones de un cál
 
 ## 7. Guardar, recalcular y exportar
 
-**Guardar** conserva los datos y condiciones del experimento. **Actualizar y exportar** recalcula mediante Excel, comprueba los resultados, actualiza Origin si está habilitado y exporta las figuras. Son operaciones diferentes.
+**Guardar** conserva los datos y condiciones del experimento. Tras crear una carpeta nueva, puedes elegir calcular y exportar inmediatamente o seguir editando. **Actualizar y exportar** recalcula mediante Excel, comprueba los resultados, actualiza Origin si está habilitado y exporta las figuras. Son operaciones diferentes.
 
 Cierra el libro del experimento en Excel y su proyecto en Origin antes de actualizar. Si estás abriendo el Excel, espera, guarda y ciérralo. El programa evita sobrescribir un libro en uso. La barra integrada muestra las fases; el registro aporta detalles cuando una fase falla.
 
@@ -127,13 +127,13 @@ Para mover o respaldar el trabajo, copia toda la carpeta raíz. Los nombres prin
 
 El selector de idioma cambia la interfaz; el selector claro/oscuro cambia su apariencia. Los nombres de muestra y textos introducidos por ti no se traducen automáticamente. Los gráficos científicos utilizan inglés.
 
-La ventana de estilos permite elegir una plantilla y ajustar colores, símbolos, líneas, barras de error y tipografía por tipo de gráfica. La previsualización usa ejemplos: no recalcula el experimento. Para aplicar cambios a archivos exportados, guarda el estilo y actualiza los resultados.
+La ventana de estilos permite elegir una plantilla y ajustar colores, símbolos —incluida la opción **Sin símbolos / No markers**—, líneas, barras de error y tipografía por tipo de gráfica. Ocultar símbolos no elimina medidas, barras de error ni líneas de ajuste. La previsualización usa ejemplos: no recalcula el experimento. Para aplicar cambios a archivos exportados, guarda el estilo y actualiza los resultados.
 
 Las figuras de **Origin** pertenecen al proyecto editable. **Publication** ofrece exportaciones alternativas. Revisa las unidades, el número de réplicas, las barras de error y la legibilidad al tamaño final del artículo. Si haces ajustes manuales en Origin, conserva una copia antes de regenerar: una reconstrucción puede reemplazar los gráficos generados.
 
 ## 10. Actualizaciones
 
-El menú de actualizaciones permite consultar GitHub y descargar versiones. Mantén los experimentos fuera de `Application`. El actualizador verifica el paquete y comprueba el arranque; si falla, intenta restaurar la versión anterior. Conserva una copia de seguridad independiente de tus trabajos.
+Al iniciar, la aplicación instalada busca versiones en segundo plano, salvo que hayas desactivado esa preferencia. Si encuentra una nueva, abre la ventana de actualización y ofrece **Actualizar ahora / Update now** o **Actualizar al salir / Update on exit**. Ambas opciones reinician PhDexLab después de instalar. La descarga muestra su progreso en esa ventana; los cambios sin guardar y los procesos de análisis siguen protegidos. También puedes buscar y elegir la actualización manualmente desde ese menú. Mantén los experimentos fuera de `Application`. El actualizador verifica el paquete y comprueba el arranque; si falla, intenta restaurar la versión anterior. Conserva una copia de seguridad independiente de tus trabajos.
 
 Si utilizas la versión 0.7.0 y aparece `[Errno 2]` al buscar actualizaciones, instala manualmente la última versión desde GitHub una vez. No necesitas instalar las versiones intermedias. Para una copia del código modificada por ti, utiliza Git y tu entorno de desarrollo en lugar del actualizador binario.
 
@@ -151,6 +151,8 @@ Si utilizas la versión 0.7.0 y aparece `[Errno 2]` al buscar actualizaciones, i
 | Un error interrumpe la generación | Conserva la carpeta y consulta el registro antes de borrar o editar archivos internos. |
 
 Puedes comunicar errores en [GitHub Issues](https://github.com/RpastranaE/PhDexLab/issues) o a **rpe10@alu.ua.es**. Incluye versión, pasos y mensaje de error. Comparte un ejemplo sintético: los experimentos y registros pueden contener información privada.
+
+Las capturas de la ayuda están disponibles en mayor resolución: pulsa una imagen para abrir su visor y ajustar el zoom o verla al 100%.
 
 ## 12. Créditos y licencias
 

@@ -25,7 +25,9 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         if self.proc:return super().closeEvent(event)
         updates=getattr(self,'updates',None)
         if updates and updates.worker and updates.worker.isRunning():updates.prepare_close();event.ignore();return
-        if not self.confirm_discard():event.ignore();return
+        if not self.confirm_discard():
+            if updates:updates.closing=False
+            event.ignore();return
         if updates and not updates.prepare_close():event.ignore();return
         event.accept()
 
@@ -80,6 +82,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         self.set_assays([])
         self.dirty=False
         self.setup_features();self.sync_assay_controls()
+        self.raw.rows_edited.connect(lambda:self.raw_changed(None))
     def mark_dirty(self):
         super().mark_dirty()
         if self._workspace_ready and not self.loading:self.status_timer.start()
@@ -270,7 +273,8 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
     def save(self):
         if not self.assays:raise ValueError(t('Añade un ensayo antes de guardar.'))
         self.commit_active()
-        if self.folder is None:
+        created=self.folder is None
+        if created:
             parent=QFileDialog.getExistingDirectory(self,'Carpeta que contendrá el experimento')
             if not parent:return
             name,ok=QInputDialog.getText(self,'Nuevo experimento','Nombre de carpeta nueva')
@@ -279,6 +283,13 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
             path=experiments.create(Path(parent)/name,self.assays);save_presentation(path,self.graph_style);self.load_folder(path)
         else:experiments.save(self.folder,self.assays,self.open_hash);save_presentation(self.folder,self.graph_style);self.load_folder(self.folder)
         self.log.appendPlainText('Guardadas las entradas de todos los ensayos. Actualizar para calcular y exportar los completos.')
+        if created:
+            dialog=QMessageBox(self);dialog.setWindowTitle(t('Experimento guardado'))
+            dialog.setText(t('¿Quieres calcular y exportar los resultados ahora o seguir editando?'))
+            run=dialog.addButton(t('Actualizar y exportar ahora'),QMessageBox.ButtonRole.AcceptRole)
+            edit=dialog.addButton(t('Seguir editando'),QMessageBox.ButtonRole.RejectRole);dialog.setDefaultButton(edit)
+            dialog.exec()
+            if dialog.clickedButton()==run:self.update()
     def new_protocol(self):
         self.tabs.setCurrentWidget(self.parameters)
         self.log.appendPlainText(t('Edita las condiciones de este ensayo. Guarda una variante solo si quieres reutilizarla en otros ensayos.'))

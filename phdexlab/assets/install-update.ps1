@@ -29,13 +29,13 @@ try {
     $taskHealth=Start-Process -FilePath $taskExe -ArgumentList '--update-healthcheck' -WorkingDirectory $taskRoot -WindowStyle Hidden -PassThru
     if (-not $taskHealth.WaitForExit(60000)) {$taskHealth.Kill();throw 'New version health check timed out'}
     if ($taskHealth.ExitCode -ne 0) {throw 'New version failed its startup health check'}
+    if ($taskJob.relaunch) {Start-Process -FilePath $taskExe -WorkingDirectory $taskRoot -WindowStyle Normal}
     Write-Receipt 'installed' 'Application updated; user experiments and preferences preserved.'
     # Both paths are generated children of the verified installation root.
     try {
         if ((Split-Path -Parent $taskBackup) -eq $taskRoot -and (Split-Path -Leaf $taskBackup) -match '^\.PhDexLab-backup-[a-f0-9]{32}$') {Remove-Item -LiteralPath $taskBackup -Recurse -Force}
         if ((Split-Path -Parent $taskStage) -eq $taskRoot) {Remove-Item -LiteralPath $taskStage -Recurse -Force}
     } catch {Write-Receipt 'installed' ('Application updated; optional cleanup: '+$_.Exception.Message)}
-    if ($taskJob.relaunch) {Start-Process -FilePath $taskExe -WorkingDirectory $taskRoot -WindowStyle Hidden}
 } catch {
     $taskError=$_.Exception.Message
     try {
@@ -44,7 +44,7 @@ try {
             Move-Item -LiteralPath $taskTarget -Destination $taskNew
         }
         if ($taskMoved -and (Test-Path -LiteralPath $taskBackup)) {Move-Item -LiteralPath $taskBackup -Destination $taskTarget}
-        if ($taskJob.relaunch -and (Test-Path -LiteralPath (Join-Path $taskTarget 'PhDexLab.exe'))) {Start-Process -FilePath (Join-Path $taskTarget 'PhDexLab.exe') -WorkingDirectory $taskRoot -WindowStyle Hidden}
+        if ($taskJob.relaunch -and (Test-Path -LiteralPath (Join-Path $taskTarget 'PhDexLab.exe'))) {Start-Process -FilePath (Join-Path $taskTarget 'PhDexLab.exe') -WorkingDirectory $taskRoot -WindowStyle Normal}
     } catch {$taskError+='; rollback: '+$_.Exception.Message}
     Write-Receipt 'failed' $taskError
     exit 1

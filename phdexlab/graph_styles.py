@@ -12,7 +12,7 @@ STYLES={
  'warm':dict(name='Terracota',en='Terracotta',colors=['#AF4B32','#286A84','#7B6D26','#72558E'],fill='#F1DBD3',marker='v',symbol=4,open=True,line='-',line_origin=0,font='Arial'),
 }
 DEFAULT='classic'
-MARKERS={'o':2,'s':1,'^':3,'v':4,'D':5}
+MARKERS={'none':0,'o':2,'s':1,'^':3,'v':4,'D':5}
 PALETTES={
  'Accessible':['#0072B2','#D55E00','#009E73','#CC79A7','#E69F00','#56B4E9'],
  'Muted':['#4477AA','#EE6677','#228833','#CCBB44','#66CCEE','#AA3377'],
@@ -116,4 +116,4 @@ def save_presentation(folder,key):
 def presentation_hash(folder):return digest(read_presentation(folder))
 
 def for_experiment(folder):
-    data=read_presentation(folder);return dict(resolved(data),revision=data['revision'],renderer=6)
+    data=read_presentation(folder);return dict(resolved(data),revision=data['revision'],renderer=7)

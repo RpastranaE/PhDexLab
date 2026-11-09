@@ -268,3 +268,8 @@ class ActivityLog(QPlainTextEdit):
     def __init__(self,*args,**kwargs):super().__init__(*args,**kwargs);self.source_lines=[]
     def appendPlainText(self,text):self.source_lines.append(str(text));super().appendPlainText(t(text))
     def retranslate(self):self.setPlainText('\n'.join(t(text) for text in self.source_lines))
+
+for pair in """Experimento guardado|Experiment saved
+¿Quieres calcular y exportar los resultados ahora o seguir editando?|Would you like to calculate and export results now or continue editing?
+Actualizar y exportar ahora|Update and export now
+Seguir editando|Continue editing""".splitlines():add(*pair.split("|",1))

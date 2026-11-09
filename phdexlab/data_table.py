@@ -1,10 +1,20 @@
 import uuid
-from PySide6.QtCore import Qt,QTimer
+from PySide6.QtCore import Qt,QTimer,QSignalBlocker,Signal
 from PySide6.QtGui import QColor,QKeySequence
-from PySide6.QtWidgets import QTableWidget,QTableWidgetItem,QStyledItemDelegate,QComboBox,QHeaderView,QAbstractItemView,QApplication,QStyleOptionComboBox,QStyle
+from PySide6.QtWidgets import QTableWidget,QTableWidgetItem,QStyledItemDelegate,QComboBox,QHeaderView,QAbstractItemView,QApplication,QStyleOptionComboBox,QStyle,QMenu,QInputDialog,QMessageBox
 from .data_entry import COLUMNS
 from .ui_fields import FIELDS,KIND_LABELS
 from .i18n import t
+from .i18n import add
+for pair in '''Copiar|Copy
+Cortar|Cut
+Pegar|Paste
+Borrar contenido|Clear contents
+Insertar filas…|Insert rows…
+Eliminar filas seleccionadas|Delete selected rows
+Copiar filas|Copy rows
+Pegar como filas nuevas|Paste as new rows
+Número de filas|Number of rows'''.splitlines():add(*pair.split('|',1))
 
 def required_fields(kind,protocol):
     if protocol:
@@ -67,6 +77,7 @@ class YesNoDelegate(QStyledItemDelegate):
     def displayText(self,value,locale):return t(value)
 
 class RawTable(QTableWidget):
+    rows_edited=Signal()
     def __init__(self):
         self.columns=list(COLUMNS);self.kind_names=dict(KIND_LABELS)
         super().__init__(24,len(self.columns))
@@ -119,27 +130,101 @@ class RawTable(QTableWidget):
         self.horizontalHeader().viewport().update()
         for r in range(self.rowCount()):self.update_row(r)
     def keyPressEvent(self,event):
+        if event.matches(QKeySequence.StandardKey.Copy):self.copy_cells();return
+        if event.matches(QKeySequence.StandardKey.Cut):self.copy_cells();self.clear_cells();return
         if event.matches(QKeySequence.StandardKey.Paste):
-            self.paste(QApplication.clipboard().text());return
+            self.run_action(lambda:self.paste(QApplication.clipboard().text()));return
+        if event.key()==Qt.Key.Key_Delete:self.clear_cells();return
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            if event.key() in (Qt.Key.Key_Plus,Qt.Key.Key_Equal):self.run_action(self.insert_rows);return
+            if event.key()==Qt.Key.Key_Minus:self.delete_rows();return
         super().keyPressEvent(event)
+    def copy_cells(self,whole_rows=False):
+        indexes=self.selectedIndexes()
+        if not indexes:return
+        rows=sorted({i.row() for i in indexes});cols=([c for c in range(self.columnCount()) if not self.isColumnHidden(c)] if whole_rows else sorted({i.column() for i in indexes if not self.isColumnHidden(i.column())}))
+        selected={(i.row(),i.column()) for i in indexes}
+        def value(r,c):
+            item=self.item(r,c)
+            if not item or (not whole_rows and (r,c) not in selected):return ''
+            if self.columns[c]=='kind':return item.data(Qt.ItemDataRole.UserRole) or item.text()
+            return item.text()
+        QApplication.clipboard().setText('\n'.join('\t'.join(value(r,c) for c in cols) for r in rows))
+    def clear_cells(self):
+        indexes=list(self.selectedIndexes());rows={i.row() for i in indexes}
+        with QSignalBlocker(self):
+            for index in indexes:
+                if self.isColumnHidden(index.column()):continue
+                item=self.item(index.row(),index.column())
+                if item:
+                    item.setText('')
+                    if self.columns[index.column()]=='kind':item.setData(Qt.ItemDataRole.UserRole,None)
+            for row in rows:
+                if any(i.row()==row and self.columns[i.column()]=='kind' for i in indexes):
+                    self.setItem(row,self.columns.index('kind_label'),QTableWidgetItem(''))
+                self.update_row(row)
+        if indexes:self.rows_edited.emit()
+    def insert_rows(self,count=None):
+        if count is None:
+            count,ok=QInputDialog.getInt(self,t('Insertar filas…'),t('Número de filas'),1,1,10000)
+            if not ok:return
+        row=max(0,self.currentRow())
+        if self.rowCount()+count>10000:raise ValueError('Maximum: 10000 rows')
+        for _ in range(count):self.insertRow(row)
+        self.clearSelection()
+        self.setCurrentCell(row,1)
+        self.rows_edited.emit()
+    def delete_rows(self):
+        for row in sorted({i.row() for i in self.selectedIndexes()},reverse=True):self.removeRow(row)
+        # Row removal has no itemChanged signal; notify the workspace explicitly.
+        self.rows_edited.emit()
+    def paste_rows(self):
+        text=QApplication.clipboard().text();count=len(text.splitlines())
+        if not count:return
+        row=max(0,self.currentRow());self.insert_rows(count);self.setCurrentCell(row,1);self.paste(text)
+    def contextMenuEvent(self,event):
+        index=self.indexAt(event.pos())
+        if index.isValid() and not self.selectionModel().isSelected(index):self.setCurrentCell(index.row(),index.column())
+        menu=QMenu(self)
+        for label,callback,shortcut in [('Copiar',self.copy_cells,'Ctrl+C'),('Cortar',lambda:(self.copy_cells(),self.clear_cells()),'Ctrl+X'),('Pegar',lambda:self.paste(QApplication.clipboard().text()),'Ctrl+V'),('Borrar contenido',self.clear_cells,'Del')]:
+            action=menu.addAction(t(label));action.setShortcut(shortcut);action.triggered.connect(lambda checked=False,f=callback:self.run_action(f))
+        menu.addSeparator()
+        for label,callback in [('Insertar filas…',self.insert_rows),('Eliminar filas seleccionadas',self.delete_rows),('Copiar filas',lambda:self.copy_cells(True)),('Pegar como filas nuevas',self.paste_rows)]:
+            menu.addAction(t(label)).triggered.connect(lambda checked=False,f=callback:self.run_action(f))
+        menu.exec(event.globalPos())
+    def run_action(self,callback):
+        try:callback()
+        except (ValueError,TypeError) as error:QMessageBox.warning(self,t('Datos'),str(error))
     def paste(self,text):
-        matrix=[line.split('\t') for line in text.splitlines()]
+        matrix=[line.split('\t') for line in text.splitlines()] if text else [['']]
         if not matrix:return
-        start=max(0,self.currentRow());col=max(1,self.currentColumn())
-        keys=None
+        start=max(0,self.currentRow());col=max(1,self.currentColumn());keys=None
         if matrix[0] in (self.columns,self.columns[:14]):keys=matrix.pop(0)
         elif matrix[0]==[FIELDS[k][0].replace('\n',' ') for k in self.columns[1:14]]:matrix.pop(0);col=1
-        self.setRowCount(max(self.rowCount(),start+len(matrix)+5))
+        if start+len(matrix)>10000:raise ValueError('Maximum: 10000 rows')
+        visible=[c for c in range(col,len(self.columns)) if not self.isColumnHidden(c)]
+        changes=[]
         for r,line in enumerate(matrix,start):
             for offset,val in enumerate(line):
-                c=self.columns.index(keys[offset]) if keys and offset<len(keys) else col+offset
+                c=self.columns.index(keys[offset]) if keys and offset<len(keys) else (visible[offset] if offset<len(visible) else len(self.columns))
                 if c>=len(self.columns):break
-                if self.columns[c]=='kind':
-                    kind=val if val in self.kind_names else next((k for label,k in self.roles if label==val),None)
-                    if kind is None:raise ValueError(f'Tipo desconocido: {val}. Añádelo con «Añadir tipo» y vincúlalo a una categoría.')
-                    item=QTableWidgetItem(self.kind_names[kind] if val in self.kind_names else val);item.setData(Qt.ItemDataRole.UserRole,kind)
-                else:item=QTableWidgetItem(val)
+                if self.columns[c] in ('record_id','kind_label'):continue
+                item=QTableWidgetItem(val)
+                if self.columns[c]=='kind' and val.strip():
+                    kind=val if val in self.kind_names else next((k for label,k in self.roles if val in (label,t(label))),None)
+                    if kind is None:raise ValueError(f'Unknown reading type: {val}')
+                    item.setText(self.kind_names[kind] if val in self.kind_names else val);item.setData(Qt.ItemDataRole.UserRole,kind)
+                changes.append((r,c,item))
+        # Validate first, then commit once: no partial paste and no repeated whole-table scans.
+        with QSignalBlocker(self):
+            self.setRowCount(max(self.rowCount(),start+len(matrix)))
+            for r,c,item in changes:
                 self.setItem(r,c,item)
+                if self.columns[c]=='kind':
+                    kind=item.data(Qt.ItemDataRole.UserRole);label=item.text() if kind and item.text()!=self.kind_names.get(kind) else ''
+                    self.setItem(r,self.columns.index('kind_label'),QTableWidgetItem(label))
+            for r in range(start,start+len(matrix)):self.update_row(r)
+        if changes:self.rows_edited.emit()
     def load(self,rows):
         self.blockSignals(True);self.clearContents();self.setRowCount(max(24,len(rows)+5))
         for r,d in enumerate(rows):
@@ -170,7 +255,7 @@ class RawTable(QTableWidget):
         return records
     def update_row(self,row):
         if row>=self.rowCount():return
-        self.blockSignals(True)
+        was_blocked=self.blockSignals(True)
         item=self.item(row,1);kind=item.data(Qt.ItemDataRole.UserRole) if item else None
         if not kind and item:kind=next((k for label,k in self.roles if label==item.text()),item.text())
         tint={'sample':'#E9F6F2','standard':'#EDF3FE','blank':'#F0F2F5','control':'#FFF3DF'}.get(kind,'#FFFFFF')
@@ -187,4 +272,4 @@ class RawTable(QTableWidget):
                 cell.setBackground(QColor((dark_tint if dark else tint) if key=='kind' else (('#293A46' if dark else '#F2F4F7') if key in irrelevant else ('#20313D' if dark else '#FFFFFF'))))
                 cell.setForeground(QColor(('#8295A2' if dark else '#87939D') if key in irrelevant else ('#E2EAF0' if dark else '#203944')))
                 cell.setToolTip(t(FIELDS[key][1])+ ('\n\n'+t('No se utiliza en esta categoría/protocolo.') if key in irrelevant else ''))
-        self.blockSignals(False)
+        self.blockSignals(was_blocked)

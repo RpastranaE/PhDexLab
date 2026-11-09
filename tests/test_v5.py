@@ -72,7 +72,7 @@ def test_workspace_switch_preserves_unsaved_data_and_help():
     w.assay_list.setCurrentRow(1);assert w.protocol()['method']=='ABTS'
     w.assay_list.setCurrentRow(0);assert w.raw.item(0,6).text()=='0.031'
     w.assay_list.setCurrentRow(1);assert w.raw.kind_names['blank']=='Control radical sin antioxidante'
-    assert len(w.assays)==5 and w.help_dialog.topics.count()==12
+    assert len(w.assays)==5 and w.help_dialog.topics.count()==13
     w.dirty=False;w.close()
 
 def test_workspace_non_absorbance_forms():

@@ -1,10 +1,21 @@
-# Validation evidence — 0.9.0
+# Validation evidence
 
 [Documentation index](README.md) · [Current user manual](MANUAL.md) · [Development](DEVELOPMENT.md)
 
-This page records checks performed for the stated release; it is not a second installation or usage guide.
+Software verification with synthetic data is not analytical validation of a chemical method or matrix. The operator must review conditions, units and biological independence.
 
-This is software verification with synthetic data, not analytical validation of a chemical method or matrix. Protocol conditions and independence of biological units remain the operator's responsibility.
+## 0.9.1 verification
+
+- **141 automated tests passed.** New regressions cover clearing cells, cut/copy/paste, atomic rejection of invalid pasted roles, row insertion/deletion, fresh IDs for pasted rows, update timing choices, restart scheduling, unsaved-work cancellation, first-save choices, image zoom and credits.
+- The final frozen executable generated the consolidated FRAP/DPPH workbook/project and **12 Origin + 12 Publication exports**, with native value and style readback. An unchanged verified repeat took **1.13 s**, including process startup, on the test machine.
+- A second frozen refresh changed the existing styled project to **No markers** in all three roles: all four native plots read back as symbol 0, all 24 exports were present, and captions explicitly described hidden biological-unit markers. Error bars and connecting/fitted lines remained visible.
+- All 24 bilingual help screenshots were recaptured at twice their previous pixel resolution. The image viewer retains originals and supports fit-to-window and 100% zoom.
+- The exact installer was tested in a separate installation identity with isolated desktop/menu destinations. Both shortcuts and frozen startup passed. An isolated actual 0.9.0 Application was upgraded using the release ZIP; the new health check passed and sentinel experiment/preferences files were unchanged.
+- Windows executable fixtures verified successful installation **and relaunch**, plus failed health-check rollback **and relaunch of the previous application**. These fixtures are separate from native analytical tests and do not operate a user's running session.
+- Excel writing was benchmarked on the same synthetic 1,200-reading input before/after replacing repeated worksheet-size scans with explicit row indices: **12.54 s → 4.76 s**. Every worksheet's values and formula strings matched. This measures workbook construction, not total Excel/Origin/export time, and is not a performance guarantee.
+- The final compiled Python module inventory matched the reviewed source. ZIP staging, installer identity and user-data preservation remain part of the checks. See below for earlier evidence and practical limits.
+
+## 0.9.0 evidence retained
 
 ## Automated checks
 

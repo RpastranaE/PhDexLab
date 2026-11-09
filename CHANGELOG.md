@@ -2,6 +2,17 @@
 
 Para instalar y utilizar PhDexLab, consulta el [manual vigente](docs/MANUAL.md). Esta página explica la evolución; las instrucciones actuales no están repartidas entre versiones.
 
+## 0.9.1
+
+[Versión y descargas](https://github.com/RpastranaE/PhDexLab/releases/tag/v0.9.1)
+
+- Borrado de contenido y menú contextual de filas: insertar, eliminar, copiar y pegar; atajos Ctrl+C/X/V y Supr.
+- Búsqueda de actualizaciones en segundo plano al iniciar; elección de instalar ahora o al salir y reinicio tras instalar.
+- Capturas de ayuda a doble resolución, visor con zoom y sección de créditos/licencias con contacto.
+- Elección de calcular/exportar o seguir editando tras guardar un experimento nuevo.
+- Opción Sin símbolos independiente para resultados, calibración y curvas de dosis, conservando líneas y errores.
+- Escritura del Excel optimizada evitando recorrer repetidamente las celdas ya escritas. Se conservan valores y fórmulas.
+
 ## Reorganización de documentación
 
 Se unifican las instrucciones de uso en un manual estable y las de modificación en una guía de desarrollo. Las guías antiguas quedan archivadas e identificadas como históricas. Esta reorganización no cambia el ejecutable ni requiere actualizar la aplicación.

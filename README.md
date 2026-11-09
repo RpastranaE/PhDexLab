@@ -18,7 +18,7 @@ El cálculo necesita **Microsoft Excel de escritorio**. Para generar el proyecto
 
 La aplicación empieza sin un método seleccionado. Cada ensayo mantiene su calibración y sus resultados; distintas muestras pueden compartir la calibración de ese ensayo. El menú de datos sintéticos permite practicar sin utilizar mediciones reales.
 
-![PhDexLab: inicio sin ensayos](docs/interface-v9.png)
+![PhDexLab: inicio sin ensayos](docs/interface-v091.png)
 
 ## Una documentación, según lo que necesites
 
@@ -44,6 +44,6 @@ Las plantillas son puntos de partida documentales: **no certifican que un métod
 
 ## Problemas, contribuciones y licencia
 
-Para comunicar un fallo, abre una [incidencia](https://github.com/RpastranaE/PhDexLab/issues) con versión, pasos para reproducirlo y un ejemplo sintético. Revisa los archivos antes de compartirlos: las incidencias son públicas. Para proponer código, empieza por la [guía de desarrollo](docs/DEVELOPMENT.md).
+Contacto: **rpe10@alu.ua.es**. Para comunicar un fallo, abre una [incidencia](https://github.com/RpastranaE/PhDexLab/issues) con versión, pasos para reproducirlo y un ejemplo sintético. Revisa los archivos antes de compartirlos: las incidencias son públicas. Para proponer código, empieza por la [guía de desarrollo](docs/DEVELOPMENT.md).
 
 El código original se distribuye bajo [licencia MIT](LICENSE). Las dependencias mantienen sus licencias y [avisos correspondientes](THIRD_PARTY_NOTICES.md).
