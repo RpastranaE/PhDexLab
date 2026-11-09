@@ -14,7 +14,7 @@ The checkbox in the update window disables automatic checking/downloads and inst
 
 1. Update both version fields, source/docs and tests. Keep versions numeric and stable.
 2. On Windows with Python 3.12, run `Install.ps1`, install pytest, and run the tests. Validate native Excel/Origin workflows with synthetic data on the target versions.
-3. Run `Build-Windows.ps1`, then `.venv/Scripts/python.exe tools/package_windows.py`. Check the executable, health check and staged installer/rollback before publishing.
+3. Run `Build-Windows.ps1`, then `.venv/Scripts/python.exe tools/package_windows.py`, followed by `Build-Installer.ps1 -Compiler <path-to-ISCC.exe>` to include the redistribution notices in the installer payload. Check the executable, health check and staged installer/rollback before publishing.
 4. Commit the reviewed source in the public repository. Never add experiments, credentials, private source snapshots, local logs or build environments.
 5. Authenticate with official GitHub CLI. Run `tools/publish_release.ps1 -Version X.Y.Z -Package <path-to-PhDexLab-Windows-x64.zip> -Notes <release-notes.md>`.
 6. Confirm the release is public/stable, GitHub has supplied a SHA-256 digest for the asset, and the app check returns that release. Releases lacking a digest are deliberately refused.
