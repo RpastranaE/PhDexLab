@@ -78,6 +78,15 @@ El modo de Origin también puede ser `values` o `connector`. El comando de demos
 
 Ejecuta las pruebas desde la raíz del código. Las pruebas unitarias incluyen comportamiento de la interfaz y lógica de persistencia, pero no acreditan por sí solas la compatibilidad de cada instalación nativa.
 
+Para repetir la auditoría de ecuaciones y unidades de las 15 variantes con Microsoft Excel:
+
+```powershell
+$env:PYTHONPATH = (Get-Location).Path
+.\.venv\Scripts\python.exe tests/native_calculation_audit.py ..\PhDexLab-calculation-audit
+```
+
+La carpeta debe estar nueva/vacía. Produce un libro de 24 casos y un informe: las ocho variantes ópticas se comprueban con ambos ejes de calibración; se incluyen humedad, materia seca, cenizas en ambas bases, condiciones TAPPI completadas **solo como prueba sintética**, EC50 y balance de tamizado. El programa usa valores conocidos y factores dimensionales independientes del generador de fórmulas. Un segundo argumento opcional permite verificar localmente el banco FRAP del usuario; ese archivo no forma parte del repositorio ni de la distribución. Los resultados se recalculan con Excel, no con un emulador Python.
+
 Los siguientes programas de prueba nativa heredados utilizan datos sintéticos de FRAP. Requieren Excel y Origin disponibles y una carpeta de destino nueva:
 
 ```powershell

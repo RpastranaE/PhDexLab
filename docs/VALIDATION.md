@@ -4,6 +4,20 @@
 
 Software verification with synthetic data is not analytical validation of a chemical method or matrix. The operator must review conditions, units and biological independence.
 
+## 0.9.3 calculation audit
+
+- **191 automated tests passed** after the calculation/validation changes. Additional regressions cover several dilutions within one independent extraction, rejection of ambiguous mass-bearing control rows, dimensional unit guards, the TFC mass basis, explicit DPPH adaptation and the visible normalisation chain.
+- **24 native Microsoft Excel equation cases cover all 15 catalogue variants**, with independent dimensional factors. All eight optical variants were checked on both before-reaction and final-mixture axes, with a nonzero fitted intercept, measured blank/sample background, two prior dilutions per extraction and two independent extractions. Final values, biological n/SD and 90% control recovery matched independent expectations. No unexpected Excel formula errors were found.
+- Gravimetric checks include moisture, complementary dry matter and ash on initial/dry bases. Two incomplete TAPPI variants remain blocked in the catalogue; only explicitly labelled software-test operating conditions were used to exercise their equations. DPPH EC50 interpolation and 98% sieve mass recovery also matched independent values.
+- The local FRAP reference cross-check regressed **raw observations independently**, without reading cached coefficients or expected results. All **nine extraction means and within-unit SDs** matched the generated Excel. Six readings at two dilutions remain one extraction, with biological n=3 per lot. The manufacturer source was separately reviewed; a sample-example transcription discrepancy and rounding differences are documented in [Protocol sources](PROTOCOL_SOURCES.md).
+- These checks establish numerical behaviour for stated inputs, not analytical validity, sample extraction recovery or the cause of an unprovided app-generated workbook's exact cell. See the auditable method/units review before interpreting scientific results.
+
+- The native individual/known-mean/unknown-mean comparison was repeated: **216 biological-summary comparisons across 10 methods and 3 additional variants passed**, including technical SD scaling and direct-delta/paired FRAP equivalence.
+
+- The final **frozen 0.9.3 executable** reproduced the local FRAP case through real Excel and Origin (9 extraction results, 3 biological units per lot, 6 Origin + 6 Publication exports). On a disposable copy, doubling prior dilution or extract volume doubled the per-reading result; doubling mass halved it, with interpolated concentration unchanged. The native exported calculation header layout was visually reviewed.
+- A separate frozen four-assay test (FRAP, ABTS, DPPH, adapted TPC) generated **24 Origin + 24 Publication exports**, preserved unknown precision and no-marker styles, and completed in 63.33 s locally. An integrity-verified unchanged repeat took 1.03 s. These fixture timings are not a general performance guarantee.
+- The exact installer passed isolated desktop/menu shortcuts and startup checks. The installed executable, bundled resources and compiled modules matched the final source/build.
+
 ## 0.9.2 verification
 
 - **181 automated tests passed.** Coverage includes all 15 catalogue variants, context-specific fields, individual/mean exclusivity, optional known precision, meaningful unknown precision, variable counts, unused entry slots, legacy template/input activation, explicit blank modes, signal-change protection, lossless switching between old/new variants, calibration minimums and prevention of provenance loss through the legacy writer.

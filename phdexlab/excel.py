@@ -18,7 +18,7 @@ HEADERS = {
     "Summary": ["Sample", "Biological n", "Mean", "Biological SD"],
     "RAW": COLUMNS,
     "Parameters": ["Parámetro", "Valor"],
-    "Processing": ["record_id", "Respuesta bruta", "Respuesta corregida", "C equivalente eje", "Resultado / Recuperación %"],
+    "Processing": ["Record ID", "Measured response (AU)", "Corrected response (AU)", "Equivalent concentration (calibration axis)", "Sample result / control recovery (see Unit)", "Unit", "Reaction dilution correction", "Prior sample dilution factor", "Original extract concentration (axis unit)", "Total extract volume (L)", "Reference mass (g)", "Reporting / unit conversion factor", "Equivalent amount (axis unit x L)"],
     "Calibration": ["Standard concentration", "Mean response", "Technical n", "Response SD", "OLS prediction", "Residual", "", "", "Metric", "Value"],
     "Results": ["kind", "Sample", "Biological unit", "Technical n", "Mean", "Technical SD", "CV (%)", "QC", "Unit"],
     "ReadMe": ["Concepto", "Detalle"],
@@ -50,6 +50,8 @@ def write_book(path, rows, protocol, experiment_id):
     from .calculations import groups
     for i, ((kind,sid,bio),_) in enumerate(groups(rows,{"sample","control"}).items(),2):
         wb["Results"].cell(i,9,p["result_unit"] if kind=="sample" else "% recuperación")
+    for i,d in enumerate(rows,2):
+        if d['kind'] in ('sample','control'):wb['Processing'].cell(i,6,p['result_unit'] if d['kind']=='sample' else '% recovery')
     readme = [
         ("Experimento",experiment_id), ("Estado",p["status"]), ("Fuente",p["source"]),
         ("Unidad resultado",p["result_unit"]), ("Base de masa",p["mass_basis"]),

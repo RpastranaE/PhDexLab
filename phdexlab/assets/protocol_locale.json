@@ -53,7 +53,7 @@
       "name": "CUPRAC · normal · 60 min",
       "source": "https://doi.org/10.1021/jf048741x",
       "source_updated": "2004",
-      "notes": "Enter aliquot x in µL and water to reach 4100 µL. 0<x≤1100 µL. Source procedure specifies 60 min while its summary mentions 30 min; this discrepancy is retained. No hydrolysis or heating is applied by default."
+      "notes": "Enter aliquot x in µL and water to reach 4100 µL. 0<x≤1100 µL. Source procedure specifies 60 min while its summary mentions 30 min; this discrepancy is retained. No hydrolysis or heating is applied by default. The published molar-absorptivity calibration uses final-mixture concentration. A before-reaction axis requires the same fixed aliquot for all standards and samples; do not enter one stock concentration for a series made by changing standard aliquot volume."
     },
     "dpph-bw": {
       "status": "Reference protocol",
@@ -64,7 +64,7 @@
       "name": "DPPH · kinetics and EC50",
       "source": "https://doi.org/10.1016/S0023-6438(95)80008-5",
       "source_updated": "1995",
-      "notes": "Record kinetics at 0, 1 and every 15 min until plateau. The operator confirms the plateau. EC50 uses local linear interpolation between levels bracketing 50%, without extrapolation. Dose is mg dry extract/mL FINAL mixture (aliquot concentration /40). No fixed 30 min endpoint or molecular concentration of an extract is assumed."
+      "notes": "Record kinetics at 0, 1 and every 15 min until plateau. The operator confirms the plateau. EC50 uses local linear interpolation between levels bracketing 50%, without extrapolation. Dose is mg dry extract/mL FINAL mixture (aliquot concentration /40). No fixed 30 min endpoint or molecular concentration of an extract is assumed. This extract-mass EC50 (mg/mL final) is an explicit adaptation; the original pure-compound molar-ratio EC50 and its reciprocal antiradical power are different quantities and are not calculated here."
     },
     "tpc-folin": {
       "status": "Reference protocol",
@@ -90,14 +90,14 @@
     },
     "tfc-alcl3-qe": {
       "status": "Reference protocol",
-      "mass_basis": "dry leaf",
+      "mass_basis": "dry extract",
       "qc_policy": "Illustrative software QC thresholds; not analytical method validation criteria",
       "reagents": "0.5 mL sample + 1.5 mL ethanol 95% + 0.1 mL AlCl3 10% + 0.1 mL potassium acetate 1 M + 2.8 mL water; 30 min; 415 nm.",
       "standard_range": "Select and verify the linear range",
       "name": "TFC · AlCl3 · quercetin · 30 min",
       "source": "https://doi.org/10.38212/2224-6614.2748",
       "source_updated": "2002",
-      "notes": "AlCl3 method following Chang et al. (2002), with the operational adaptation reported in https://doi.org/10.1038/s41598-023-42418-1 . Quercetin calibration; report mg QE/g. This response does not quantify all flavonoid classes. Extraction is a separate procedure. Record actual temperature. Validate suitability for the sample matrix."
+      "notes": "AlCl3 method following Chang et al. (2002), with the operational adaptation reported in https://doi.org/10.1038/s41598-023-42418-1 . Quercetin calibration; report mg QE/g. This response does not quantify all flavonoid classes. Extraction is a separate procedure. Record actual temperature. Validate suitability for the sample matrix. The cited operating procedure redissolves 10 mg freeze-dried extract in 4 mL methanol: mg QE/g refers to dry extract. Reporting per gram of leaf requires the represented leaf mass/extraction yield, not a label change."
     },
     "moisture-oven": {
       "status": "Reference protocol",
@@ -273,6 +273,10 @@
     "Complete the operating conditions from the identified standard before use. A thermal residue under nitrogen is not equivalent to oxidative ash.": "Completa las condiciones operativas con la norma identificada antes de usar. Un residuo térmico bajo nitrógeno no equivale a cenizas oxidativas.",
     "mass loaded for sieving": "masa cargada al tamizado",
     "Particle size · mass distribution": "Granulometría · distribución másica",
-    "Enter actual sieve openings and passing/retained fraction limits. Recovery refers to loaded mass; do not renormalise to 100%. Define time and amplitude. Recovery limits are illustrative and editable. Additional source: https://doi.org/10.3390/foods3010066": "Adaptación de distribución másica: introducir aberturas reales y fracción pasante–retenida. Cierre respecto a masa cargada; no normalizar al 100%. Fijar tiempo y amplitud. Umbrales de recuperación ilustrativos, editables."
+    "Enter actual sieve openings and passing/retained fraction limits. Recovery refers to loaded mass; do not renormalise to 100%. Define time and amplitude. Recovery limits are illustrative and editable. Additional source: https://doi.org/10.3390/foods3010066": "Adaptación de distribución másica: introducir aberturas reales y fracción pasante–retenida. Cierre respecto a masa cargada; no normalizar al 100%. Fijar tiempo y amplitud. Umbrales de recuperación ilustrativos, editables.",
+    "dry extract": "extracto seco",
+    "AlCl3 method following Chang et al. (2002), with the operational adaptation reported in https://doi.org/10.1038/s41598-023-42418-1 . Quercetin calibration; report mg QE/g. This response does not quantify all flavonoid classes. Extraction is a separate procedure. Record actual temperature. Validate suitability for the sample matrix. The cited operating procedure redissolves 10 mg freeze-dried extract in 4 mL methanol: mg QE/g refers to dry extract. Reporting per gram of leaf requires the represented leaf mass/extraction yield, not a label change.": "Método AlCl3 según Chang et al. (2002), adaptación operativa https://doi.org/10.1038/s41598-023-42418-1 . Calibración de quercetina; resultado mg QE/g. No mide todas las clases de flavonoides. La fuente redisuelve 10 mg de extracto liofilizado en 4 mL de metanol: la base es extracto seco. Expresar por gramo de hoja requiere la masa de hoja representada/rendimiento de extracción, no cambiar solo la etiqueta. Registrar temperatura real y validar la matriz.",
+    "Record kinetics at 0, 1 and every 15 min until plateau. The operator confirms the plateau. EC50 uses local linear interpolation between levels bracketing 50%, without extrapolation. Dose is mg dry extract/mL FINAL mixture (aliquot concentration /40). No fixed 30 min endpoint or molecular concentration of an extract is assumed. This extract-mass EC50 (mg/mL final) is an explicit adaptation; the original pure-compound molar-ratio EC50 and its reciprocal antiradical power are different quantities and are not calculated here.": "Registrar cinética hasta meseta confirmada por el operador. EC50 mediante interpolación lineal local entre dosis que encierran el 50%, sin extrapolar. Dosis en mg de extracto seco/mL de mezcla FINAL (concentración de alícuota /40). Esta EC50 másica es una adaptación explícita: la EC50 del original para sustancias puras en relación molar antioxidante/DPPH y su inversa (poder antirradical) son magnitudes distintas y no se calculan aquí.",
+    "Enter aliquot x in µL and water to reach 4100 µL. 0<x≤1100 µL. Source procedure specifies 60 min while its summary mentions 30 min; this discrepancy is retained. No hydrolysis or heating is applied by default. The published molar-absorptivity calibration uses final-mixture concentration. A before-reaction axis requires the same fixed aliquot for all standards and samples; do not enter one stock concentration for a series made by changing standard aliquot volume.": "Introducir alícuota x en µL y agua hasta 4100 µL; 0<x≤1100 µL. El procedimiento normal publicado mide tras 1 h; el resumen menciona 30–60 min. Sin hidrólisis ni calentamiento por defecto. La calibración de absortividad molar publicada usa concentración final. El eje antes de reacción exige una alícuota fija e idéntica para patrones y muestras: no introducir una sola concentración madre para una serie preparada variando el volumen de patrón."
   }
 }

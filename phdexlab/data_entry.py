@@ -2,6 +2,8 @@
 import csv
 import io
 import math
+from .i18n import add
+add("Un control de calidad calcula recuperación (%), no resultado por masa. Para calcular FRAP/TPC/etc. con dilución, volumen y masa, cambia el tipo a Muestra; si realmente es un control, deja esos tres campos vacíos.", "A quality control calculates recovery (%), not a mass-normalised sample result. To calculate FRAP/TPC/etc. using dilution, extract volume and mass, change the reading type to Sample; for a true quality control, leave those three fields blank.")
 
 COLUMNS = ["record_id", "kind", "sample_id", "bio_id", "tech_id", "concentration",
            "A_end", "A_initial", "matrix_blank_delta", "dilution", "extract_mL", "mass_g", "expected", "notes", "kind_label"]
@@ -38,6 +40,8 @@ def normalize(rows, protocol):
             if not d[key]:
                 raise ValueError(f"{rid}: falta {key}")
         rep = tuple(d[k] for k in ("kind", "sample_id", "bio_id", "tech_id"))
+        flexible_dilution = enabled(protocol) and d['kind']=='sample'
+        if flexible_dilution:rep += (d['dilution'],)
         if rep in reps:
             raise ValueError(f"{rid}: réplica técnica duplicada en la misma unidad biológica")
         reps.add(rep)
@@ -49,12 +53,16 @@ def normalize(rows, protocol):
             raise ValueError(f"{rid}: concentración nominal obligatoria no negativa")
         if d["kind"] == "control" and (d["expected"] is None or d["expected"] <= 0):
             raise ValueError(f"{rid}: expected debe ser la concentración equivalente positiva en el eje del calibrado")
+        if d['kind']=='control' and any(d[k] is not None for k in ('dilution','extract_mL','mass_g')):
+            from .i18n import t
+            raise ValueError(f"{rid}: "+t('Un control de calidad calcula recuperación (%), no resultado por masa. Para calcular FRAP/TPC/etc. con dilución, volumen y masa, cambia el tipo a Muestra; si realmente es un control, deja esos tres campos vacíos.'))
         if d["kind"] == "sample":
             for key in ("dilution", "extract_mL", "mass_g"):
                 if d[key] is None or d[key] <= 0:
                     raise ValueError(f"{rid}: {key} debe ser positivo")
         group = tuple(d[k] for k in ("kind", "sample_id", "bio_id"))
         params = tuple(d[k] for k in ("concentration", "dilution", "extract_mL", "mass_g", "expected"))
+        if flexible_dilution:params = tuple(d[k] for k in ("concentration", "extract_mL", "mass_g", "expected"))
         if group in groups and groups[group] != params:
             raise ValueError(f"{rid}: parámetros distintos entre réplicas técnicas; usar otro sample_id o bio_id")
         groups[group] = params

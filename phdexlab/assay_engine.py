@@ -46,6 +46,8 @@ def validate_protocol(p):
 
 def ready_protocol(p):
     validate_protocol(p);e=engine(p)
+    expected_engine={'ABTS':'inhibition','DPPH':'ec50','HUMEDAD':'gravimetric','MATERIA_SECA':'gravimetric','CENIZAS':'gravimetric','GRANULOMETRIA':'sieve'}.get(p['method'],'colorimetric')
+    if e!=expected_engine:raise ValueError('Calculation engine is incompatible with the selected method')
     for key in NUMERIC_PARAMS:
         if p.get(key) is not None and not isinstance(p[key],(int,float)):raise ValueError("Revisar parámetro numérico: "+key)
     if p.get('blocked_reason'):
@@ -69,6 +71,12 @@ def ready_protocol(p):
         if not 0<=p['r2_min']<=1 or not 0<p['cv_max_percent'] or not 0<=p['recovery_min_percent']<p['recovery_max_percent']:raise ValueError('Criterios QC inválidos')
     elif e=='gravimetric':
         if p.get('quantity') not in ('moisture','dry_matter','ash'):raise ValueError('Magnitud gravimétrica no soportada')
+        if p.get('result_unit')!='%':raise ValueError('Gravimetric results are percentages: result_unit must be %')
+        if p.get('quantity')=='ash' and p.get('ash_basis') not in ('initial','dry'):raise ValueError('Ash mass basis must be initial or dry')
+    elif e=='sieve':
+        if p.get('result_unit')!='% loaded mass':raise ValueError('Sieving results use % loaded mass, without renormalisation')
+    elif e=='ec50':
+        if p.get('result_unit')!='mg extract/mL final' or p.get('concentration_unit')!='mg/mL final':raise ValueError('DPPH EC50 doses and results must use mg extract/mL final mixture')
     return p
 
 def clean(rows,p):
@@ -169,15 +177,21 @@ def cell_plan(rows,p):
         put('Processing',f'A{i}',raw('record_id',i))
         if e=='gravimetric':
             t,initial,final=(raw(k,i) for k in ('tare_g','initial_g','final_g'))
-            denominator=f'({initial}-{t})'
-            expression=f'100*({initial}-{final})/{denominator}' if p['quantity']=='moisture' else f'100*({final}-{t})/{denominator}'
-            if p['quantity']=='ash' and p.get('ash_basis')=='dry':expression+='/'+raw('dry_fraction',i)
+            put('Processing',f'B{i}',t);put('Processing',f'C{i}',f'{initial}-{t}');put('Processing',f'D{i}',f'{final}-{t}')
+            expression=f'100*(C{i}-D{i})/C{i}' if p['quantity']=='moisture' else f'100*D{i}/C{i}'
+            if p['quantity']=='ash' and p.get('ash_basis')=='dry':
+                put('Processing',f'F{i}',raw('dry_fraction',i));expression+=f'/F{i}'
             put('Processing',f'E{i}',expression)
-        elif e=='sieve':put('Processing',f'E{i}',f"100*{raw('retained_g',i)}/{raw('loaded_g',i)}")
+        elif e=='sieve':
+            put('Processing',f'B{i}',raw('retained_g',i));put('Processing',f'C{i}',raw('loaded_g',i))
+            put('Processing',f'E{i}',f'100*B{i}/C{i}')
         else:
             put('Processing',f'B{i}',f"{raw('A_end',i)}-{raw('matrix_blank_delta',i)}")
             timecol=raw('time_min',2).split('!')[1][:-1]
-            put('Processing',f'C{i}',f'100*(1-B{i}/AVERAGEIFS(Processing!$B$2:$B${n},RAW!$B$2:$B${n},"blank",RAW!${timecol}$2:${timecol}${n},{raw("time_min",i)}))')
+            put('Processing',f'G{i}',f'AVERAGEIFS(Processing!$B$2:$B${n},RAW!$B$2:$B${n},"blank",RAW!${timecol}$2:${timecol}${n},{raw("time_min",i)})')
+            put('Processing',f'C{i}',f'100*(1-B{i}/G{i})')
+            put('Processing',f'D{i}',raw('dose_mg_mL',i) if d['kind']=='sample' else '""')
+            put('Processing',f'E{i}',raw('time_min',i));put('Processing',f'F{i}',raw('plateau',i))
     result_groups=OrderedDict()
     if e=='ec50':
         curve_groups=OrderedDict()
@@ -191,7 +205,7 @@ def cell_plan(rows,p):
             put('DoseCurve',f'D{r}',f'AVERAGE({refs})')
             from .reading_design import stats
             time_column=raw('time_min',2).split('!')[1][:-1]
-            control=f'AVERAGEIFS(Processing!$B$2:$B${n},RAW!$B$2:$B${n},"blank",RAW!${time_column}$2:${time_column}${n},{raw("time_min",indices[0])})'
+            control=f'Processing!G{indices[0]}'
             count,sd=stats(rows,indices,p,refs,f'100/({control})')
             put('DoseCurve',f'E{r}',sd);put('DoseCurve',f'F{r}',count)
             nextrow=r+1

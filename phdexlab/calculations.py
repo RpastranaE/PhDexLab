@@ -41,10 +41,19 @@ def plan(rows, p):
     put("Calibration", "J8", f'IF(AND(J3>0,J5>={par("r2_min")}),"OK provisional","REVISAR calibración")')
     for i,d in enumerate(rows,2):
         if d["kind"] in ("sample", "control"):
-            put("Processing",f"D{i}",f"(C{i}-Calibration!$J$4)/Calibration!$J$3")
+            put("Processing",f"D{i}",f"IF(Calibration!$J$3>0,(C{i}-Calibration!$J$4)/Calibration!$J$3,NA())")
             if d["kind"]=="sample":
                 factor = f'({par("aliquot_uL")}+{par("reagent_uL")}+{par("water_uL")})/{par("aliquot_uL")}' if p["calibration_basis"]=="final" else "1"
-                put("Processing",f"E{i}",f'D{i}*({factor})*RAW!J{i}*RAW!K{i}/1000/RAW!L{i}*{par("report_factor")}')
+                # Each observation is normalised BEFORE averaging, including when
+                # the same extraction was measured at several prior dilutions.
+                put("Processing",f"G{i}",factor)
+                put("Processing",f"H{i}",f'RAW!J{i}')
+                put("Processing",f"I{i}",f'D{i}*G{i}*H{i}')
+                put("Processing",f"J{i}",f'RAW!K{i}/1000')
+                put("Processing",f"K{i}",f'RAW!L{i}')
+                put("Processing",f"L{i}",par("report_factor"))
+                put("Processing",f"M{i}",f'I{i}*J{i}')
+                put("Processing",f"E{i}",f'M{i}/K{i}*L{i}')
             else:
                 put("Processing",f"E{i}",f"D{i}/RAW!M{i}*100")
     results = groups(rows,{"sample","control"})

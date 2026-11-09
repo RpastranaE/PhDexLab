@@ -88,6 +88,22 @@ Usa nombres distintos en **Muestra**, por ejemplo `Variety A` y `Variety B`, den
 
 Las réplicas técnicas se agrupan antes de resumir las biológicas. Tres lecturas de una misma extracción no equivalen a tres muestras biológicas independientes. Las demostraciones con variedades permiten comprobar esta diferencia. El mismo nombre en FRAP y TPC no mezcla sus resultados ni sus unidades.
 
+Puedes medir una extracción a varias diluciones y mantener el mismo nombre y unidad biológica. Cada lectura individual lleva su factor de dilución; el programa la corrige **antes** de promediar. Puedes repetir los números de réplica técnica en otra dilución. La masa y el volumen total representado deben seguir siendo los de la misma extracción. Si introduces medias en lugar de lecturas individuales, conserva una sola media por unidad: no se mezclan medias de diferentes diluciones sin sus observaciones originales.
+
+### Resultado por masa y recuperación de un control
+
+**Muestra / Sample** calcula el resultado final con dilución, volumen total de extracto y masa. **Control de calidad / Quality control** comprueba una concentración conocida y devuelve recuperación en porcentaje. No lo utilices para una muestra que deba dar FRAP, TPC, etc. por gramo. Si un control lleva masa/volumen/dilución, la app pide corregir el tipo o vaciar esos campos, en vez de ignorarlos.
+
+Para FRAP Fe(II), cuando el eje del calibrado representa concentración antes de reacción:
+
+`µmol eq Fe(II)/g = C_equivalente (µmol/L) × FD × volumen_extracto (mL) / (1000 × masa (g))`
+
+Ejemplo: 200 µmol/L, FD=10, 10 mL y 0,5 g dan **40 µmol/g**, sin porcentaje ni otro factor de reacción. Si el eje es concentración **final** en la mezcla, se recupera primero la concentración de la alícuota con el volumen de reacción/alícuota. No incluyas esa corrección otra vez en FD.
+
+En Excel, **Processing G:M** muestra los pasos y **E** el resultado con su unidad en **F**. **Results** indica la unidad de cada fila; **Summary** y las figuras incluyen solo muestras. El factor 100 de las variantes mg/100 g cambia la masa de referencia: no es un porcentaje. Consulta [la revisión de todos los métodos](PROTOCOL_SOURCES.md#calculation-and-methodology-audit-for-093) para equivalentes, conversiones y límites.
+
+La nueva plantilla TFC utiliza **extracto seco**, como su fuente operativa. Si ya tienes un experimento guardado con «hoja seca», comprueba qué masa representa realmente antes de cambiarla: una actualización conserva los protocolos archivados. Para pasar de resultados por gramo de extracto a resultados por gramo de hoja hace falta la masa de hoja representada o el rendimiento de extracción. DPPH informa EC50 en mg de extracto/mL de mezcla final; no equivale a la EC50 en relación molar del artículo original.
+
 ## 6. Protocolos y plantillas
 
 En **Protocolo y condiciones / Protocol and conditions** revisa unidades, concentraciones, diluciones y demás parámetros. Los primeros controles permiten elegir señal, entrada preferida, número de lecturas propuesto, corrección de muestra, tratamiento del blanco y valores por defecto de dilución, volumen de extracción y masa. También puedes configurar el mínimo de niveles de calibración (3 por defecto; mínimo matemático de 2). Dos puntos no demuestran linealidad.

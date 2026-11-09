@@ -47,7 +47,23 @@ def write_master(path,assays,experiment_id,calculated=False):
         if engine(p)=='sieve':roles.append('MassBalance')
         names={role:sheet_name(assay,role) for role in roles}
         for role,name in names.items():
-            ws=wb.create_sheet(name);ws.append(columns(p) if role=='RAW' else HEADERS[role]);ws.sheet_properties.tabColor=COLORS.get(p['method'],'657D89')
+            ws=wb.create_sheet(name);ws.append(columns(p) if role=='RAW' else [] if role=='Processing' else HEADERS[role]);ws.sheet_properties.tabColor=COLORS.get(p['method'],'657D89')
+        if engine(p) in ('colorimetric','inhibition'):
+            processing=wb[names['Processing']]
+            for col,label in enumerate(('Record ID','Measured response (AU)','Inhibition (%)' if engine(p)=='inhibition' else 'Corrected response (AU)',
+                    'Equivalent concentration ('+p['concentration_unit']+'; calibration axis)',
+                    'Sample result / control recovery (see Unit)','Unit','Reaction dilution correction',
+                    'Prior sample dilution factor','Original extract concentration ('+p['concentration_unit']+')',
+                    'Total extract volume (L)','Reference mass (g)','Reporting / unit conversion factor',
+                    'Equivalent amount ('+p['concentration_unit']+' x L)'),1):processing.cell(1,col,label)
+            wb[names['Results']]['E1']='Sample result / control recovery (see Unit)'
+        else:
+            headers=(['Record ID','Container tare (g)','Net initial sample mass (g)','Net final residue mass (g)',p.get('quantity','Result')+' (%)','Dry-matter fraction (0-1; dry-basis ash only)'] if engine(p)=='gravimetric' else
+                ['Record ID','Retained mass (g)','Loaded mass (g)','', 'Retained fraction (% loaded mass)'] if engine(p)=='sieve' else
+                ['Record ID','Background-corrected absorbance (AU)','Inhibition (%)','Dose (mg extract/mL final)','Time (min)','Operator-confirmed plateau','Matched radical control (AU)'])
+            for col,label in enumerate(headers,1):wb[names['Processing']].cell(1,col,label)
+        wb[names['Summary']]['C1']='Mean ('+p['result_unit']+')'
+        wb[names['Summary']]['D1']='Biological SD ('+p['result_unit']+')'
         ws=wb[names['RAW']]
         raw_columns=columns(p)
         for r,d in enumerate(rows,2):
@@ -63,6 +79,15 @@ def write_master(path,assays,experiment_id,calculated=False):
             result=wb[names['Results']]
             if engine(p) in ('colorimetric','inhibition'):
                 for r,((kind,_,_),_) in enumerate(groups_local(clean,{'sample','control'}).items(),2):result.cell(r,9,p['result_unit'] if kind=='sample' else '% recovery')
+                for r,d in enumerate(clean,2):
+                    if d['kind'] in ('sample','control'):wb[names['Processing']].cell(r,6,p['result_unit'] if d['kind']=='sample' else '% recovery')
+                for pair in [('Mass-normalised sample result','C_axis x reaction correction x prior dilution x extract volume (L) / reference mass (g) x reporting factor. Processing G:M shows each step; E is the final result.'),
+                        ('Calibration basis','before: reaction correction = 1. final: correction = total reaction volume / aliquot. Do not include this reaction dilution again in RAW dilution.'),
+                        ('Prior dilution','RAW dilution is the total pre-assay dilution: 1 = undiluted, 10 = one part extract brought to ten parts total. It is not a percentage.'),
+                        ('Reference mass','RAW mass_g is in grams of the material represented by the total extract. Match the recorded mass basis. Extraction volume is total recovered/reconstituted volume, not reaction aliquot.'),
+                        ('Reporting factor',str(p['report_factor'])+'; includes the stated unit conversion and/or expression per 100 g. A per-100-g result is not a percentage.'),
+                        ('Control recovery','Control rows are calibration quality checks: C_axis / expected x 100, unit % recovery. They are not FRAP/TPC/etc. sample results and are excluded from Summary and sample figures.'),
+                        ('Dilution replicates','Individual readings at several prior dilutions may share the same sample and biological-unit IDs. Each is normalised separately, then all readings are averaged within the unit with equal weight. Do not count dilutions as biological replicates. One supplied mean per biological unit is supported; do not combine unreported means from different dilutions.')]:wb[names['ReadMe']].append(pair)
             else:
                 for r in range(2,result.max_row+1):result.cell(r,9,p['result_unit'])
             if 'Calibration' in names:
@@ -108,6 +133,12 @@ def write_master(path,assays,experiment_id,calculated=False):
                 if cell.data_type=='f' or isinstance(cell.value,(int,float)):cell.number_format='0.0000'
             ws.row_dimensions[row[0].row].height=29
         for column in ws.columns:ws.column_dimensions[column[0].column_letter].width=22
+        if ws.title.endswith('_Processing'):
+            ws.row_dimensions[1].height=72
+            if ws.max_column>=13:
+                ws.column_dimensions['E'].width=42;ws.column_dimensions['D'].width=34;ws.column_dimensions['I'].width=34
+                ws.column_dimensions['F'].width=25
+        if ws.title.endswith(('_Summary','_Results')):ws.row_dimensions[1].height=58
         ws.sheet_properties.pageSetUpPr.fitToPage=True;ws.page_setup.orientation='landscape';ws.page_setup.paperSize=ws.PAPERSIZE_A3;ws.page_setup.fitToWidth=1;ws.page_setup.fitToHeight=0
         if isparam or ws.title.endswith('_ReadMe'):ws.column_dimensions['A'].width=32;ws.column_dimensions['B'].width=105
         if israw:ws.column_dimensions['A'].hidden=True

@@ -2,6 +2,15 @@
 
 Para instalar y utilizar PhDexLab, consulta el [manual vigente](docs/MANUAL.md). Esta página explica la evolución; las instrucciones actuales no están repartidas entre versiones.
 
+## 0.9.3
+
+- Auditoría dimensional y metodológica de las 15 variantes, con fuentes, adaptaciones y límites explicados en la documentación vigente.
+- Excel desglosa la normalización por concentración, dilución, volumen total en litros, masa en gramos y factor de expresión. Cada resultado indica su unidad; recuperación de controles y capacidad por masa se distinguen expresamente.
+- Se impide que un control ignore silenciosamente masa, volumen y dilución y devuelva un porcentaje. Las muestras individuales permiten varias diluciones de una misma extracción, corregidas antes de promediar, sin aumentar el n biológico.
+- Base TFC corregida a extracto seco según su fuente operativa. Se explicitan la adaptación másica de EC50 DPPH y las bases de concentración de CUPRAC.
+- Se impide etiquetar porcentajes gravimétricos/tamizado o EC50 con unidades incompatibles. Pesadas, fracciones y control radical DPPH tienen pasos y encabezados específicos en Excel.
+- Catálogo versión 4; los protocolos archivados conservan su información y requieren revisión explícita para cambiar de base.
+
 ## 0.9.2
 
 [Versión y descargas](https://github.com/RpastranaE/PhDexLab/releases/tag/v0.9.2)

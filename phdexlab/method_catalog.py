@@ -82,6 +82,6 @@ from .reading_design import configure
 ALL[:]=[configure(p) for p in ALL]
 
 for _p in ALL:
-    _p["version"]=max(3,_p.get("version",1))
+    _p["version"]=max(4,_p.get("version",1))
     if _p["id"]=="tpc-folin":_p["default_replicates"]=2
     if _p.get("engine")=="gravimetric":_p["default_replicates"]=1
