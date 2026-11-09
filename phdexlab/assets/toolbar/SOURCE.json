@@ -19,5 +19,9 @@
     "log": "scroll-text",
     "protocol": "book-plus"
   },
-  "color_override": "#176E78"
+  "color_override": "#176E78",
+  "original_application_icons": [
+    "link.svg",
+    "protocol-save.svg"
+  ]
 }

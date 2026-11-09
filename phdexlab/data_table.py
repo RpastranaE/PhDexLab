@@ -84,7 +84,7 @@ class RawTable(QTableWidget):
         self.setColumnHidden(0,True);self.setColumnHidden(self.columns.index('kind_label'),True)
         self.setItemDelegateForColumn(self.columns.index('kind'),KindDelegate(self))
         self.setAlternatingRowColors(True);self.verticalHeader().setDefaultSectionSize(50)
-        self.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked|QAbstractItemView.EditTrigger.EditKeyPressed|QAbstractItemView.EditTrigger.SelectedClicked)
+        self.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked|QAbstractItemView.EditTrigger.EditKeyPressed|QAbstractItemView.EditTrigger.AnyKeyPressed)
         self.itemChanged.connect(lambda item:self.update_row(item.row()))
         self.cellClicked.connect(self.edit_kind)
         self.protocol=None

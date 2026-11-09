@@ -52,7 +52,7 @@ class UpdateController(QObject):
         self.root=Path(sys.executable).resolve().parent.parent if getattr(sys,'frozen',False) and Path(sys.executable).parent.name=='Application' else None
         heading=window.centralWidget().layout().itemAt(0).layout();self.button=window.make_button('Actualizaciones de PhDexLab',self.show_dialog,'update',heading)
         window.buttons.remove(self.button)
-        self.bar=QProgressBar();self.bar.setRange(0,100);self.bar.setMaximumHeight(23);self.bar.hide();window.centralWidget().layout().addWidget(self.bar)
+        # Download progress belongs only to the update dialog.
         self.timer=QTimer(self);self.timer.setInterval(6*60*60*1000);self.timer.timeout.connect(self.automatic_check)
         if self.root and not any(arg in sys.argv for arg in ('--smoke-test','--update-healthcheck')):
             QTimer.singleShot(4000,self.automatic_check);self.timer.start()
@@ -64,7 +64,7 @@ class UpdateController(QObject):
         self.detail='';self.worker=UpdateWorker(self.root,updater.settings()['automatic'],self);self.worker.progress.connect(self.set_status);self.worker.completed.connect(self.finished)
         self.worker.finished.connect(self.after_finished);self.worker.start()
     def set_status(self,value,text):
-        self.percent=value;self.status=text;self.bar.setValue(value);self.bar.setFormat(t(text)+' · %p%');self.bar.setVisible(0<value<100 or bool(self.ready));self.button.setToolTip(t('Actualizaciones de PhDexLab')+'\n'+t(text));self.update_dialog()
+        self.percent=value;self.status=text;self.button.setToolTip(t('Actualizaciones de PhDexLab')+'\n'+t(text));self.update_dialog()
     def finished(self,result,error):
         self.detail=error
         if error:self.set_status(0,'Actualización cancelada.' if error=='cancelled' else 'No se pudo comprobar o descargar la actualización. Puedes volver a intentarlo.');return
@@ -81,11 +81,10 @@ class UpdateController(QObject):
             self.check_button.setEnabled(not (self.worker and self.worker.isRunning()))
     def show_dialog(self):
         if self.dialog:self.dialog.show();self.dialog.raise_();return
-        dialog=QDialog(self.window);self.dialog=dialog;dialog.setWindowTitle(t('Actualizaciones de PhDexLab'));dialog.resize(610,300);layout=QVBoxLayout(dialog)
+        dialog=QDialog(self.window);self.dialog=dialog;dialog.setWindowTitle(t('Actualizaciones de PhDexLab'));dialog.resize(560,240);layout=QVBoxLayout(dialog)
         layout.addWidget(QLabel(t('Versión instalada')+': '+__version__))
         link=QLabel(f'<a href="{updater.REPO_URL}/releases">{t("Ver repositorio y versiones")}</a>');link.setOpenExternalLinks(True);layout.addWidget(link)
         automatic=QCheckBox(t('Buscar e instalar automáticamente al cerrar'));automatic.setChecked(updater.settings()['automatic']);automatic.toggled.connect(updater.set_automatic);layout.addWidget(automatic)
-        note=QLabel(t('Se conserva tu trabajo. La actualización solo reemplaza Application, comprueba SHA-256 y prueba el arranque; si falla, recupera la versión anterior.'));note.setWordWrap(True);layout.addWidget(note)
         self.status_label=QLabel();self.status_label.setWordWrap(True);layout.addWidget(self.status_label);self.detail_label=QLabel();self.detail_label.setWordWrap(True);self.detail_label.setTextInteractionFlags(self.detail_label.textInteractionFlags());layout.addWidget(self.detail_label)
         self.dialog_bar=QProgressBar();layout.addWidget(self.dialog_bar);self.check_button=QPushButton(t('Buscar actualizaciones'));self.check_button.clicked.connect(self.check);layout.addWidget(self.check_button)
         buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Close);buttons.rejected.connect(dialog.close);layout.addWidget(buttons)

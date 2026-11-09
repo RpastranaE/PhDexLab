@@ -1,5 +1,5 @@
 #ifndef AppVersion
-#define AppVersion "0.8.0"
+#define AppVersion "0.9.0"
 #endif
 #ifndef ApplicationDir
 #define ApplicationDir "..\Application"
@@ -8,7 +8,7 @@
 #define DestinationDir "..\.."
 #endif
 [Setup]
-AppId={{6FCA38DF-F22F-4E6C-88BB-637ECF412030}
+AppId={code:InstallAppId}
 AppName=PhDexLab
 AppVersion={#AppVersion}
 AppPublisher=RpastranaE
@@ -28,6 +28,7 @@ Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 LanguageDetectionMethod=none
+UsePreviousLanguage=no
 CloseApplications=yes
 RestartApplications=no
 LicenseFile=..\LICENSE
@@ -44,6 +45,12 @@ Name: "{code:DesktopDirectory}\PhDexLab"; Filename: "{app}\Application\PhDexLab.
 [Run]
 Filename: "{app}\Application\PhDexLab.exe"; Description: "{cm:LaunchProgram,PhDexLab}"; Flags: nowait postinstall skipifsilent
 [Code]
+function InstallAppId(Param: String): String;
+begin
+  { Isolated verification can use its own uninstall registration. }
+  Result := ExpandConstant('{param:InstallId|}');
+  if Result = '' then Result := '{6FCA38DF-F22F-4E6C-88BB-637ECF412030}';
+end;
 function MenuDirectory(Param: String): String;
 begin
   Result := ExpandConstant('{param:MenuDir|{group}}');

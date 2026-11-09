@@ -2,7 +2,7 @@
 import copy,html,json,os
 from pathlib import Path
 from PySide6.QtCore import Qt,QTimer
-from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QSplitter,QListWidget,QListWidgetItem,QLabel,QDialog,QFormLayout,QLineEdit,QComboBox,QDialogButtonBox,QInputDialog,QMessageBox,QFileDialog,QTextBrowser,QTableWidgetItem,QSizePolicy)
+from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QSplitter,QListWidget,QListWidgetItem,QLabel,QDialog,QFormLayout,QLineEdit,QComboBox,QDialogButtonBox,QInputDialog,QMessageBox,QFileDialog,QTextBrowser,QTableWidgetItem,QSizePolicy,QStackedWidget,QPushButton)
 from .interface import Window as SingleAssayWindow
 from .protocols import FE,digest,save_variant
 from .method_catalog import ALL,METHOD_NAMES
@@ -42,12 +42,17 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         self.splitter=QSplitter();left=QWidget();left_layout=QVBoxLayout(left);left_layout.setContentsMargins(0,0,6,0)
         caption=QLabel('ENSAYOS DEL EXPERIMENTO');caption.setStyleSheet('font-weight:700;color:#176E78;padding:8px 0');left_layout.addWidget(caption)
         actions=QHBoxLayout();left_layout.addLayout(actions)
-        self.make_button('Añadir un ensayo al experimento',self.add_assay,'sample',actions)
+        self.add_assay_button=self.make_button('Añadir un ensayo al experimento',self.add_assay,'sample',actions)
         self.make_button('Duplicar el ensayo seleccionado',self.duplicate_assay,'variant',actions)
         self.make_button('Retirar el ensayo seleccionado',self.remove_assay,'close',actions);actions.addStretch()
         self.assay_list=QListWidget();self.assay_list.setWordWrap(True);self.assay_list.setMinimumWidth(210);self.assay_list.setStyleSheet('QListWidget{background:white;border:1px solid #D9E6EB;border-radius:7px} QListWidget::item{padding:12px 6px;border-bottom:1px solid #E7EFF1} QListWidget::item:selected{background:#D8EEF1;color:#123E49}')
         left_layout.addWidget(self.assay_list,1);self.assay_list.currentRowChanged.connect(self.switch_assay);self.assay_list.itemDoubleClicked.connect(lambda _:self.rename_assay())
-        self.splitter.addWidget(left);self.splitter.addWidget(self.tabs);self.splitter.setStretchFactor(0,0);self.splitter.setStretchFactor(1,1);self.splitter.setSizes([235,1200]);layout.insertWidget(2,self.splitter,1)
+        self.assay_pages=QStackedWidget();self.assay_pages.addWidget(self.tabs)
+        self.empty_page=QWidget();empty_layout=QVBoxLayout(self.empty_page);empty_layout.addStretch()
+        title=QLabel('Empieza añadiendo un ensayo');title.setAlignment(Qt.AlignmentFlag.AlignCenter);title.setStyleSheet('font-size:24px;font-weight:600;padding:16px');empty_layout.addWidget(title)
+        hint=QLabel('Elige el método y su protocolo para empezar a introducir datos.');hint.setAlignment(Qt.AlignmentFlag.AlignCenter);empty_layout.addWidget(hint)
+        row=QHBoxLayout();row.addStretch();self.first_assay_button=QPushButton('Nuevo ensayo');self.first_assay_button.setProperty('iconName','sample');self.first_assay_button.setIcon(self.add_assay_button.icon());self.first_assay_button.setToolTip('Añadir un ensayo al experimento');self.first_assay_button.clicked.connect(lambda:self.guard(self.add_assay));row.addWidget(self.first_assay_button);row.addStretch();empty_layout.addLayout(row);empty_layout.addStretch();self.assay_pages.addWidget(self.empty_page)
+        self.splitter.addWidget(left);self.splitter.addWidget(self.assay_pages);self.splitter.setStretchFactor(0,0);self.splitter.setStretchFactor(1,1);self.splitter.setSizes([235,1200]);layout.insertWidget(2,self.splitter,1)
         bar=layout.itemAt(1).layout()
         self.method.hide()
         for i in range(bar.count()):
@@ -60,7 +65,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
                 # One visible save action, next to Variant. The old bottom duplicate is retired.
                 bottom=layout.itemAt(3).layout();bottom.removeWidget(button);button.setParent(None);self.buttons.remove(button);button.deleteLater()
             if button.toolTip()=='Guardar / generar Excel':button.setToolTip('Guardar las entradas de todos los ensayos en el Excel maestro')
-        self.save_variant_button=self.make_button('Guardar protocolo como nueva variante versionada',self.save_variant,'variant',bar)
+        self.save_variant_button=self.make_button('Guardar protocolo como nueva variante versionada',self.save_variant,'protocol-save',bar)
         bar.removeWidget(self.save_variant_button);bar.insertWidget(bar.count()-1,self.save_variant_button)
         self.method_guide=QTextBrowser();self.method_guide.setOpenExternalLinks(True);self.tabs.addTab(self.method_guide,'3   Metodología')
         self.help_dialog.close();self.help_dialog.deleteLater();self.help_dialog=HelpDialog(self)
@@ -72,9 +77,9 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         self.status_timer=QTimer(self);self.status_timer.setInterval(300);self.status_timer.setSingleShot(True);self.status_timer.timeout.connect(self.update_current_state)
         self.metrics.setSizePolicy(QSizePolicy.Policy.Ignored,QSizePolicy.Policy.Fixed);self.metrics.setMinimumWidth(0)
         self._workspace_ready=True
-        self.set_assays([dict(id='A01_FRAP',label='FRAP',protocol=copy.deepcopy(FE),rows=[])])
+        self.set_assays([])
         self.dirty=False
-        self.setup_features()
+        self.setup_features();self.sync_assay_controls()
     def mark_dirty(self):
         super().mark_dirty()
         if self._workspace_ready and not self.loading:self.status_timer.start()
@@ -100,6 +105,8 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
                     self.parameters.blockSignals(True);self.parameters.item(r,1).setText(p['result_unit']);self.parameters.blockSignals(False)
         return p
     def set_protocol(self,p):
+        if self._workspace_ready and not p:
+            self.show_empty_workspace();return
         super().set_protocol(p)
         if not self._workspace_ready:return
         previous_loading=self.loading;self.loading=True
@@ -160,10 +167,24 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         try:a['protocol']=self.protocol();a['rows']=self.raw.records()
         finally:self.loading=was
     def set_assays(self,assays,active=0):
-        self.status_timer.stop();self.loading=True;self.assays=copy.deepcopy(assays);self.next_assay_number=max(self.next_assay_number,max(int(a['id'].split('_')[0][1:]) for a in assays)+1);self.active_id=None
+        self.status_timer.stop();self.loading=True;self.assays=copy.deepcopy(assays);self.next_assay_number=max(self.next_assay_number,max([int(a['id'].split('_')[0][1:]) for a in assays]+[0])+1);self.active_id=None
         self.assay_list.blockSignals(True);self.assay_list.clear()
         for a in self.assays:self.assay_list.addItem(self.item_text(a))
         self.assay_list.setCurrentRow(active);self.assay_list.blockSignals(False);self.loading=False;self.switch_assay(active)
+        if not self.assays:self.show_empty_workspace()
+        self.sync_assay_controls()
+    def show_empty_workspace(self):
+        self.loading=True;self.active_id=None;self._protocol={};self.parameters.clearContents();self.parameters.setRowCount(0)
+        self.raw.protocol=None;self.raw.clearContents();self.raw.setRowCount(0);self.variant.blockSignals(True);self.variant.clear();self.variant.blockSignals(False)
+        self.method_guide.clear();self.metrics.clear();self.loading=False;self.assay_pages.setCurrentWidget(self.empty_page)
+    def sync_assay_controls(self):
+        active=bool(self.active_id);busy=bool(self.proc)
+        for button in self.buttons:
+            icon=button.property('iconName')
+            needs=icon in ('save','refresh','rows','type','excel','origin','plots','protocol','protocol-save','template','variant','close') or (icon=='sample' and button is not self.add_assay_button)
+            if needs:button.setEnabled(active and not busy)
+        self.variant.setEnabled(active and not busy);self.origin_mode.setEnabled(active and not busy);self.row_count.setEnabled(active and not busy)
+        if hasattr(self,'templates_button'):self.templates_button.setEnabled(active and not busy)
     def item_text(self,a):
         status,issue,_=state(a);label='Listo para calcular' if status=='ready' else 'Borrador'
         cached=self.saved_states.get(a['id'],{}) if not self.dirty else {}
@@ -171,8 +192,9 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         return a['label']+'\n'+t(label)+' · '+a['id']
     def switch_assay(self,index):
         if not self._workspace_ready or not 0<=index<len(self.assays):return
-        self.commit_active();self.loading=True;a=self.assays[index];self.active_id=a['id'];p=a['protocol'];self.set_protocol(p);self.raw.load(a.get('rows',[]));self.populate_variants(p);self.loading=False;super().update_metrics();self.update_current_state()
+        self.assay_pages.setCurrentWidget(self.tabs);self.commit_active();self.loading=True;a=self.assays[index];self.active_id=a['id'];p=a['protocol'];self.set_protocol(p);self.raw.load(a.get('rows',[]));self.populate_variants(p);self.loading=False;super().update_metrics();self.update_current_state()
     def populate_variants(self,p):
+        if not p:return
         self.variant.blockSignals(True);self.variant.clear();selected=-1
         for idx,v in enumerate(self.variants):
             if v['method']==p['method']:
@@ -183,7 +205,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
     def select_variant(self,index):
         if not self._workspace_ready:return super().select_variant(index)
         global_index=self.variant.itemData(index)
-        if global_index is None or self.loading:return
+        if global_index is None or self.loading or not self.active_id:return
         self.commit_active();self.loading=True;self.set_protocol(copy.deepcopy(self.variants[global_index]));self.loading=False;self.mark_dirty();self.update_current_state()
     def select_method(self,method):
         if not self._workspace_ready:return super().select_method(method)
@@ -224,7 +246,9 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         if ok and name.strip():a['label']=name.strip();self.dirty=True;self.update_current_state()
     def clear_experiment(self):
         if not self._workspace_ready:return super().clear_experiment()
-        self.graph_style=DEFAULT;self.next_assay_number=1;self.saved_states={};self.folder=None;self.open_hash=None;self.active_id=None;self.set_assays([dict(id='A01_FRAP',label='FRAP',protocol=copy.deepcopy(FE),rows=[])]);self.pathlabel.setText(t('Nuevo experimento sin guardar'));self.dirty=False;self.progress_panel.hide()
+        self._excel_launch=None
+        if hasattr(self,'_excel_launch_timer'):self._excel_launch_timer.stop()
+        self.graph_style=DEFAULT;self.next_assay_number=1;self.saved_states={};self.folder=None;self.open_hash=None;self.active_id=None;self.set_assays([]);self.pathlabel.setText(t('Nuevo experimento sin guardar'));self.dirty=False;self.progress_panel.hide()
     def load_demo(self,multivariety=False):
         if not self.confirm_discard():return
         self.next_assay_number=1;self.saved_states={};self.folder=None;self.open_hash=None;self.active_id=None;self.set_assays([dict(id='A01_FRAP',label='FRAP · SINTÉTICO',protocol=copy.deepcopy(FE),rows=demo_varieties() if multivariety else demo_rows())]);self.pathlabel.setText(t('Demostración sin guardar'));self.dirty=False;self.log.appendPlainText('Datos sintéticos FRAP cargados; no son resultados experimentales.')
@@ -244,6 +268,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
             for i,a in enumerate(self.assays):
                 s=report.get('assays',{}).get(a['id'],{});self.assay_list.item(i).setToolTip(t(s.get('issue','')))
     def save(self):
+        if not self.assays:raise ValueError(t('Añade un ensayo antes de guardar.'))
         self.commit_active()
         if self.folder is None:
             parent=QFileDialog.getExistingDirectory(self,'Carpeta que contendrá el experimento')
@@ -265,6 +290,19 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         p=self.protocol();validate_protocol(p);name,ok=QInputDialog.getText(self,'Guardar variante','Nombre de la nueva variante',text=p['name'])
         if not ok or not name.strip():return
         p=copy.deepcopy(p);p.update(name=name.strip(),version=int(p.get('version') or 0)+1);save_variant(self.variant_folder,p);self.variants.append(p);self.loading=True;self.set_protocol(p);self.populate_variants(p);self.loading=False;self.mark_dirty();self.log.appendPlainText('Variante guardada sin modificar versiones anteriores.')
+    def open_excel(self):
+        if self.proc:raise RuntimeError(t('Ya hay una actualización en curso'))
+        if not self.folder:raise ValueError(t('Guardar o abrir un experimento primero'))
+        from .excel_launch import launching
+        launching(self,Layout(self.folder).master)
+        try:super().open_excel()
+        except Exception:
+            self._excel_launch=None;self._excel_launch_timer.stop();raise
+    def start(self,action,payload=None):
+        if self.folder:
+            from .excel_launch import check
+            check(self)
+        return super().start(action,payload)
     def open_origin(self):
         if not self.folder:raise ValueError('Guardar o abrir un experimento primero')
         report=json.loads((Layout(self.folder).meta/'status.json').read_text(encoding='utf-8'))
@@ -292,4 +330,12 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
             report=json.loads((Layout(self.folder).meta/'status.json').read_text(encoding='utf-8'))
             if report['state']=='draft':self.progress.setFormat('Borradores guardados · completar los datos antes de calcular')
             if report.get('reused'):self.progress.setFormat(t('Sin cambios: Excel, Origin y exportaciones verificados'));self.log.appendPlainText(t('Sin cambios: Excel, Origin y exportaciones verificados'))
-        self.update_current_state()
+        if code!=0 and self.folder:
+            from .file_access import EXCEL_IN_USE
+            path=Layout(self.folder).meta/'status.json'
+            try:error=json.loads(path.read_text(encoding='utf-8')).get('error','')
+            except (OSError,ValueError):error=''
+            try:label=json.loads((Layout(self.folder).meta/'progress.json').read_text(encoding='utf-8')).get('label','')
+            except (OSError,ValueError):label=''
+            if EXCEL_IN_USE in error or label==EXCEL_IN_USE:self.progress.setFormat(t(EXCEL_IN_USE));self.log.appendPlainText(t(EXCEL_IN_USE))
+        self.update_current_state();self.sync_assay_controls()

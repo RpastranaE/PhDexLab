@@ -40,7 +40,7 @@ def test_builtin_names_sources_and_display_translations():
 def test_language_changes_preserve_protocol_and_custom_text():
     q=app()
     from phdexlab.workspace import Window
-    w=Window();assert 'Draft' in w.assay_list.item(0).text();canonical=w.protocol()
+    w=Window();w.append_assay(ALL[0],'FRAP');assert 'Draft' in w.assay_list.item(0).text();canonical=w.protocol()
     w.language_selector.setCurrentIndex(0);assert w.protocol()==canonical
     w.language_selector.setCurrentIndex(1);assert w.protocol()==canonical
     w.set_protocol(dict(canonical,notes='Operator-authored text'));assert w.protocol()['notes']=='Operator-authored text'

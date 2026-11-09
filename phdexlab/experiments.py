@@ -66,6 +66,8 @@ def refresh(folder,origin_mode='connector',edited_rows=None,edited_protocol=None
     notify(1,'Verificando ensayos y trazabilidad')
     verify(folder);l=migrate_legacy(folder);l.prepare()
     with locked(folder):
+        from .file_access import assert_available
+        assert_available(l.master)
         before=file_hash(l.master)
         if expected_hash and expected_hash!=before:raise RuntimeError('El Excel cambió desde que se abrió la ventana. Reabrir antes de actualizar.')
         from .graph_styles import presentation_hash
@@ -104,7 +106,14 @@ def refresh(folder,origin_mode='connector',edited_rows=None,edited_protocol=None
                 summ=values(staged,sheet_name(a,'Summary'))
                 if not errors and any(row[2]=='#N/A' for row in summ[1:]):status.update(state='needs_review',issue='Hay unidades sin resultado: revisar EC50/mesetas/rango. No se eliminan del cálculo biológico.')
             if file_hash(l.master)!=before:raise RuntimeError('El Excel fue modificado durante el cálculo; no se sobrescribe')
-            replacement=l.documents/(l.stem+'.next.xlsx');shutil.copy2(staged,replacement);os.replace(replacement,l.master)
+            replacement=l.documents/(l.stem+'.next.xlsx');shutil.copy2(staged,replacement)
+            assert_available(l.master)
+            try:os.replace(replacement,l.master)
+            except PermissionError as error:
+                if getattr(error,'winerror',None) in (32,33):
+                    from .file_access import WorkbookInUseError,EXCEL_IN_USE
+                    raise WorkbookInUseError(EXCEL_IN_USE) from error
+                raise
             share_values(staged,l.master)
             m.update(schema=3,app_version=__version__,next_assay_number=max(m.get('next_assay_number',1),max(int(a['id'].split('_')[0][1:]) for a in assays)+1));dump(l.meta/'experiment.json',m)
             for old in l.generated():

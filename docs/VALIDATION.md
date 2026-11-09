@@ -1,10 +1,10 @@
-# Validation scope — 0.8.0
+# Validation scope — 0.9.0
 
 This is software verification with synthetic data, not analytical validation of a chemical method or matrix. Protocol conditions and independence of biological units remain the operator's responsibility.
 
 ## Automated checks
 
-**119 tests passed** in the release source. The final frozen FRAP/DPPH refresh completed in 84.50 seconds on the test machine; a verified unchanged repeat took 0.94 seconds including process startup. These are local measurements for this two-assay fixture, not a general performance guarantee.
+**127 tests passed** in the release source. The final frozen FRAP/DPPH refresh completed in 42.32 seconds on the test machine; a verified unchanged repeat took 0.73 seconds including process startup. These are local measurements for this two-assay fixture, not a general performance guarantee.
 
 The pytest suite checks analytical input rules, formula generation, independent expected results, traceability, workbook round trips, assay isolation, incomplete protocols, technical/biological replicates, data templates, language/theme changes, graphical settings and cache invalidation. Update checks cover numeric version ordering, the expected GitHub release/repository, digests, download corruption, unsafe/duplicate paths, symlinks, manifest/version mismatch, disabled automatic downloads and unsaved-work cancellation.
 
@@ -41,3 +41,11 @@ The single-file Inno installer was installed into a disposable workspace folder.
 The 0.7.0 frozen TLS failure was reproduced independently. Its Python runtime expected `codex-rejected-cas.pem` adjacent to ssl.py, but the previous build omitted the file. The release conditionally bundles this public CA-policy sidecar without removing certificate checks or changing that runtime’s trust policy. Anonymous API quota failure has a separately validated public-release-metadata fallback.
 
 After publication, the installed 0.8.0 executable successfully checked the actual public GitHub release (`tls_initialized: true`, `ok: true`, version 0.8.0). The anonymous API was quota-limited on this connection, so this also exercised the live public-metadata fallback. GitHub’s SHA-256 digests matched all four uploaded assets. The disposable installation was then uninstalled successfully: both shortcuts and the executable were removed, while the sentinel experiment and personal style remained unchanged.
+
+## Version 0.9.0 regressions
+
+The initial workspace contains no assay or protocol; closing returns to that state, and the first explicit assay is A01. Tests exercise repeated transitions, language changes while empty, distinct duplicate/save-variant icons, first-use help persistence, all 24 bilingual help images, real Qt mouse/keyboard events for select/type/F2 editing, asynchronous shell-open preflight and update progress confined to its own dialog. First-run onboarding is dispatched by the normal app launch path; health checks do not consume it.
+
+Real Excel checks cover both an already-open workbook and a workbook opened after recalculation but before replacement. Both are blocked with the save-and-close-workbook message. The original workbook remains open and byte-for-byte unchanged. The latter leaves an actionable failed status and preserves the calculation history. Tests use dedicated synthetic workbooks and close only their own Excel instance.
+
+The final frozen FRAP/DPPH run completed with 12 Origin and 12 Publication exports; native style values were read back. The module inventory matches release source, and all 24 help screenshots are present in the frozen payload. The single-file installer passed isolated installation, shortcut and frozen GUI checks. A real 0.8.0 Application copy was upgraded with the exact 0.9.0 release ZIP: startup passed, screenshots were present and experiment/style sentinels were unchanged. Installer verification uses its own InstallId and redirected desktop/menu folders so an existing real installation’s uninstall registration is preserved.

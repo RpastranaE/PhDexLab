@@ -40,7 +40,7 @@ class WorkspaceFeatures:
         for button in self.buttons:
             if button.property('iconName')=='refresh':
                 button.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu);button.customContextMenuRequested.connect(lambda point,b=button:self.rebuild_menu(b,point))
-        self.set_protocol(self.protocol());self.raw.set_protocol(self.protocol());self.apply_appearance();self.retranslate_ui()
+        self.set_protocol(self.protocol());self.raw.set_protocol(self.protocol()) if self.active_id else None;self.apply_appearance();self.retranslate_ui()
         for i,a in enumerate(self.assays):self.assay_list.item(i).setText(self.item_text(a))
         from .ui_tooltips import install_tooltips
         install_tooltips(self)
@@ -64,7 +64,7 @@ class WorkspaceFeatures:
         self.log.retranslate()
     def change_language(self,*args):
         self.commit_active();was_dirty=self.dirty;rows=self.raw.records();p=self.protocol();i18n.set_language(self.language_selector.currentData())
-        self.loading=True;self.set_protocol(p);self.populate_variants(p);self.raw.set_protocol(p);self.raw.load(rows);self.loading=False;self.dirty=was_dirty
+        self.loading=True;self.set_protocol(p);self.populate_variants(p);self.raw.set_protocol(p) if p else None;self.raw.load(rows) if p else None;self.loading=False;self.dirty=was_dirty
         for i,a in enumerate(self.assays):self.assay_list.item(i).setText(self.item_text(a))
         self.update_current_state();self.retranslate_ui();save_preferences(i18n.LANGUAGE,'dark' if self.theme_dark else 'light')
     def apply_appearance(self):

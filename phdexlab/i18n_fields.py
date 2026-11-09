@@ -78,6 +78,11 @@ def register():
         'Abrir artículo original / fuente':'Open original article / source',
         'Introduce un enlace web para la fuente.':'Enter a web link for the source.',
         'Custom protocol':'Custom protocol',
+        'Empieza añadiendo un ensayo':'Start by adding an assay',
+        'Elige el método y su protocolo para empezar a introducir datos.':'Choose a method and protocol to start entering data.',
+        'Nuevo ensayo':'New assay',
+        'Añade un ensayo antes de guardar.':'Add an assay before saving.',
+        'Excel está abierto o se está abriendo. Guarda y cierra el libro del experimento antes de actualizar y exportar.':'Excel is open or opening. Save and close the experiment workbook before updating and exporting.',
     }.items():add(es,en)
     from .ui_fields import FIELDS,PARAMETERS
     from .i18n import add

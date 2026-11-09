@@ -21,8 +21,9 @@ def run(args=None):
         report=refresh(folder,mode,progress=progress,**kwargs)
         progress(6,'Sin cambios: Excel, Origin y exportaciones verificados' if report.get('reused') else 'Actualización finalizada',busy=False,state=report['state'])
         print(json.dumps(report,indent=2,ensure_ascii=True))
-    except Exception:
-        progress(0,'Error: consultar registro',busy=False,state='failed')
+    except Exception as error:
+        from .file_access import WorkbookInUseError,EXCEL_IN_USE
+        progress(0,EXCEL_IN_USE if isinstance(error,WorkbookInUseError) else 'Error: consultar registro',busy=False,state='failed')
         raise
     if payload:Path(payload).unlink(missing_ok=True)
 

@@ -62,7 +62,7 @@ class Window(QMainWindow):
             except (ValueError,TypeError):pass
         self.raw.horizontalHeader().sectionClicked.connect(self.field_popup)
         self.raw.itemChanged.connect(self.raw_changed)
-        self.parameters=QTableWidget(0,3);self.parameters.setHorizontalHeaderLabels(["Parámetro del ensayo","Valor / selección","Ayuda"])
+        self.parameters=QTableWidget(0,3);self.parameters.setEditTriggers(QTableWidget.EditTrigger.DoubleClicked|QTableWidget.EditTrigger.EditKeyPressed|QTableWidget.EditTrigger.AnyKeyPressed);self.parameters.setHorizontalHeaderLabels(["Parámetro del ensayo","Valor / selección","Ayuda"])
         self.parameters.horizontalHeader().setSectionResizeMode(1,QHeaderView.ResizeMode.Stretch)
         self.parameters.setColumnWidth(0,340);self.parameters.setColumnWidth(2,60);self.tabs.addTab(self.parameters,"2   Protocolo y condiciones")
         helptext=QPlainTextEdit();helptext.setReadOnly(True);helptext.setPlainText(
@@ -352,7 +352,10 @@ def run():
     app=QApplication.instance() or QApplication(sys.argv)
     configure_font(app)
     from .workspace import Window as ExperimentWindow
-    w=ExperimentWindow();w.show();return app.exec()
+    w=ExperimentWindow();w.show()
+    from .onboarding import show_on_first_use
+    QTimer.singleShot(0,lambda:show_on_first_use(w))
+    return app.exec()
 
 def configure_font(app):
     font=Path(os.environ.get("WINDIR","C:/Windows"))/"Fonts"/"segoeui.ttf"
