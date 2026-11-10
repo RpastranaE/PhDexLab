@@ -100,9 +100,17 @@ Para FRAP Fe(II), cuando el eje del calibrado representa concentración antes de
 
 Ejemplo: 200 µmol/L, FD=10, 10 mL y 0,5 g dan **40 µmol/g**, sin porcentaje ni otro factor de reacción. Si el eje es concentración **final** en la mezcla, se recupera primero la concentración de la alícuota con el volumen de reacción/alícuota. No incluyas esa corrección otra vez en FD.
 
-En Excel, **Processing G:M** muestra los pasos y **E** el resultado con su unidad en **F**. **Results** indica la unidad de cada fila; **Summary** y las figuras incluyen solo muestras. El factor 100 de las variantes mg/100 g cambia la masa de referencia: no es un porcentaje. Consulta [la revisión de todos los métodos](PROTOCOL_SOURCES.md#calculation-and-methodology-audit-for-093) para equivalentes, conversiones y límites.
+En Excel, la sección **Calculations** de la pestaña **Analysis** muestra los pasos en G:M y el resultado en E, con su unidad en F. **Results by unit** indica la unidad de cada fila; **Final results** y las figuras incluyen solo muestras. El factor 100 de las variantes mg/100 g cambia la masa de referencia: no es un porcentaje. Consulta [la revisión de todos los métodos](PROTOCOL_SOURCES.md#calculation-and-methodology-audit-for-093) para equivalentes, conversiones y límites.
 
 La nueva plantilla TFC utiliza **extracto seco**, como su fuente operativa. Si ya tienes un experimento guardado con «hoja seca», comprueba qué masa representa realmente antes de cambiarla: una actualización conserva los protocolos archivados. Para pasar de resultados por gramo de extracto a resultados por gramo de hoja hace falta la masa de hoja representada o el rendimiento de extracción. DPPH informa EC50 en mg de extracto/mL de mezcla final; no equivale a la EC50 en relación molar del artículo original.
+
+### Rellenar series y repeticiones
+
+- Selecciona `P0` y `P1` y arrastra el cuadrado de la esquina inferior derecha para obtener `P2`, `P3`… También funciona con concentraciones, números y nombres como `E01`.
+- `Ctrl+D` copia hacia abajo y `Ctrl+R` hacia la derecha. Al pegar un único valor sobre un rango seleccionado, se rellena todo el rango. `Ctrl+Z` y `Ctrl+Y` deshacen y rehacen.
+- **Numerar repeticiones**, en el clic derecho o la flecha de la pipeta, completa las filas seleccionadas por muestra y unidad, sin cambiar mediciones.
+- **Añadir repeticiones** crea filas del mismo diseño, numera sus repeticiones y deja vacías las absorbancias. No convierte una media en lecturas individuales.
+- Al editar un nombre de muestra o unidad se sugieren nombres ya presentes en la columna.
 
 ## 6. Protocolos y plantillas
 
@@ -150,7 +158,7 @@ Tener la misma absorbancia no basta para fusionar observaciones de preparaciones
 
 Las celdas obligatorias empiezan con asterisco y sin fondo rojo. Si faltan datos al intentar actualizar, el borrador queda guardado y aparece un aviso con ensayo, fila, campo y problema. Las celdas pendientes se resaltan en rojo y se limpian al corregirlas. **Ir al primer problema** o doble clic en el aviso lleva a su posición. Por defecto no se exporta hasta corregirlo; si hay ensayos completos, puedes elegir expresamente calcular solo esos ensayos. Los ensayos incompletos siguen como borrador.
 
-![Aviso de entradas pendientes](validation-es-v0101.png)
+![Aviso de entradas pendientes](validation-es-v011.png)
 
 Cierra el libro del experimento en Excel y su proyecto en Origin antes de actualizar. Si estás abriendo el Excel, espera, guarda y ciérralo. El programa evita sobrescribir un libro en uso. La barra integrada muestra las fases; el registro aporta detalles cuando una fase falla.
 
@@ -180,7 +188,7 @@ Cuando el renderizador de Origin añade una línea espuria encima del título, l
 
 La pestaña lee el Excel ya calculado y no repite las ecuaciones. Si editas entradas o cambia el Excel externamente, oculta los valores antiguos hasta actualizar. Si cambian el estilo, el proyecto o las imágenes, pide renovar las figuras. Revisa también los controles de calidad en el Excel y el registro.
 
-![Resultados finales con figuras de Origin](results-en-v0101.png)
+![Resultados finales con figuras de Origin](results-en-v011.png)
 
 ## 8. Dónde están los archivos
 
@@ -204,7 +212,14 @@ EXP_001/
     ...
 ```
 
-`Documents` contiene los archivos de trabajo principales; `Figures` separa las exportaciones por ensayo y generador. El Excel separa ensayos por hojas y Origin por carpetas. `_internal` conserva versiones, estado y trazabilidad: no necesitas editarlo para usar el programa, pero forma parte del experimento.
+`Documents` contiene los archivos de trabajo principales; `Figures` separa las exportaciones por ensayo y generador. El Excel tiene **Overview**, con el resumen completo, y dos pestañas por ensayo:
+
+| Pestaña | Contenido |
+|---|---|
+| `…_Data` | Lecturas originales, condiciones y método. Los enlaces superiores llevan a cada sección. |
+| `…_Analysis` | Resultados finales y por unidad, calibración o curva de dosis, balance y cálculos auditables. |
+
+Las fórmulas se conservan una sola vez. La hoja técnica oculta contiene únicamente el índice interno de bloques. Los experimentos anteriores se abren y adoptan este formato al guardar o actualizar; el Excel anterior queda en el historial. El nuevo formato requiere **PhDexLab 0.11.0 o posterior**. Origin mantiene las carpetas por ensayo. `_internal` conserva versiones, estado y trazabilidad: no necesitas editarlo para usar el programa, pero forma parte del experimento.
 
 Los botones de Excel y Origin abren sus archivos. El botón de figuras abre la carpeta general si hay varios ensayos; con un único ensayo y figuras disponibles puede abrir directamente su carpeta. Antes de generar figuras, la carpeta puede estar vacía.
 
@@ -214,7 +229,7 @@ Para mover o respaldar el trabajo, copia toda la carpeta raíz. Los nombres prin
 
 El selector de idioma cambia la interfaz; el selector claro/oscuro cambia su apariencia. Los nombres de muestra y textos introducidos por ti no se traducen automáticamente. Los gráficos científicos utilizan inglés.
 
-La ventana de estilos permite elegir una plantilla y ajustar colores, símbolos —incluida la opción **Sin símbolos / No markers**—, líneas, barras de error y tipografía por tipo de gráfica. Ocultar símbolos no elimina medidas, barras de error ni líneas de ajuste. La previsualización usa ejemplos: no recalcula el experimento. Para aplicar cambios a archivos exportados, guarda el estilo y actualiza los resultados.
+En el icono de paleta elige **Gráficas de Origin**. Su ventana permite elegir una plantilla y ajustar colores, símbolos —incluida la opción **Sin símbolos / No markers**—, líneas, barras de error y tipografía por tipo de gráfica. Ocultar símbolos no elimina medidas, barras de error ni líneas de ajuste. La previsualización usa ejemplos: no recalcula el experimento. Para aplicar cambios a archivos exportados, guarda el estilo y actualiza los resultados.
 
 Las figuras de **Origin** pertenecen al proyecto editable. **Publication** ofrece exportaciones alternativas. Revisa las unidades, el número de réplicas, las barras de error y la legibilidad al tamaño final del artículo. Si haces ajustes manuales en Origin, conserva una copia antes de regenerar: una reconstrucción puede reemplazar los gráficos generados.
 
@@ -256,3 +271,9 @@ El resumen sobre la tabla separa los contadores de lecturas, blancos, patrones, 
 ![Resumen de lecturas y estado](summary-es-v0101.png)
 
 ![Novedades después de actualizar](whats-new-es-v0101.png)
+
+### Estilo del Excel
+
+En el icono de paleta elige **Estilo del Excel / Excel style**. Hay cuatro paletas iniciales y se pueden editar los colores de encabezados, secciones, entradas y filas alternas, además de la letra y la altura de filas. La vista previa es inmediata. **Guardar como estilo** permite reutilizar una configuración personal. Aplica los cambios y guarda o actualiza el experimento para regenerar el libro. Este estilo es independiente de Origin y del modo claro/oscuro de la app.
+
+![Estilos de Excel](excel-style-en-v011.png)

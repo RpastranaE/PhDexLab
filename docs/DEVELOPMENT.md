@@ -158,3 +158,9 @@ El destino debe ser nuevo o vacío. La prueba compara diez métodos y tres varia
 ### Release highlights
 
 `release_notes.py` bundles ES/EN highlights for offline use. Update those notes with each release. `onboarding.json` retains the last version shown: a fresh install opens Help and records the current version; an upgrade displays the highlights once. Legacy installations with Help already seen and no recorded version display the current notes once. Health checks construct the GUI without consuming this state.
+
+### Compact workbook schema 4
+
+`compact_excel.py` maps logical tables onto Overview plus Data/Analysis per assay. It moves cell and chart references (including absolute references) without changing the equation engine, preserves validation and adds managed defined names so native Excel structural edits can update block positions. Schema 3 books remain readable. Values/API readers address logical tables through the adapter; Origin uses tested partial imports of the physical blocks. Do not restore hidden calculation sheets or copy formula results into a second production engine.
+
+`excel_styles.py` and `excel_style_dialog.py` store workbook appearance independently of Origin. The Excel style hash participates in update-cache validation. `spreadsheet_fill.py` provides series dragging, fill shortcuts and cell/row undo history; history is reset between assays. Changes to repeat numbering must never manufacture measured absorbances or promote a supplied mean into independent readings.

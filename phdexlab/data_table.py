@@ -1,12 +1,15 @@
 import uuid
 from PySide6.QtCore import Qt,QTimer,QSignalBlocker,Signal
 from PySide6.QtGui import QColor,QKeySequence,QPen
-from PySide6.QtWidgets import QTableWidget,QTableWidgetItem,QStyledItemDelegate,QComboBox,QHeaderView,QAbstractItemView,QApplication,QStyleOptionComboBox,QStyle,QMenu,QInputDialog,QMessageBox
+from PySide6.QtWidgets import QTableWidget,QTableWidgetItem,QStyledItemDelegate,QComboBox,QHeaderView,QAbstractItemView,QApplication,QStyleOptionComboBox,QStyle,QMenu,QInputDialog,QMessageBox,QLineEdit,QCompleter
 from .data_entry import COLUMNS
 from .ui_fields import FIELDS,KIND_LABELS
 from .i18n import t
 from .i18n import add
+from .spreadsheet_fill import SpreadsheetFill
 for pair in '''Copiar|Copy
+Deshacer|Undo
+Rehacer|Redo
 Cortar|Cut
 Pegar|Paste
 Borrar contenido|Clear contents
@@ -14,7 +17,14 @@ Insertar filas…|Insert rows…
 Eliminar filas seleccionadas|Delete selected rows
 Copiar filas|Copy rows
 Pegar como filas nuevas|Paste as new rows
-Número de filas|Number of rows'''.splitlines():add(*pair.split('|',1))
+Número de filas|Number of rows
+Rellenar hacia abajo|Fill down
+Rellenar hacia la derecha|Fill right
+Añadir repeticiones…|Add repeated readings…
+Numerar repeticiones|Number repeated readings
+Repeticiones nuevas por fila|New readings per row
+Selecciona una fila con tipo, muestra y unidad.|Select a row with type, sample and unit.
+Una media no se puede convertir en repeticiones individuales.|A mean cannot be converted into individual readings.'''.splitlines():add(*pair.split('|',1))
 
 def required_fields(kind,protocol):
     if protocol:
@@ -32,6 +42,12 @@ class RequiredHeader(QHeaderView):
             painter.drawText(rect.adjusted(0,4,-6,0),Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTop,'*');painter.restore()
 
 class RequiredDelegate(QStyledItemDelegate):
+    def createEditor(self,parent,option,index):
+        editor=super().createEditor(parent,option,index);table=self.parent()
+        if isinstance(editor,QLineEdit) and table.columns[index.column()] in ('sample_id','bio_id'):
+            choices=sorted({table.item(r,index.column()).text() for r in range(table.rowCount()) if table.item(r,index.column()) and table.item(r,index.column()).text()})
+            completer=QCompleter(choices,editor);completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive);editor.setCompleter(completer)
+        return editor
     def paint(self,painter,option,index):
         super().paint(painter,option,index)
         table=self.parent();item=table.item(index.row(),1);kind=item.data(Qt.ItemDataRole.UserRole) if item else None
@@ -89,11 +105,12 @@ class BasisDelegate(QStyledItemDelegate):
     def setModelData(self,editor,model,index):model.setData(index,editor.currentData())
     def displayText(self,value,locale):return t('Media ya calculada' if value=='mean' else 'Lectura individual')
 
-class RawTable(QTableWidget):
+class RawTable(SpreadsheetFill,QTableWidget):
     rows_edited=Signal()
     def __init__(self):
         self.columns=list(COLUMNS);self.kind_names=dict(KIND_LABELS)
         super().__init__(24,len(self.columns))
+        self.init_fill()
         self.protocol=None;self.show_validation=False;self._validation_rules=None
         self.setHorizontalHeader(RequiredHeader(Qt.Orientation.Horizontal,self))
         self.setItemDelegate(RequiredDelegate(self))
@@ -167,12 +184,19 @@ class RawTable(QTableWidget):
             for field in ('technical_n','technical_sd'):self.setColumnHidden(self.columns.index(field),not has_mean)
         self.horizontalHeader().viewport().update()
     def keyPressEvent(self,event):
+        if event.matches(QKeySequence.StandardKey.Undo):self.undo_cells();return
+        if event.matches(QKeySequence.StandardKey.Redo):self.redo_cells();return
         if event.matches(QKeySequence.StandardKey.Copy):self.copy_cells();return
         if event.matches(QKeySequence.StandardKey.Cut):self.copy_cells();self.clear_cells();return
         if event.matches(QKeySequence.StandardKey.Paste):
             self.run_action(lambda:self.paste(QApplication.clipboard().text()));return
         if event.key()==Qt.Key.Key_Delete:self.clear_cells();return
         if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            if event.key()==Qt.Key.Key_D:self.fill_down();return
+            if event.key()==Qt.Key.Key_R:
+                if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:self.run_action(self.add_repeated_readings)
+                else:self.fill_right()
+                return
             if event.key() in (Qt.Key.Key_Plus,Qt.Key.Key_Equal):self.run_action(self.insert_rows);return
             if event.key()==Qt.Key.Key_Minus:self.delete_rows();return
         super().keyPressEvent(event)
@@ -219,11 +243,77 @@ class RawTable(QTableWidget):
         text=QApplication.clipboard().text();count=len(text.splitlines())
         if not count:return
         row=max(0,self.currentRow());self.insert_rows(count);self.setCurrentCell(row,1);self.paste(text)
+    def add_repeated_readings(self,count=None):
+        selected=sorted({i.row() for i in self.selectedIndexes()}) or [self.currentRow()]
+        sources=[]
+        for row in selected:
+            data={key:self.item(row,c).text() if self.item(row,c) else '' for c,key in enumerate(self.columns)}
+            kind=self.item(row,1);data['kind']=kind.data(Qt.ItemDataRole.UserRole) if kind else ''
+            if not all(data.get(k) for k in ('kind','sample_id','bio_id')):raise ValueError(t('Selecciona una fila con tipo, muestra y unidad.'))
+            if data.get('reading_basis')=='mean':raise ValueError(t('Una media no se puede convertir en repeticiones individuales.'))
+            sources.append((row,data))
+        if count is None:
+            count,ok=QInputDialog.getInt(self,t('Añadir repeticiones…'),t('Repeticiones nuevas por fila'),max(1,int((self.protocol or {}).get('default_replicates',3))-1),1,100)
+            if not ok:return
+        if self.rowCount()+count*len(sources)>10000:raise ValueError('Maximum: 10000 rows')
+        def group(d):return tuple(d.get(k,'') for k in ('kind','sample_id','bio_id','dose_mg_mL','time_min'))
+        used={}
+        for row in self.records():used.setdefault(group(row),set()).add(str(row.get('tech_id','')))
+        plans=[]
+        for position,data in sources:
+            taken=used.setdefault(group(data),set())
+            def next_id():
+                n=1
+                while str(n) in taken:n+=1
+                taken.add(str(n));return str(n)
+            initial=data.get('tech_id') or next_id();copies=[]
+            for _ in range(count):
+                new=dict(data,record_id=uuid.uuid4().hex,tech_id=next_id())
+                for key in ('A_end','A_initial','technical_n','technical_sd','tare_g','initial_g','final_g','retained_g','plateau'):
+                    if key in new:new[key]=''
+                copies.append(new)
+            plans.append((position,initial,copies))
+        with QSignalBlocker(self):
+            for position,initial,copies in reversed(plans):
+                self.setItem(position,self.columns.index('tech_id'),QTableWidgetItem(initial))
+                for offset,data in enumerate(copies,1):
+                    self.insertRow(position+offset)
+                    for c,key in enumerate(self.columns):
+                        item=QTableWidgetItem(data.get(key,''))
+                        if key=='kind':item.setText(data.get('kind_label') or self.kind_names[data['kind']]);item.setData(Qt.ItemDataRole.UserRole,data['kind'])
+                        self.setItem(position+offset,c,item)
+                    self.update_row(position+offset)
+        self.rows_edited.emit()
+    def number_repeated_readings(self):
+        selected=sorted({i.row() for i in self.selectedIndexes()}) or [self.currentRow()];records={}
+        for row in range(self.rowCount()):
+            data={key:self.item(row,c).text() if self.item(row,c) else '' for c,key in enumerate(self.columns)}
+            if not any(v for k,v in data.items() if k not in ('record_id','kind_label')):continue
+            item=self.item(row,1);data['kind']=item.data(Qt.ItemDataRole.UserRole) if item else '';records[row]=data
+        targets=[row for row in selected if row in records]
+        if not targets:raise ValueError(t('Selecciona una fila con tipo, muestra y unidad.'))
+        for row in targets:
+            if not all(records[row].get(k) for k in ('kind','sample_id','bio_id')):raise ValueError(t('Selecciona una fila con tipo, muestra y unidad.'))
+            if records[row].get('reading_basis')=='mean':raise ValueError(t('Una media no se puede convertir en repeticiones individuales.'))
+        group=lambda d:tuple(d.get(k,'') for k in ('kind','sample_id','bio_id','dose_mg_mL','time_min'))
+        used={}
+        for row,data in records.items():
+            if row not in targets:used.setdefault(group(data),set()).add(data.get('tech_id',''))
+        with QSignalBlocker(self):
+            for row in targets:
+                taken=used.setdefault(group(records[row]),set());n=1
+                while str(n) in taken:n+=1
+                taken.add(str(n));self.setItem(row,self.columns.index('tech_id'),QTableWidgetItem(str(n)));self.update_row(row)
+        self.rows_edited.emit()
     def contextMenuEvent(self,event):
         index=self.indexAt(event.pos())
         if index.isValid() and not self.selectionModel().isSelected(index):self.setCurrentCell(index.row(),index.column())
         menu=QMenu(self)
+        menu.addAction(t('Deshacer'),self.undo_cells);menu.addAction(t('Rehacer'),self.redo_cells);menu.addSeparator()
         for label,callback,shortcut in [('Copiar',self.copy_cells,'Ctrl+C'),('Cortar',lambda:(self.copy_cells(),self.clear_cells()),'Ctrl+X'),('Pegar',lambda:self.paste(QApplication.clipboard().text()),'Ctrl+V'),('Borrar contenido',self.clear_cells,'Del')]:
+            action=menu.addAction(t(label));action.setShortcut(shortcut);action.triggered.connect(lambda checked=False,f=callback:self.run_action(f))
+        menu.addSeparator()
+        for label,callback,shortcut in [('Rellenar hacia abajo',self.fill_down,'Ctrl+D'),('Rellenar hacia la derecha',self.fill_right,'Ctrl+R'),('Numerar repeticiones',self.number_repeated_readings,''),('Añadir repeticiones…',self.add_repeated_readings,'Ctrl+Shift+R')]:
             action=menu.addAction(t(label));action.setShortcut(shortcut);action.triggered.connect(lambda checked=False,f=callback:self.run_action(f))
         menu.addSeparator()
         for label,callback in [('Insertar filas…',self.insert_rows),('Eliminar filas seleccionadas',self.delete_rows),('Copiar filas',lambda:self.copy_cells(True)),('Pegar como filas nuevas',self.paste_rows)]:
@@ -236,6 +326,10 @@ class RawTable(QTableWidget):
         matrix=[line.split('\t') for line in text.splitlines()] if text else [['']]
         if not matrix:return
         start=max(0,self.currentRow());col=max(1,self.currentColumn());keys=None
+        box=self.selection_box()
+        if len(matrix)==1 and len(matrix[0])==1 and box and (box[2]>box[0] or box[3]>box[1]):
+            start,col=box[:2];width=sum(not self.isColumnHidden(c) for c in range(col,box[3]+1))
+            matrix=[[matrix[0][0]]*width for _ in range(box[2]-start+1)]
         if matrix[0] in (self.columns,self.columns[:14]):keys=matrix.pop(0)
         elif matrix[0]==[FIELDS[k][0].replace('\n',' ') for k in self.columns[1:14]]:matrix.pop(0);col=1
         if start+len(matrix)>10000:raise ValueError('Maximum: 10000 rows')
@@ -278,6 +372,7 @@ class RawTable(QTableWidget):
         self.blockSignals(False)
         for r in range(len(rows)):self.update_row(r)
         if self.protocol:self.configure_view(self.protocol)
+        self.reset_history()
     def records(self):
         records=[]
         for r in range(self.rowCount()):

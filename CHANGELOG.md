@@ -2,6 +2,15 @@
 
 Para instalar y utilizar PhDexLab, consulta el [manual vigente](docs/MANUAL.md). Esta página explica la evolución; las instrucciones actuales no están repartidas entre versiones.
 
+## 0.11.0
+
+- Creación de repeticiones con campos comunes y numeración preparada, sin copiar absorbancias. Numeración automática de filas existentes por muestra y unidad.
+- Arrastrar el tirador de selección para completar series numéricas o nombres como P0/P1 y E01. Rellenar abajo/derecha con Ctrl+D/R, pegado de un valor en un rango, sugerencias de nombres y deshacer/rehacer con Ctrl+Z/Y.
+- Excel compacto: Overview y dos pestañas por ensayo, Data y Analysis. Cálculos, calibraciones y resultados se agrupan por secciones con enlaces. No se duplican fórmulas ni se mantienen hojas de cálculo ocultas.
+- Lectura de libros anteriores y migración al guardar/actualizar, conservando historial. Bloques con rangos definidos; conector Excel de Origin actualizado y comprobado con importaciones parciales.
+- Estilos de Excel independientes de Origin: cuatro paletas, colores editables, tipografía, densidad, filas alternas, vista previa y estilos personales reutilizables.
+- Actualización de ayuda y novedades. El formato agrupado requiere 0.11.0 o posterior.
+
 ## 0.10.1
 
 - Resumen visual de lecturas con contadores separados y estado verde Listo para calcular, adaptado a ambos idiomas y temas.

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "phdexlab-prototype"
-version = "0.10.1"
+version = "0.11.0"
 description = "Standalone Windows chemistry workflow; no PhDex modifications"
 requires-python = ">=3.11,<3.14"
 dependencies = ["PySide6-Essentials>=6.7,<7", "openpyxl>=3.1.5,<4", "matplotlib>=3.9,<4", "SciencePlots>=2,<3", "pywin32>=306; sys_platform == 'win32'", "originpro>=1.1.12,<2; sys_platform == 'win32'"]

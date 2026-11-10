@@ -17,7 +17,7 @@ def new_id(assays,method,minimum=1):
     number=max(minimum,max([int(a['id'].split('_')[0][1:]) for a in assays]+[0])+1)
     return f'A{number:02}_{method[:12]}'
 
-def create(folder,assays):
+def create(folder,assays,excel_style=None):
     folder=Path(folder).resolve();validate_ids(assays)
     if not assays:raise ValueError('Añadir al menos un ensayo')
     if folder.exists() and any(folder.iterdir()):raise FileExistsError('Elegir una carpeta nueva o vacía')
@@ -26,7 +26,9 @@ def create(folder,assays):
     m['next_assay_number']=max(int(a['id'].split('_')[0][1:]) for a in assays)+1
     dump(l.meta/'experiment.json',m);l.prepare();dump(l.meta/'protocol.initial.json',config(assays));dump(l.meta/'raw.initial.json',raw(assays))
     for a in assays:dump(l.meta/'revisions'/(digest(a['protocol'])+'.json'),a['protocol'])
-    states=write_master(l.master,assays,m['experiment_id']);audit(folder,'created_multi',workbook_sha256=file_hash(l.master),assays=config(assays))
+    from .excel_styles import save as save_excel_style
+    if excel_style is not None:save_excel_style(folder,excel_style)
+    states=write_master(l.master,assays,m['experiment_id'],excel_style=excel_style);audit(folder,'created_multi',workbook_sha256=file_hash(l.master),assays=config(assays))
     dump(l.meta/'status.json',dict(state='draft' if any(s['state']=='draft' for s in states.values()) else 'pending',assays=states));return folder
 
 def read(folder):
@@ -43,11 +45,14 @@ def archive(l):
     if l.project.exists():shutil.copy2(l.project,history/(l.stem+'.before.opju'))
     return run,history
 
-def save(folder,assays,expected_hash):
+def save(folder,assays,expected_hash,excel_style=None):
     verify(folder);l=migrate_legacy(folder);validate_ids(assays)
     with locked(folder):
         if expected_hash and expected_hash!=file_hash(l.master):raise RuntimeError('El Excel cambió desde que se abrió la ventana. Reabrir antes de guardar.')
-        run,h=archive(l);m=verify(folder);staged=h/(l.stem+'.draft.xlsx');states=write_master(staged,assays,m['experiment_id'])
+        from .excel_styles import read as read_excel_style,save as save_excel_style
+        selected_style=read_excel_style(folder) if excel_style is None else excel_style
+        run,h=archive(l);m=verify(folder);staged=h/(l.stem+'.draft.xlsx');states=write_master(staged,assays,m['experiment_id'],excel_style=selected_style)
+        if excel_style is not None:save_excel_style(folder,excel_style)
         replacement=l.documents/(l.stem+'.next.xlsx');shutil.copy2(staged,replacement);os.replace(replacement,l.master)
         m.update(schema=3,app_version=__version__,next_assay_number=max(m.get('next_assay_number',1),max(int(a['id'].split('_')[0][1:]) for a in assays)+1));dump(l.meta/'experiment.json',m);revision(l,assays)
         # Results are invalidated immediately when inputs change; archive them, never leave stale figures current.
@@ -72,11 +77,13 @@ def refresh(folder,origin_mode='connector',edited_rows=None,edited_protocol=None
         if expected_hash and expected_hash!=before:raise RuntimeError('El Excel cambió desde que se abrió la ventana. Reabrir antes de actualizar.')
         from .graph_styles import presentation_hash
         style_hash=presentation_hash(folder)
+        from .excel_styles import read as read_excel_style
+        excel_style=read_excel_style(folder);excel_style_hash=digest(excel_style)
         previous=l.meta/'status.json'
         if not force and edited_assays is None and edited_rows is None and edited_protocol is None and previous.exists():
             old=json.loads(previous.read_text(encoding='utf-8'))
             if (old.get('state')=='complete' and old.get('app_version')==__version__ and old.get('origin_mode')==origin_mode
-                and old.get('excel_sha256')==before and old.get('presentation_hash')==style_hash
+                and old.get('excel_style_hash')==excel_style_hash and old.get('excel_sha256')==before and old.get('presentation_hash')==style_hash
                 and (origin_mode=='none' or old.get('origin',{}).get('master_path')==str(l.master))
                 and (origin_mode=='none' or (l.project.exists() and old.get('project_sha256')==file_hash(l.project)))
                 and old.get('outputs') and all((l.root/name).is_file() and file_hash(l.root/name)==sha for name,sha in old['outputs'].items())):
@@ -90,7 +97,7 @@ def refresh(folder,origin_mode='connector',edited_rows=None,edited_protocol=None
         report=dict(state='running',run=run,origin_mode=origin_mode,assays={},force_rebuild=force,reused=False);dump(l.meta/'status.json',report);audit(folder,'refresh_started_multi',run=run)
         try:
             notify(2,'Preparando el Excel maestro y calculando los ensayos completos')
-            staged=h/(l.stem+'.calculated.xlsx');report['assays']=write_master(staged,assays,m['experiment_id'],calculated=True)
+            staged=h/(l.stem+'.calculated.xlsx');report['assays']=write_master(staged,assays,m['experiment_id'],calculated=True,excel_style=excel_style)
             ready=[a for a in assays if report['assays'][a['id']]['state']=='ready']
             pdfs=recalculate_master(staged,h/'Excel') if ready else []
             notify(3,'Comprobando resultados y separando exportaciones por ensayo')
@@ -139,7 +146,7 @@ def refresh(folder,origin_mode='connector',edited_rows=None,edited_protocol=None
             notify(6,'Archivando el experimento y sus revisiones')
             report['state']='complete' if all(s['state']=='calculated' for s in report['assays'].values()) and not report['origin'].get('errors') else 'partial' if ready else 'draft'
             report['excel_sha256']=file_hash(l.master);report['outputs']={str(f.relative_to(l.root)):file_hash(f) for f in l.generated()}
-            report.update(app_version=__version__,presentation_hash=style_hash,project_sha256=file_hash(l.project) if l.project.exists() else None)
+            report.update(app_version=__version__,presentation_hash=style_hash,excel_style_hash=excel_style_hash,project_sha256=file_hash(l.project) if l.project.exists() else None)
             for output in l.generated():
                 target=h/'outputs'/output.relative_to(l.root);target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(output,target)
             if l.project.exists():shutil.copy2(l.project,h/(l.stem+'.after.opju'))

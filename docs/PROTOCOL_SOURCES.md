@@ -1,5 +1,7 @@
 # Published protocol sources
 
+Workbook layout from 0.11.0: RAW/Parameters, Processing, Calibration, Results and Summary in the audit below are logical table names. They are now sections of Data/Analysis, with an experiment-wide Overview; the equations and reporting units are unchanged.
+
 These links identify the publication associated with each built-in starting point. Local operating adaptations, unresolved conditions and matrix validation are distinct from the cited original method. Archived experiment snapshots are not rewritten when the built-in catalogue changes. Internal IDs retain their historical spelling for compatibility.
 
 | Protocol | Primary source / adaptation |

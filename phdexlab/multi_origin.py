@@ -15,7 +15,7 @@ from .protocols import digest
 from .integration import file_hash
 from .export_cache import store,restore
 
-RENDER_VERSION=2
+RENDER_VERSION=3
 
 def prepare_assay_folders(op,managed,aid):
     """One round trip instead of repeated mkdir/cd + temporary-path queries."""
@@ -53,6 +53,12 @@ def move_if_needed(op,name,path,current=None):
 def sync(folder,assays,states,mode='connector',notify=lambda *args:None,force=False):
     import originpro as op
     l=Layout(folder);style=for_experiment(folder);report={'mode':mode,'auto_sync_verified':False,'relative_paths_verified':False,'errors':[],'exports':[],'assays':{},'presentation':style,'render_version':RENDER_VERSION,'export_repairs':{}}
+    from openpyxl import load_workbook
+    from .compact_excel import mappings
+    workbook=load_workbook(l.master,read_only=True,data_only=True)
+    try:excel_layout=mappings(workbook)
+    finally:workbook.close()
+    report['connector_ranges']={};report['connector_blocks']={}
     previous=l.meta/'origin_status.json';old_status=json.loads(previous.read_text(encoding='utf-8')) if previous.exists() else {}
     restyle=old_status.get('presentation')!=style
     project_verified=l.project.exists() and old_status.get('project_sha256')==file_hash(l.project)
@@ -86,10 +92,13 @@ def sync(folder,assays,states,mode='connector',notify=lambda *args:None,force=Fa
             if engine(p)=='ec50':expected_roles.append('DoseCurve')
             if engine(p)=='sieve':expected_roles.append('MassBalance')
             hashes={aid+'/'+role:digest(values(l.master,sheet_name(a,role))) for role in expected_roles}
+            blocks={aid+'/'+role:excel_layout.get(sheet_name(a,role)) for role in expected_roles}
+            report['connector_blocks'].update(blocks)
             graph_keys=[short+'ResG']+([short+'CalG'] if 'Calibration' in expected_roles else [])+([short+'DoseG'] if 'DoseCurve' in expected_roles else [])
             old_assay=old_status.get('assays',{}).get(aid,{})
             reusable=(trust and not restyle and states[aid]['state']=='calculated' and old_assay.get('state')=='calculated'
                 and all(old_status.get('table_hashes',{}).get(key)==sha for key,sha in hashes.items())
+                and all(old_status.get('connector_blocks',{}).get(key)==block for key,block in blocks.items())
                 and all(key in old_status.get('graphs',{}) for key in graph_keys))
             if reusable and all(restore(folder,old_status['graphs'][key].get('files',{})) for key in graph_keys):
                 notify(4,f'Origin · {aid}: resultados sin cambios verificados')
@@ -116,10 +125,18 @@ def sync(folder,assays,states,mode='connector',notify=lambda *args:None,force=Fa
                 if existed:move_if_needed(op,book.name,data_path,current=location)
                 page_paths[book.name]=data_path
                 table=values(l.master,sheet_name(a,role));table_key=aid+'/'+role;table_hash=digest(table);report['table_hashes'][table_key]=table_hash
-                reused=trust and old_status.get('table_hashes',{}).get(table_key)==table_hash and existed
+                block=excel_layout.get(sheet_name(a,role))
+                reused=trust and old_status.get('table_hashes',{}).get(table_key)==table_hash and existed and old_status.get('connector_blocks',{}).get(table_key)==block
                 if reused:report['reused_tables'].append(table_key)
                 elif mode=='connector':
-                    dc=op.Connector(ws,dctype='Excel',keep_DC=True);settings=dc.settings();settings['mainheader']=0;settings['labels'][op.attrib_key('Use')]='1';settings['labels']['longname']=1;dc.imp(str(l.master),sel=sheet_name(a,role))
+                    dc=op.Connector(ws,dctype='Excel',keep_DC=True);settings=dc.settings();settings['mainheader']=0;settings['labels'][op.attrib_key('Use')]='1'
+                    settings['labels']['longname']=block['row'] if block else 1
+                    settings['partial'][op.attrib_key('Use')]='1' if block else '0'
+                    if block:
+                        settings['partial']['row']='1:'+str(max(1,len(table)-1))
+                        settings['partial']['col']=str(block['col'])+':'+str(block['col']+block['cols']-1)
+                        report['connector_ranges'][table_key]=dict(block)
+                    dc.imp(str(l.master),sel=block['sheet'] if block else sheet_name(a,role))
                 else:
                     ws.remove_DC();ws.clear()
                     for c,label in enumerate(table[0]):ws.from_list(c,[r[c] if c<len(r) else None for r in table[1:]],lname=str(label or ''))

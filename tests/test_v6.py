@@ -69,7 +69,9 @@ def test_excel_values_loaded_once_and_invalidated_after_edit(tmp_path):
 def test_fast_update_only_accepts_intact_outputs(tmp_path):
     folder=create(tmp_path/'EXP',multi_demo()[:1]);l=Layout(folder);output=l.figures/'test.svg';output.write_bytes(b'<svg/>')
     from phdexlab import __version__
-    report=dict(state='complete',app_version=__version__,origin_mode='none',excel_sha256=file_hash(l.master),presentation_hash=presentation_hash(folder),outputs={str(output.relative_to(folder)):file_hash(output)})
+    from phdexlab.excel_styles import read as read_excel_style
+    from phdexlab.protocols import digest
+    report=dict(state='complete',app_version=__version__,origin_mode='none',excel_style_hash=digest(read_excel_style(folder)),excel_sha256=file_hash(l.master),presentation_hash=presentation_hash(folder),outputs={str(output.relative_to(folder)):file_hash(output)})
     dump(l.meta/'status.json',report);assert refresh(folder,'none')['reused']
     output.write_bytes(b'corrupt')
     with patch('phdexlab.experiments.write_master',side_effect=RuntimeError('REBUILD')):

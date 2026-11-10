@@ -6,6 +6,7 @@ The optional reference remains local and is never bundled or uploaded.
 import copy,json,math,statistics,sys
 from pathlib import Path
 from openpyxl import load_workbook
+from phdexlab.compact_excel import table_values
 from phdexlab.method_catalog import ALL
 from phdexlab.assay_engine import columns,clean,state,engine
 from phdexlab.multi_excel import write_master,sheet_name
@@ -148,12 +149,12 @@ def run(destination,reference=None):
     try:
         for a in assays:
             aid=a['id'];p=a['protocol'];want=expected[aid]
-            actual=list(wb[sheet_name(a,'Results')].values)[1:]
+            actual=table_values(wb,sheet_name(a,'Results'))[1:]
             sample=[r for r in actual if r[0]=='sample']
             if 'biological' in want:
                 assert len(sample)==len(want['biological'])
                 for r,v in zip(sample,want['biological']):assert math.isclose(r[4],v,rel_tol=1e-10,abs_tol=1e-10),(aid,r,v)
-                summary=list(wb[sheet_name(a,'Summary')].values)[1]
+                summary=table_values(wb,sheet_name(a,'Summary'))[1]
                 assert summary[1]==2 and math.isclose(summary[2],statistics.mean(want['biological']),rel_tol=1e-10)
                 assert math.isclose(summary[3],statistics.stdev(want['biological']),rel_tol=1e-10)
                 if engine(p) in ('colorimetric','inhibition'):
@@ -161,9 +162,9 @@ def run(destination,reference=None):
                     assert control[0][8]=='% recovery' and all(r[8]==p['result_unit'] for r in sample)
                     assert all(r[3]==6 for r in sample)  # 2 dilutions x 3 readings; still independent n=2.
             else:
-                summary=list(wb[sheet_name(a,'Summary')].values)[1:]
+                summary=table_values(wb,sheet_name(a,'Summary'))[1:]
                 assert [round(r[2],9) for r in summary]==want['fractions']
-                assert all(math.isclose(r[5],98) for r in list(wb[sheet_name(a,'MassBalance')].values)[1:])
+                assert all(math.isclose(r[5],98) for r in table_values(wb,sheet_name(a,'MassBalance'))[1:])
             checks.append(dict(protocol=p['id'],basis=p['calibration_basis'],unit=p['result_unit'],expected=want,passed=True))
         errors=[(s.title,c.coordinate,c.value) for s in wb for row in s for c in row if c.data_type=='e' and c.value!='#N/A']
         assert not errors,errors
@@ -173,13 +174,13 @@ def run(destination,reference=None):
         a,oracle=reference_assay(reference);path=out/'ZenBio-Olive-verification.xlsx';write_master(path,[a],'LOCAL-USER-REFERENCE-CROSSCHECK',calculated=True);recalc(path)
         wb=load_workbook(path,data_only=True)
         try:
-            actual=list(wb[sheet_name(a,'Results')].values)[1:];reference_report=[]
+            actual=table_values(wb,sheet_name(a,'Results'))[1:];reference_report=[]
             for r in actual:
                 expected_values=oracle[(r[1],r[2])];wanted=statistics.mean(expected_values)
                 assert r[3]==6 and math.isclose(r[4],wanted,rel_tol=1e-10)
                 assert math.isclose(r[5],statistics.stdev(expected_values),rel_tol=1e-10)
                 reference_report.append(dict(sample=r[1],biological_unit=r[2],mean=r[4],within_unit_sd=r[5],n=r[3],unit=r[8]))
-            assert all(r[1]==3 for r in list(wb[sheet_name(a,'Summary')].values)[1:])
+            assert all(r[1]==3 for r in table_values(wb,sheet_name(a,'Summary'))[1:])
         finally:wb.close()
     report=dict(protocol_variants=len(ALL),equation_cases=len(checks),blocked_defaults_retained=blocked,checks=checks,reference=reference_report)
     (out/'audit.json').write_text(json.dumps(report,indent=2),encoding='utf-8');print(json.dumps(report,indent=2),flush=True)

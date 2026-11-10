@@ -4,6 +4,20 @@
 
 Software verification with synthetic data is not analytical validation of a chemical method or matrix. The operator must review conditions, units and experimental independence.
 
+## 0.11.0 spreadsheet editing and compact Excel
+
+- **240 automated tests passed**; **57 focused regressions passed** after the final table/layout changes. Coverage includes drag filling, decimal and padded-name series, fill shortcuts, selected-range paste, undo/redo, numbering/grouping of repeated readings, preservation of source values/IDs, rejection of artificial replicates from a mean, old/new workbook round trips and configurable workbook styles.
+- The **24 independent native Excel equation cases covering all 15 catalogue variants** passed again against the final compact workbook code. The equation engine is unchanged. Incomplete TAPPI defaults remain blocked.
+- A ten-assay structural check reduced visible tabs to **21** (Overview plus two per assay), with only the metadata map hidden. RAW round trips, chart count and formula count matched the previous layout. Cell and chart references point to the new physical blocks; there are no mirrored hidden calculation sheets.
+- Native Excel chart caches matched **16, 24 and 32** for the FRAP fixture. References, axes, unit captions and label placement were reviewed in the real PDF export. Native row insertion retained all readings and conditions through managed defined ranges.
+- An actual schema **3 → 4** migration of a synthetic 0.10.1 four-assay experiment retained all RAW and protocol values, produced nine visible tabs and archived the previous workbook.
+- OriginPro 2024 imported **20 compact table blocks** for FRAP, ABTS, DPPH and TPC. Changing row height re-imported the eight relocated blocks and reused all eight unchanged plot exports; saved native connector header/column positions matched the new layout. Unchanged blocks remained reusable.
+- The exact final frozen executable generated **24 Origin + 24 Publication exports**, with a custom green/Arial/24-point workbook style. Expected means, unknown precision and no-marker settings were retained. The final workbook had nine visible tabs, schema 4, correct bar-chart caches/visible axes and no external workbook links. All four app Results views matched rounded saved means/SDs and verified Origin previews.
+- The four-assay frozen fixture took **59.26 s** while packaging ran concurrently; an integrity-verified unchanged repeat took **0.98 s**. These local measurements are not performance guarantees.
+- The complete compiled-module inventory and bundled assets matched final source. Frozen startup and one-time update-note checks passed.
+
+- The exact final installer passed isolated installation, desktop/menu shortcut and startup checks. The installed executable matched the final build. The exact ZIP passed an isolated **0.10.1 → 0.11.0** update, retaining 24 help images, experiment/style sentinels and the unseen update-notes state.
+
 ## 0.10.1 libraries, result precision and figure exports
 
 - The full suite passed **224 tests**. After the final compact-summary changes, **58 focused regressions passed**, including readiness counters, both languages/themes, one-time update notes, first-install Help, library operations and source optionality.

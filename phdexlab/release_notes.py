@@ -8,22 +8,18 @@ from .updater import version,REPO_URL
 
 NOTES={
     'es':[
-        'Gestiona y elimina plantillas de datos y variantes personales desde la biblioteca. Los protocolos incluidos pueden ocultarse y restaurarse sin afectar a experimentos guardados.',
-        'El resumen de lecturas tiene contadores separados y un indicador verde cuando las entradas están listas para calcular.',
-        'Resultados muestra media ± desviación estándar con cifras significativas coherentes y acceso directo a la carpeta de figuras. Excel conserva los valores completos.',
-        'Las exportaciones y previsualizaciones de Origin corrigen las líneas espurias sobre los títulos; se conserva el SVG original. El defecto local puede permanecer dentro del proyecto editable de Origin.',
-        'Unidad experimental / extracción sustituye a Unidad biológica. La ayuda explica muestras, preparaciones independientes y repeticiones de lectura.',
-        'La fuente del protocolo es opcional. La ayuda aclara los papeles del patrón cero y el blanco de reactivos.',
-        'Esta ventana de novedades aparece una sola vez después de actualizar.'
+        'Repeticiones: numeración automática y creación de nuevas filas sin copiar las absorbancias.',
+        'Edición de celdas: arrastrar series, sugerencias de nombres, rellenar abajo/derecha y deshacer/rehacer.',
+        'Excel: un resumen completo y dos pestañas por ensayo. Los cálculos y resultados quedan juntos.',
+        'Estilos de Excel: paletas editables, tipografía, altura de filas y plantillas personales reutilizables.',
+        'Los experimentos anteriores se pueden abrir. Al guardar o actualizar se adopta el nuevo formato; el Excel anterior queda en el historial. El formato agrupado requiere 0.11.0 o posterior.'
     ],
     'en':[
-        'Manage and delete data templates and personal protocol variants in the library. Included protocols can be hidden and restored without changing saved experiments.',
-        'The reading summary now has separate counters and a green indicator when inputs are ready to calculate.',
-        'Results shows mean ± standard deviation with consistent significant figures and direct access to the figures folder. Excel retains full values.',
-        'Origin exports and previews remove spurious lines above axis titles and retain the original SVG. The local rendering defect may remain inside the editable Origin project.',
-        'Experimental unit / extraction replaces Biological unit. Help explains samples, independent preparations and repeated readings.',
-        'The protocol source is optional. Help clarifies the roles of the zero standard and reagent blank.',
-        'These release notes appear only once after an update.'
+        'Repeated readings: automatic numbering and new rows without copying absorbance measurements.',
+        'Spreadsheet editing: drag to fill series, name suggestions, fill down/right and undo/redo.',
+        'Excel: one complete overview and two sheets per assay, with calculations and results together.',
+        'Excel styles: editable palettes, fonts, row heights and reusable personal presets.',
+        'Existing experiments can be opened. Saving or updating adopts the new layout and keeps the previous workbook in history. The compact layout requires 0.11.0 or later.'
     ]}
 
 

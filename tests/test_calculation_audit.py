@@ -34,7 +34,7 @@ def test_tfc_source_mass_basis_and_explicit_ec50_adaptation():
 
 
 def test_processing_exposes_normalisation_chain_without_percentage_format(tmp_path):
-    path=tmp_path/'audit.xlsx';write_master(path,multi_demo(True),'AUDIT')
+    path=tmp_path/'audit.xlsx';write_master(path,multi_demo(True),'AUDIT',compact_layout=False)
     wb=load_workbook(path)
     try:
         ws=wb['A01_FRAP_Processing'];raw=wb['A01_FRAP_RAW']

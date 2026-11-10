@@ -234,9 +234,13 @@ def values(path,sheet):
     if cache is not None:
         if key not in cache:
             wb=load_workbook(path,data_only=True,read_only=True)
-            try:cache[key]={ws.title:list(ws.values) for ws in wb}
+            try:
+                from .compact_excel import cached_tables
+                cache[key]=cached_tables(wb)
             finally:wb.close()
         return cache[key][sheet]
     wb=load_workbook(path,data_only=True,read_only=True)
-    try:return list(wb[sheet].values)
+    try:
+        from .compact_excel import table_values
+        return table_values(wb,sheet)
     finally:wb.close()

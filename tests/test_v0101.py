@@ -158,7 +158,7 @@ def test_release_notes_first_install_upgrade_repeat_downgrade_and_legacy():
     assert not show_after_update(w)
     path=user_data_dir()/'onboarding.json';dump(path,dict(help_seen=True,last_version='0.10.0',retained='yes'))
     assert show_after_update(w);assert w.whats_new_dialog.isVisible()
-    assert 'standard deviation' in w.whats_new_dialog.findChild(QTextBrowser).toPlainText()
+    assert __version__ in w.whats_new_dialog.findChild(QTextBrowser).toPlainText()
     w.whats_new_dialog.close();assert not show_after_update(w)
     assert json.loads(path.read_text())==dict(help_seen=True,last_version=__version__,retained='yes')
     dump(path,dict(help_seen=True,last_version='9.0.0'));assert not show_after_update(w)

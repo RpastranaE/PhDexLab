@@ -22,6 +22,9 @@ class WorkspaceFeatures:
     def setup_features(self):
         from .i18n_fields import register
         register();pref=preferences();self.theme_dark=pref['theme']=='dark';self.graph_style=DEFAULT
+        from .excel_styles import selection as excel_selection
+        from .excel_style_dialog import ExcelStyleDialog
+        self.excel_style=excel_selection()
         i18n.set_language(pref['language']);self.dialog_translator=DialogTranslator(self);QApplication.instance().installEventFilter(self.dialog_translator)
         self.pathlabel.setProperty('userData',bool(self.folder))
         layout=self.centralWidget().layout();heading=layout.itemAt(0).layout();bottom=layout.itemAt(3).layout()
@@ -36,7 +39,9 @@ class WorkspaceFeatures:
         self.templates_button.setMenu(self.templates_menu)
         from PySide6.QtWidgets import QToolButton
         self.templates_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-        self.graph_button=self.make_button('Personalizar gráficas',self.customize_graphs,'palette',bottom)
+        self.graph_button=self.make_button('Personalización',lambda:None,'palette',bottom)
+        styles_menu=QMenu(self.graph_button);styles_menu.addAction('Gráficas de Origin',lambda:self.guard(self.customize_graphs));styles_menu.addAction('Estilo del Excel',lambda:self.guard(self.customize_excel))
+        self.graph_button.setMenu(styles_menu);self.graph_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         # Keep controls next to the other bottom toolbar actions, before its stretch and legend.
         for button in (self.templates_button,self.graph_button):bottom.removeWidget(button);bottom.insertWidget(max(0,bottom.count()-2),button)
         self.language_selector.currentIndexChanged.connect(self.change_language)
@@ -105,6 +110,11 @@ class WorkspaceFeatures:
         if self.folder:save_presentation(self.folder,self.graph_style)
         else:self.dirty=True
         self.log.appendPlainText(t('La personalización se guardará con el experimento. Actualiza para regenerar las figuras.'))
+    def customize_excel(self):
+        from .excel_style_dialog import ExcelStyleDialog
+        dialog=ExcelStyleDialog(self.excel_style,self)
+        if dialog.exec()!=QDialog.DialogCode.Accepted or dialog.selected==self.excel_style:return
+        self.excel_style=dialog.selected;self.mark_dirty()
     def save_data_template(self):
         self.commit_active();dialog=QDialog(self);dialog.setWindowTitle(t('Guardar plantilla de datos'));layout=QVBoxLayout(dialog);form=QFormLayout();layout.addLayout(form)
         name=QLineEdit();form.addRow(t('Nombre de la plantilla'),name);keep=QCheckBox(t('Conservar también lecturas experimentales'));layout.addWidget(keep)

@@ -33,12 +33,14 @@ def test_master_isolation_roundtrip_and_draft_preservation(tmp_path):
     root=create(tmp_path/'EXP-multi',assays);loaded=read(root);assert len(loaded)==5
     assert loaded[-1]['rows'][0]['A_end']=='pending measurement'
     wb=load_workbook(Layout(root).master)
-    assert wb['_PhDexLab'].sheet_state=='veryHidden' and 'Samples' in wb and 'ExperimentSummary' in wb
-    assert wb['Index'].cell(6,4).value=='DRAFT'
-    assert 'A01_FRAP_RAW' in wb and 'A02_ABTS_RAW' in wb
-    formula=wb['A02_ABTS_Processing']['C5'].value
-    assert 'A02_ABTS_Calibration' in formula and 'A01_FRAP' not in formula
-    assert wb['A05_TFC_Results'].max_row==1
+    from phdexlab.compact_excel import table_values
+    assert wb['_PhDexLab'].sheet_state=='veryHidden' and 'Overview' in wb
+    assert len([ws for ws in wb if ws.sheet_state=='visible'])==1+2*len(assays)
+    assert table_values(wb,'Index')[5][3]=='DRAFT'
+    assert 'A01_FRAP_Data' in wb and 'A02_ABTS_Data' in wb
+    formula=table_values(wb,'A02_ABTS_Processing')[4][2]
+    assert 'A02_ABTS_Analysis' in formula and 'A01_FRAP' not in formula
+    assert len(table_values(wb,'A05_TFC_Results'))==1
     wb.close();verify(root)
 
 def test_save_all_retains_other_assay_and_rejects_stale(tmp_path):

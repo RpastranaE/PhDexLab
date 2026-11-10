@@ -9,6 +9,7 @@ from .reading_design import configure,signal,enabled,prepare_row,OPTICAL,PARAMET
 from .assay_engine import engine,columns
 from .data_entry import number
 from .ui_fields import FIELDS,KIND_LABELS
+from .spreadsheet_fill import SpreadsheetFill
 
 for pair in '''Muestra / patrón|Sample / standard
 Unidad experimental / extracción|Experimental unit / extraction
@@ -30,12 +31,17 @@ Las masas inicial/final son pesadas del procedimiento, no lecturas de absorbanci
 Una fila por fracción. Otro tamizado independiente debe usar otra unidad experimental.|One row per fraction. Use another experimental unit for an independent sieving run.
 Nueva entrada|New entry'''.splitlines():add(*pair.split('|',1))
 
-class EntryGrid(QTableWidget):
+class EntryGrid(SpreadsheetFill,QTableWidget):
     def __init__(self):
-        super().__init__();self.required_columns=set();self.setHorizontalHeader(EntryHeader(Qt.Orientation.Horizontal,self));self.setAlternatingRowColors(True);self.verticalHeader().setDefaultSectionSize(42)
+        super().__init__();self.init_fill();self.required_columns=set();self.setHorizontalHeader(EntryHeader(Qt.Orientation.Horizontal,self));self.setAlternatingRowColors(True);self.verticalHeader().setDefaultSectionSize(42)
         self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked|QAbstractItemView.EditTrigger.EditKeyPressed|QAbstractItemView.EditTrigger.AnyKeyPressed)
     def keyPressEvent(self,event):
+        if event.matches(QKeySequence.StandardKey.Undo):self.undo_cells();return
+        if event.matches(QKeySequence.StandardKey.Redo):self.redo_cells();return
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            if event.key()==Qt.Key.Key_D:self.fill_down();return
+            if event.key()==Qt.Key.Key_R:self.fill_right();return
         if event.matches(QKeySequence.StandardKey.Paste):
             rows=QApplication.clipboard().text().splitlines();r=max(0,self.currentRow());c=max(0,self.currentColumn())
             if r+len(rows)>100:QMessageBox.warning(self,'PhDexLab','Maximum: 100 rows');return
@@ -106,7 +112,7 @@ class MeasurementDialog(QDialog):
         if self.e=='colorimetric':layout.addWidget(self.signal_note)
         pending=QLabel(t('Introduce los datos disponibles. Las celdas pendientes se conservan como borrador.'));pending.setWordWrap(True);layout.addWidget(pending)
         buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Ok|QDialogButtonBox.StandardButton.Cancel);buttons.button(QDialogButtonBox.StandardButton.Ok).setText(t('Añadir a la tabla'));buttons.accepted.connect(self.accept);buttons.rejected.connect(self.reject);layout.addWidget(buttons)
-        self.count.valueChanged.connect(self.grid.setRowCount);self.mode.currentIndexChanged.connect(self.sync);self.signal.currentIndexChanged.connect(self.sync);self.kind.currentIndexChanged.connect(self.sync);self.sync()
+        self.count.valueChanged.connect(self.grid.setRowCount);self.mode.currentIndexChanged.connect(self.sync);self.signal.currentIndexChanged.connect(self.sync);self.kind.currentIndexChanged.connect(self.sync);self.sync();self.grid.reset_history()
         self.grid.model().rowsInserted.connect(lambda *args:self.count.setValue(self.grid.rowCount()))
         self.grid.model().rowsRemoved.connect(lambda *args:self.count.setValue(self.grid.rowCount()))
     def sync(self):

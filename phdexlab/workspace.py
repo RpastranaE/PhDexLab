@@ -67,7 +67,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         bar.removeWidget(self.save_variant_button);bar.insertWidget(bar.count()-1,self.save_variant_button)
         self.measure_button=next(b for b in self.buttons if b.property('iconName')=='measure')
         layout.itemAt(3).layout().removeWidget(self.measure_button);self.measure_button.setText('Añadir lecturas o una media');self.measure_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon);self.measure_button.setFixedWidth(250);self.tabs.setCornerWidget(self.measure_button,Qt.Corner.TopRightCorner)
-        entry_menu=QMenu(self.measure_button);entry_menu.addAction(t('Configurar entrada en Protocolo y condiciones'),lambda:self.guard(self.configure_input_options));self.measure_button.setMenu(entry_menu);self.measure_button.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
+        entry_menu=QMenu(self.measure_button);entry_menu.addAction(t('Numerar repeticiones'),lambda:self.guard(self.raw.number_repeated_readings));entry_menu.addAction(t('Añadir repeticiones…'),lambda:self.guard(self.raw.add_repeated_readings));entry_menu.addAction(t('Configurar entrada en Protocolo y condiciones'),lambda:self.guard(self.configure_input_options));self.measure_button.setMenu(entry_menu);self.measure_button.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
         self.method_guide=QTextBrowser();self.method_guide.setOpenExternalLinks(True);self.tabs.addTab(self.method_guide,'3   Metodología')
         self.help_dialog.close();self.help_dialog.deleteLater();self.help_dialog=HelpDialog(self)
         self.demo_menu.clear()
@@ -246,7 +246,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
     def show_empty_workspace(self):
         self.loading=True;self.active_id=None;self._protocol={};self.parameters.clearContents();self.parameters.setRowCount(0)
         self.raw.protocol=None;self.raw.clearContents();self.raw.setRowCount(0);self.variant.blockSignals(True);self.variant.clear();self.variant.blockSignals(False)
-        self.method_guide.clear();self.metrics.clear();self.loading=False;self.assay_pages.setCurrentWidget(self.empty_page)
+        self.method_guide.clear();self.metrics.clear();self.raw.reset_history();self.loading=False;self.assay_pages.setCurrentWidget(self.empty_page)
     def sync_assay_controls(self):
         active=bool(self.active_id);busy=bool(self.proc)
         for button in self.buttons:
@@ -336,7 +336,8 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         if not self._workspace_ready:return super().clear_experiment()
         self._excel_launch=None
         if hasattr(self,'_excel_launch_timer'):self._excel_launch_timer.stop()
-        self.graph_style=DEFAULT;self.next_assay_number=1;self.saved_states={};self.folder=None;self.open_hash=None;self.active_id=None;self.set_assays([]);self.pathlabel.setText(t('Nuevo experimento sin guardar'));self.dirty=False;self.progress_panel.hide()
+        from .excel_styles import selection as excel_selection
+        self.excel_style=excel_selection();self.graph_style=DEFAULT;self.next_assay_number=1;self.saved_states={};self.folder=None;self.open_hash=None;self.active_id=None;self.set_assays([]);self.pathlabel.setText(t('Nuevo experimento sin guardar'));self.dirty=False;self.progress_panel.hide()
     def load_demo(self,multivariety=False):
         if not self.confirm_discard():return
         self.next_assay_number=1;self.saved_states={};self.folder=None;self.open_hash=None;self.active_id=None;self.set_assays([dict(id='A01_FRAP',label='FRAP · SINTÉTICO',protocol=copy.deepcopy(FE),rows=demo_varieties() if multivariety else demo_rows())]);self.pathlabel.setText(t('Demostración sin guardar'));self.dirty=False;self.log.appendPlainText('Datos sintéticos FRAP cargados; no son resultados experimentales.')
@@ -352,6 +353,8 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         self._validation_requested=False;self.raw.set_validation_visible(False)
         from .graph_styles import selection
         self.graph_style=selection(read_presentation(path))
+        from .excel_styles import read as read_excel_style
+        self.excel_style=read_excel_style(path)
         assays=experiments.read(path);self.next_assay_number=json.loads((Layout(path).meta/'experiment.json').read_text(encoding='utf-8')).get('next_assay_number',1);self.saved_states={};self.dirty=False
         report_path=Layout(path).meta/'status.json'
         if report_path.exists():self.saved_states=json.loads(report_path.read_text(encoding='utf-8')).get('assays',{})
@@ -372,8 +375,8 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
             name,ok=QInputDialog.getText(self,'Nuevo experimento','Nombre de carpeta nueva')
             if not ok:return
             if not name or name in ('.','..') or any(c in name for c in '<>:"/\\|?*'):raise ValueError('Nombre de carpeta inválido')
-            path=experiments.create(Path(parent)/name,self.assays);save_presentation(path,self.graph_style);self.load_folder(path)
-        else:experiments.save(self.folder,self.assays,self.open_hash);save_presentation(self.folder,self.graph_style);self.load_folder(self.folder)
+            path=experiments.create(Path(parent)/name,self.assays,excel_style=self.excel_style);save_presentation(path,self.graph_style);self.load_folder(path)
+        else:experiments.save(self.folder,self.assays,self.open_hash,excel_style=self.excel_style);save_presentation(self.folder,self.graph_style);self.load_folder(self.folder)
         if was_validating:self._validation_requested=True;self.raw.set_validation_visible(True)
         self.log.appendPlainText('Guardadas las entradas de todos los ensayos. Actualizar para calcular y exportar los completos.')
         if created and prompt_after_create:

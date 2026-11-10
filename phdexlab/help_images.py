@@ -37,3 +37,6 @@ class ImageViewer(QDialog):
         self.zoom.setValue(max(20,min(200,int(100*min((self.scroll.viewport().width()-12)/self.original.width(),(self.scroll.viewport().height()-12)/self.original.height())))))
     def render(self,value):
         size=self.original.size()*float(value/100);self.label.setPixmap(self.original.scaled(size,Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation));self.label.adjustSize()
+
+CAPTIONS_EN[11]="The palette menu has separate editors for Origin graphs and Excel."
+CAPTIONS_ES[11]="El menú de la paleta tiene editores separados para Origin y Excel."

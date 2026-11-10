@@ -70,7 +70,8 @@ def snapshot(folder,assay):
     if state.get('state') not in ('calculated','needs_review'):return dict(state='pending',issue=state.get('issue',''))
     wb=load_workbook(l.master,read_only=True,data_only=True)
     try:
-        saved=lambda role:list(wb[sheet_name(assay,role)].values)
+        from .compact_excel import table_values
+        saved=lambda role:table_values(wb,sheet_name(assay,role))
         data=dict(state='ready',issue=state.get('issue',''),summary=saved('Summary')[1:],
                   results=saved('Results')[1:],figures=[],figure_state='missing')
         if engine(assay['protocol']) in ('colorimetric','inhibition'):

@@ -29,7 +29,7 @@ def summary_count(rows,p):
     if engine(p)=='sieve':return len({(r['sample_id'],r['lower_um'],r['upper_um']) for r in rows})
     return len({r['sample_id'] for r in rows if r['kind']=='sample'})
 
-def write_master(path,assays,experiment_id,calculated=False):
+def write_master(path,assays,experiment_id,calculated=False,compact_layout=True,excel_style=None):
     validate_ids(assays);wb=Workbook();wb.remove(wb.active)
     index=wb.create_sheet('Index');index.append(['Assay ID','Assay / protocol','Method','State','Information / next step','Source','Result unit'])
     overall=wb.create_sheet('ExperimentSummary');overall.append(['Assay ID','Method','Sample','Independent n','Mean','Between-unit SD','Unit'])
@@ -125,13 +125,14 @@ def write_master(path,assays,experiment_id,calculated=False):
         if ws==meta:continue
         ws.freeze_panes='A2';ws.auto_filter.ref=ws.dimensions;ws.sheet_view.showGridLines=False;ws.row_dimensions[1].height=34
         israw=ws.title.endswith('_RAW');isparam=ws.title.endswith('_Parameters')
-        for cell in ws[1]:cell.fill=PatternFill('solid',fgColor='173E4A');cell.font=Font(name='Calibri',size=11,bold=True,color='FFFFFF');cell.alignment=Alignment(wrap_text=True,vertical='center')
-        for row in ws.iter_rows(min_row=2):
-            for cell in row:
-                editable=israw or isparam and cell.column==2
-                cell.font=Font(name='Calibri',size=11,color='145B9B' if editable else '26373D');cell.fill=PatternFill('solid',fgColor='EAF4FC' if editable else 'F3F7F8' if cell.row%2==0 else 'FFFFFF');cell.alignment=Alignment(wrap_text=True,vertical='top')
-                if cell.data_type=='f' or isinstance(cell.value,(int,float)):cell.number_format='General'
-            ws.row_dimensions[row[0].row].height=29
+        if not compact_layout:
+            for cell in ws[1]:cell.fill=PatternFill('solid',fgColor='173E4A');cell.font=Font(name='Calibri',size=11,bold=True,color='FFFFFF');cell.alignment=Alignment(wrap_text=True,vertical='center')
+            for row in ws.iter_rows(min_row=2):
+                for cell in row:
+                    editable=israw or isparam and cell.column==2
+                    cell.font=Font(name='Calibri',size=11,color='145B9B' if editable else '26373D');cell.fill=PatternFill('solid',fgColor='EAF4FC' if editable else 'F3F7F8' if cell.row%2==0 else 'FFFFFF');cell.alignment=Alignment(wrap_text=True,vertical='top')
+                    if cell.data_type=='f' or isinstance(cell.value,(int,float)):cell.number_format='General'
+                ws.row_dimensions[row[0].row].height=29
         for column in ws.columns:ws.column_dimensions[column[0].column_letter].width=22
         if ws.title.endswith('_Processing'):
             ws.row_dimensions[1].height=72
@@ -152,6 +153,10 @@ def write_master(path,assays,experiment_id,calculated=False):
             from openpyxl.utils import get_column_letter
             for key,type_,formula1,formula2 in [('reading_basis','list','"individual,mean"',None),('technical_n','whole','1','1000000'),('technical_sd','decimal','0','1E+100')]:
                 validation=DataValidation(type=type_,operator='between' if type_!='list' else None,formula1=formula1,formula2=formula2,allow_blank=True);validation.showErrorMessage=True;ws.add_data_validation(validation);col=get_column_letter(columns(assay['protocol']).index(key)+1);validation.add(f'{col}2:{col}10001')
+    if compact_layout:
+        from .compact_excel import compact
+        from .excel_styles import selection
+        compact(wb,assays,selection(excel_style))
     meta.sheet_state='veryHidden';wb.calculation=CalcProperties(calcId=0,fullCalcOnLoad=True);wb.save(path);wb.close();return report
 
 def add_charts(wb,names,p,rows):
@@ -159,10 +164,10 @@ def add_charts(wb,names,p,rows):
         ws=wb[names['Calibration']];last=len(groups_local(rows,{'standard'}))+1
         chart=ScatterChart();chart.title=p['method']+' calibration';chart.x_axis.title=p['equivalent']+' ('+p['concentration_unit']+')';chart.y_axis.title='Inhibition (%)' if engine(p)=='inhibition' else 'Blank-corrected absorbance (AU)'
         series=Series(Reference(ws,min_col=2,min_row=2,max_row=last),Reference(ws,min_col=1,min_row=2,max_row=last),title='Calibration means');series.marker.symbol='circle';series.graphicalProperties.line.noFill=True;chart.series.append(series)
-        fit=Series(Reference(ws,min_col=5,min_row=2,max_row=last),Reference(ws,min_col=1,min_row=2,max_row=last),title='OLS fit');chart.series.append(fit);chart.width=22;chart.height=12;ws.add_chart(chart,'A12')
+        fit=Series(Reference(ws,min_col=5,min_row=2,max_row=last),Reference(ws,min_col=1,min_row=2,max_row=last),title='OLS fit');chart.series.append(fit);chart.width=22;chart.height=12;ws.add_chart(chart,'A'+str(max(12,ws.max_row+3)))
     ws=wb[names['Summary']]
     if ws.max_row>1:
-        chart=BarChart();chart.title=p['method']+' | mean across units ± SD';chart.y_axis.title=p['result_unit'];chart.x_axis.title='Sample';chart.add_data(Reference(ws,min_col=3,min_row=1,max_row=ws.max_row),titles_from_data=True);chart.set_categories(Reference(ws,min_col=1,min_row=2,max_row=ws.max_row));chart.legend=None;chart.width=22;chart.height=12
+        chart=BarChart();chart.title=p['method']+' mean ± SD';chart.y_axis.title=p['result_unit'];chart.x_axis.title='Sample';chart.add_data(Reference(ws,min_col=3,min_row=1,max_row=ws.max_row),titles_from_data=True);chart.set_categories(Reference(ws,min_col=1,min_row=2,max_row=ws.max_row));chart.legend=None;chart.width=22;chart.height=12
         sd=NumDataSource(numRef=NumRef(f"'{ws.title}'!$D$2:$D${ws.max_row}"));chart.series[0].errBars=ErrorBars(errDir='y',errBarType='both',errValType='cust',plus=sd,minus=sd);chart.series[0].graphicalProperties.solidFill='B5D5E5';ws.add_chart(chart,'A'+str(max(7,ws.max_row+3)))
 
 def groups_local(rows,kinds):
@@ -176,14 +181,15 @@ def read_master(path):
             from .excel import read_inputs
             rows,p=read_inputs(path);return [dict(id='A01_'+p['method'],label=p['name'],protocol=p,rows=rows)]
         meta=wb['_PhDexLab'];assays=[]
-        if meta.cell(1,2).value!=3:raise ValueError('Versión de libro no soportada')
+        if meta.cell(1,2).value not in (3,4):raise ValueError('Versión de libro no soportada')
+        from .compact_excel import cells
         for meta_row in list(meta.values)[2:]:
             id,label=meta_row[:2]
             if not id:continue
-            prefix=str(id);pws=wb[prefix+'_Parameters'];rws=wb[prefix+'_RAW']
-            for ws in (pws,rws):
-                if any(c.data_type=='f' for row in ws for c in row):raise ValueError('RAW y Parameters deben contener valores, no fórmulas')
-            p={r[0]:r[1] for r in pws.iter_rows(min_row=2,values_only=True) if r[0]}
+            prefix=str(id);pws=cells(wb,prefix+'_Parameters');rws=cells(wb,prefix+'_RAW')
+            for rows in (pws,rws):
+                if any(c.data_type=='f' for row in rows for c in row):raise ValueError('RAW y Parameters deben contener valores, no fórmulas')
+            p={r[0].value:r[1].value for r in pws[1:] if r[0].value}
             missing={'method','name','id','version','result_unit','concentration_unit','response'}-set(p)
             if missing:raise ValueError('Faltan claves en Parameters: '+', '.join(sorted(missing))+'. Editar valores; no borrar filas de parámetros.')
             p.setdefault('source','')
@@ -195,8 +201,9 @@ def read_master(path):
             if 'operational_confirmed' in p:p['operational_confirmed']=yes(p['operational_confirmed'])
             if p.get('reading_schema')==2 and engine(p)=='colorimetric':p['response']='endpoint' if p.get('reading_signal')=='endpoint' else 'delta'
             keys=columns(p)
-            if list(next(rws.values))!=keys:raise ValueError('No cambiar nombres ni orden de columnas RAW')
-            rows=[dict(zip(keys,r)) for r in rws.iter_rows(min_row=2,values_only=True) if any(v is not None and str(v).strip() for v in r)]
+            if [c.value for c in rws[0]]!=keys:raise ValueError('No cambiar nombres ni orden de columnas RAW')
+            raw_values=[tuple(c.value for c in row) for row in rws[1:]]
+            rows=[dict(zip(keys,r)) for r in raw_values if any(v is not None and str(v).strip() for v in r)]
             import uuid
             for row in rows:
                 if not row.get('record_id'):row['record_id']=uuid.uuid4().hex
@@ -207,6 +214,12 @@ def read_master(path):
 def recalculate_master(path,export_folder):
     import time,pythoncom,win32com.client
     pythoncom.CoInitialize();app=None;book=None;exports=[];export_folder=Path(export_folder);export_folder.mkdir(parents=True,exist_ok=True)
+    from .compact_excel import mappings
+    source=load_workbook(path,read_only=True,data_only=False)
+    try:
+        layout=mappings(source)
+        chart_font=source['Overview'].cell(4,1).font.name if layout else 'Calibri'
+    finally:source.close()
     try:
         app=win32com.client.DispatchEx('Excel.Application');app.Visible=False;app.DisplayAlerts=False;app.AskToUpdateLinks=False;app.AutomationSecurity=3
         app.ScreenUpdating=False;app.EnableEvents=False
@@ -217,11 +230,24 @@ def recalculate_master(path,export_folder):
             if time.monotonic()>deadline:raise TimeoutError('Excel no terminó de recalcular')
             pythoncom.PumpWaitingMessages();time.sleep(.1)
         for ws in book.Worksheets:
-            if ws.Name.endswith(('_Summary','_Calibration')):
+            if ws.Name.endswith(('_Summary','_Calibration','_Analysis')):
                 for i in range(1,ws.ChartObjects().Count+1):
                     try:
                         obj=ws.ChartObjects(i);ws.Activate();obj.Activate();chart=obj.Chart
                         chart.Axes(1).TickLabels.NumberFormat='General';chart.Axes(2).TickLabels.NumberFormat='General'
+                        if ws.Name.endswith('_Analysis'):
+                            chart.ChartArea.Font.Name=chart_font;chart.ChartArea.Font.Size=10
+                            chart.Axes(1).TickLabels.Font.Size=9;chart.Axes(2).TickLabels.Font.Size=9
+                            if chart.Axes(2).HasTitle:
+                                unit=chart.Axes(2).AxisTitle.Text;chart.Axes(2).HasTitle=False
+                                chart.ChartTitle.Text=chart.ChartTitle.Text+'\n'+unit
+                            sample_axis=chart.Axes(1).HasTitle and chart.Axes(1).AxisTitle.Text=='Sample'
+                            if sample_axis:chart.Axes(1).HasTitle=False
+                            chart.PlotArea.Left=45;chart.PlotArea.Top=40;chart.PlotArea.Width=obj.Width-60
+                            chart.PlotArea.Height=obj.Height-(75 if sample_axis else 110)
+                            if not sample_axis and chart.Axes(1).HasTitle:chart.Axes(1).AxisTitle.Top=obj.Height-42
+                            if chart.HasLegend:chart.Legend.Top=obj.Height-18
+                            continue
                         if chart.Axes(2).HasTitle:
                             unit=chart.Axes(2).AxisTitle.Text;chart.Axes(2).HasTitle=False;chart.ChartTitle.Text=ws.Name.split('_')[1]+' | '+unit
                         if chart.Axes(1).HasTitle:chart.Axes(1).AxisTitle.Top=obj.Height-40
@@ -230,6 +256,11 @@ def recalculate_master(path,export_folder):
                         pass  # Optional chart geometry differs across desktop Excel builds; values are already calculated.
                 if ws.Name.endswith('_Summary') and ws.UsedRange.Rows.Count>1:
                     target=export_folder/(ws.Name+'.pdf');ws.ExportAsFixedFormat(0,str(target.resolve()));exports.append(target)
+                elif ws.Name.endswith('_Analysis'):
+                    logical=ws.Name.removesuffix('_Analysis')+'_Summary';block=layout.get(logical)
+                    if block and block['rows']>1:
+                        following=min((b['row']-2 for b in layout.values() if b['sheet']==ws.Name and b['row']>block['row']),default=block['row']+block['rows']+25)
+                        target=export_folder/(logical+'.pdf');ws.Range(f'A1:M{following}').ExportAsFixedFormat(0,str(target.resolve()));exports.append(target)
         book.Save()
         return exports
     finally:
