@@ -274,6 +274,10 @@ El resumen sobre la tabla separa los contadores de lecturas, blancos, patrones, 
 
 ### Estilo del Excel
 
-En el icono de paleta elige **Estilo del Excel / Excel style**. Hay cuatro paletas iniciales y se pueden editar los colores de encabezados, secciones, entradas y filas alternas, además de la letra y la altura de filas. La vista previa es inmediata. **Guardar como estilo** permite reutilizar una configuración personal. Aplica los cambios y guarda o actualiza el experimento para regenerar el libro. Este estilo es independiente de Origin y del modo claro/oscuro de la app.
+En el icono de paleta elige **Estilo del Excel / Excel style**. Hay seis paletas iniciales. En **Colores** puedes editar encabezados, secciones, entradas, texto, fondo y bordes. En **Distribución** puedes ajustar letra, tamaños de título/secciones/encabezados, altura de filas y encabezados, anchura de columnas, alineación, bordes y cuadrícula. Los valores y fórmulas conservan su precisión. La vista previa es inmediata. **Guardar como estilo** permite reutilizar una configuración personal. Aplica los cambios y guarda o actualiza el experimento para regenerar el libro. Este estilo es independiente de Origin y del modo claro/oscuro de la app.
 
-![Estilos de Excel](excel-style-en-v011.png)
+![Estilos de Excel](excel-style-en-v0111.png)
+
+![Distribución del Excel](excel-layout-en-v0111.png)
+
+En la versión 0.11.1 se corrige la representación de exponentes en SVG. Para corregir figuras de un experimento anterior, pulsa **Actualizar y exportar**.

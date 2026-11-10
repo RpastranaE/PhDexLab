@@ -15,7 +15,7 @@ from .protocols import digest
 from .integration import file_hash
 from .export_cache import store,restore
 
-RENDER_VERSION=3
+RENDER_VERSION=4
 
 def prepare_assay_folders(op,managed,aid):
     """One round trip instead of repeated mkdir/cd + temporary-path queries."""

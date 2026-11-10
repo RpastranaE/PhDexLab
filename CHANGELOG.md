@@ -2,6 +2,13 @@
 
 Para instalar y utilizar PhDexLab, consulta el [manual vigente](docs/MANUAL.md). Esta página explica la evolución; las instrucciones actuales no están repartidas entre versiones.
 
+## 0.11.1
+
+- Estilos Excel ampliados: seis paletas, colores de texto y fondos, bordes horizontales o completos, alineación, tamaños independientes de encabezados/secciones/título, altura de encabezados, anchura de columnas y cuadrícula.
+- Editor con pestañas Colores y Distribución y vista previa. Se conservan los estilos personales anteriores; no se redondean valores ni cambian cálculos.
+- Superíndices SVG normalizados a texto vectorial editable con tamaño y desplazamiento explícitos. Evita el fallo de fuente que mostraba −1 como !. Se conservan las curvas, símbolos, signos negativos y anotaciones.
+- La próxima actualización/exportación regenera las figuras de Origin con la corrección.
+
 ## 0.11.0
 
 - Creación de repeticiones con campos comunes y numeración preparada, sin copiar absorbancias. Numeración automática de filas existentes por muestra y unidad.

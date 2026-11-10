@@ -8,18 +8,16 @@ from .updater import version,REPO_URL
 
 NOTES={
     'es':[
-        'Repeticiones: numeración automática y creación de nuevas filas sin copiar las absorbancias.',
-        'Edición de celdas: arrastrar series, sugerencias de nombres, rellenar abajo/derecha y deshacer/rehacer.',
-        'Excel: un resumen completo y dos pestañas por ensayo. Los cálculos y resultados quedan juntos.',
-        'Estilos de Excel: paletas editables, tipografía, altura de filas y plantillas personales reutilizables.',
-        'Los experimentos anteriores se pueden abrir. Al guardar o actualizar se adopta el nuevo formato; el Excel anterior queda en el historial. El formato agrupado requiere 0.11.0 o posterior.'
+        'Excel: seis paletas y nuevos controles de texto, fondos, bordes, alineación, tamaños y anchura de columnas.',
+        'Vista previa organizada en Colores y Distribución, con estilos personales reutilizables.',
+        'SVG: superíndices compatibles para que −1 se vea correctamente en las unidades.',
+        'Actualiza y exporta los experimentos existentes para regenerar las figuras corregidas.'
     ],
     'en':[
-        'Repeated readings: automatic numbering and new rows without copying absorbance measurements.',
-        'Spreadsheet editing: drag to fill series, name suggestions, fill down/right and undo/redo.',
-        'Excel: one complete overview and two sheets per assay, with calculations and results together.',
-        'Excel styles: editable palettes, fonts, row heights and reusable personal presets.',
-        'Existing experiments can be opened. Saving or updating adopts the new layout and keeps the previous workbook in history. The compact layout requires 0.11.0 or later.'
+        'Excel: six palettes and new controls for text, backgrounds, borders, alignment, sizes and column widths.',
+        'Live preview organised into Colours and Layout, with reusable personal presets.',
+        'SVG: portable superscripts so −1 displays correctly in scientific units.',
+        'Update and export existing experiments to regenerate corrected figures.'
     ]}
 
 

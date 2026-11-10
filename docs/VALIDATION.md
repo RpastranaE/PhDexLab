@@ -4,6 +4,15 @@
 
 Software verification with synthetic data is not analytical validation of a chemical method or matrix. The operator must review conditions, units and experimental independence.
 
+## 0.11.1 Excel appearance and SVG superscripts
+
+- **247 automated tests passed**; **43 focused regressions passed** after the final SVG positioning adjustment, including new preview-to-workbook checks for colours, borders, alignment, header height and font sizes. Logical input values and formulas remain identical when appearance changes. Invalid style settings are rejected; older settings receive compatible defaults.
+- The SVG regression preserves plot paths, rotations, ordinary negative values and literal exclamation marks. Unicode superscripts become ordinary editable text segments with explicit coordinates and size, including in the app’s SVG Tiny renderer. The transform is idempotent and does not replace punctuation globally.
+- Visual checks using Windows fonts confirmed the corrected FRAP inverse-gram unit in both the SVG rendering and its vector PDF. The style editor was reviewed in English and Spanish at high resolution.
+
+- The exact frozen executable generated **24 Origin + 24 Publication exports** for FRAP, ABTS, DPPH and TPC. All eight Origin SVGs passed the exponent check, including Origin’s per-character coordinate lists. Native chart caches, means, SD handling, no-marker options and the custom violet workbook formatting passed. The first run took **79.89 s** during concurrent packaging; an unchanged integrity-verified repeat took **1.11 s**.
+- A real **0.11.0 → 0.11.1** package update passed startup verification and preserved experiment and preference sentinels. All compiled modules and bundled assets matched source.
+
 ## 0.11.0 spreadsheet editing and compact Excel
 
 - **240 automated tests passed**; **57 focused regressions passed** after the final table/layout changes. Coverage includes drag filling, decimal and padded-name series, fill shortcuts, selected-range paste, undo/redo, numbering/grouping of repeated readings, preservation of source values/IDs, rejection of artificial replicates from a mean, old/new workbook round trips and configurable workbook styles.

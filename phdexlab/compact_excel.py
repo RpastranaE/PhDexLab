@@ -7,7 +7,7 @@ import copy,re,math
 from openpyxl.formula.tokenizer import Tokenizer
 from openpyxl.utils.cell import get_column_letter,column_index_from_string,coordinate_to_tuple,range_boundaries
 from openpyxl.workbook.defined_name import DefinedName
-from openpyxl.styles import Font,PatternFill,Alignment
+from openpyxl.styles import Font,PatternFill,Alignment,Border,Side
 from openpyxl.worksheet.cell_range import MultiCellRange
 
 
@@ -142,22 +142,26 @@ def compact(wb,assays,style):
             if not isinstance(chart.anchor,str):raise ValueError('Unsupported chart anchor')
             new.add_chart(moved,shift_address(chart.anchor,dr,dc))
         role=logical.rsplit('_',1)[-1] if logical not in ('Index','ExperimentSummary','Samples') else logical
-        heading=new.cell(entry['row']-1,entry['col'],labels[role]);heading.font=Font(name=style['font'],size=12,bold=True,color=style['accent'][1:])
+        heading=new.cell(entry['row']-1,entry['col'],labels[role]);heading.font=Font(name=style['font'],size=style['section_size'],bold=True,color=style['accent'][1:])
         nav=new.cell(1,len([c for c in new[1] if c.value])+1,labels[role]);nav.hyperlink=f"#'{new.title}'!{get_column_letter(entry['col'])}{entry['row']-1}";nav.style='Hyperlink'
-        new.sheet_properties.tabColor=style['accent'][1:];new.freeze_panes='A5';new.sheet_view.showGridLines=False
+        new.sheet_properties.tabColor=style['accent'][1:];new.freeze_panes='A5';new.sheet_view.showGridLines=style['gridlines']
         new.sheet_properties.pageSetUpPr.fitToPage=True;new.page_setup.orientation='landscape';new.page_setup.paperSize=new.PAPERSIZE_A3;new.page_setup.fitToWidth=1;new.page_setup.fitToHeight=0
         for row in range(entry['row'],entry['row']+entry['rows']):
-            new.row_dimensions[row].height=style['row_height'] if row!=entry['row'] else max(36,old.row_dimensions[1].height or 36)
+            new.row_dimensions[row].height=style['row_height'] if row!=entry['row'] else style['header_height']
             for col in range(entry['col'],entry['col']+entry['cols']):
                 cell=new.cell(row,col);header=row==entry['row'];editable=role=='RAW' or role=='Parameters' and col==entry['col']+1
-                cell.font=Font(name=style['font'],size=style['font_size'],bold=header,color='FFFFFF' if header else style['input_text'][1:] if editable else '26373D')
-                cell.fill=PatternFill('solid',fgColor=style['header'][1:] if header else style['input'][1:] if editable else style['stripe'][1:] if style['striped'] and (row-entry['row'])%2 else 'FFFFFF')
-                if cell.value is not None:cell.alignment=Alignment(wrap_text=True,vertical='center' if header else 'top')
+                cell.font=Font(name=style['font'],size=style['header_size'] if header else style['font_size'],bold=header,color=style['header_text'][1:] if header else style['input_text'][1:] if editable else style['text'][1:])
+                cell.fill=PatternFill('solid',fgColor=style['header'][1:] if header else style['input'][1:] if editable else style['stripe'][1:] if style['striped'] and (row-entry['row'])%2 else style['background'][1:])
+                if cell.value is not None:cell.alignment=Alignment(wrap_text=True,vertical='center' if header else 'top',horizontal=style['alignment'])
+                edge=Side(style='thin',color=style['border_color'][1:])
+                cell.border=Border(bottom=edge) if style['border']=='horizontal' else Border(left=edge,right=edge,top=edge,bottom=edge) if style['border']=='all' else Border()
         if role=='RAW':new.column_dimensions[get_column_letter(entry['col'])].hidden=True
         if role=='RAW':new.auto_filter.ref=f"{get_column_letter(entry['col'])}{entry['row']}:{get_column_letter(entry['col']+entry['cols']-1)}{entry['row']+entry['rows']-1}"
     for ws in targets.values():
         assay=next((a for a in assays if ws.title in (a['id']+'_Data',a['id']+'_Analysis')),None)
-        title=ws.cell(2,1,assay['label'] if assay else 'Experiment overview');title.font=Font(name=style['font'],size=14,bold=True,color=style['accent'][1:]);ws.row_dimensions[2].height=28
+        title=ws.cell(2,1,assay['label'] if assay else 'Experiment overview');title.font=Font(name=style['font'],size=style['title_size'],bold=True,color=style['accent'][1:]);ws.row_dimensions[2].height=max(28,style['title_size']*1.6)
+        for dimension in ws.column_dimensions.values():
+            if dimension.width:dimension.width*=style['column_scale']/100
         for row in range(2,ws.max_row+1):
             if ws.row_dimensions[row].height is None:ws.row_dimensions[row].height=style['row_height']
     for ws in source.values():wb.remove(ws)
