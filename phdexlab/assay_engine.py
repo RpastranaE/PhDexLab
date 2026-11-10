@@ -38,7 +38,7 @@ def validate_protocol(p):
     from .method_catalog import METHOD_NAMES
     if p.get('method') not in METHOD_NAMES:raise ValueError('Método no implementado')
     if engine(p) not in ('colorimetric','inhibition','ec50','gravimetric','sieve'):raise ValueError('Motor de cálculo desconocido')
-    if not p.get('name') or not p.get('source'):raise ValueError('Nombre y fuente del protocolo obligatorios')
+    if not p.get('name'):raise ValueError('Nombre del protocolo obligatorio')
     canonical(p)
     from .reading_design import validate
     validate(p)
@@ -145,7 +145,7 @@ def clean(rows,p):
         for unit,ds in batches.items():
             if len({d['loaded_g'] for d in ds})!=1:raise ValueError('La masa cargada debe coincidir en todas las fracciones de una unidad')
             intervals=sorted({(d['lower_um'],d['upper_um'] if d['upper_um'] is not None else math.inf) for d in ds})
-            if len(ds)!=len(intervals):raise ValueError('Una masa por fracción y unidad; otro tamizado utiliza otra unidad biológica')
+            if len(ds)!=len(intervals):raise ValueError('Una masa por fracción y unidad; otro tamizado utiliza otra unidad experimental')
             if any(a[1]>b[0] for a,b in zip(intervals,intervals[1:])):raise ValueError('Intervalos granulométricos solapados')
     if len(result)>10000:raise ValueError('Máximo 10000 lecturas por ensayo')
     return result
@@ -243,7 +243,7 @@ def cell_plan(rows,p):
     for r,sid in enumerate(samples,2):
         positions=[i for i,key in enumerate(result_groups,2) if key[1]==sid];refs=','.join(f'Results!E{i}' for i in positions)
         put('Summary',f'A{r}',f'Results!B{positions[0]}');put('Summary',f'B{r}',f'COUNT({refs})')
-        # Missing EC50 is not silently excluded from biological mean/SD.
+        # Missing EC50 is not silently excluded from mean across units/SD.
         valid=f'COUNT({refs})={len(positions)}'
         put('Summary',f'C{r}',f'IF({valid},AVERAGE({refs}),NA())');put('Summary',f'D{r}',f'IF({valid},STDEV({refs}),NA())' if len(positions)>1 else 'NA()')
     return f

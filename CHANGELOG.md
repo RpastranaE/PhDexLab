@@ -2,6 +2,21 @@
 
 Para instalar y utilizar PhDexLab, consulta el [manual vigente](docs/MANUAL.md). Esta página explica la evolución; las instrucciones actuales no están repartidas entre versiones.
 
+## 0.10.1
+
+- Resumen visual de lecturas con contadores separados y estado verde Listo para calcular, adaptado a ambos idiomas y temas.
+- Ventana de novedades local que aparece una sola vez al abrir una versión posterior; la primera instalación mantiene la ayuda inicial.
+
+- Biblioteca accesible desde el icono de cuadrícula, incluso sin experimento abierto, para buscar y eliminar plantillas de datos y variantes personales con confirmación.
+- Los protocolos incluidos pueden ocultarse del catálogo y restaurarse desde el gestor. Las copias utilizadas en experimentos y las condiciones editadas del ensayo actual se conservan.
+- La biblioteca de variantes respeta el mismo directorio de datos de usuario que las plantillas y preferencias.
+- Acceso directo a la carpeta de figuras desde Resultados finales.
+- Terminología genérica: Unidad experimental / extracción, n independiente y DE entre unidades, sin cambiar bio_id, la agrupación ni los cálculos guardados.
+- Resultados presenta media ± DE: dos cifras significativas para la desviación y media redondeada a la misma posición decimal. Excel y las ayudas emergentes conservan los valores completos; no se inventa una DE cuando no es estimable.
+- Fuente del protocolo opcional para guardar y calcular; las referencias existentes se conservan.
+- Limpieza del defecto de sobrelínea en los títulos de exportaciones de Origin. Se conserva el SVG original en trazabilidad y se generan PNG/PDF desde sus vectores corregidos; datos, ajustes, ejes y barras de error se mantienen.
+- Ayuda ampliada sobre patrón cero y blanco de reactivos: el ejemplo Zen-Bio representa tres observaciones en dos roles; el blanco se resta una sola vez y no son réplicas independientes adicionales.
+
 ## 0.10.0
 
 - Actualizar y exportar guarda primero las entradas y condiciones actuales en el Excel maestro, incluida la celda en edición. Se conserva la protección contra cambios externos del libro.

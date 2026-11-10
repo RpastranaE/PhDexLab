@@ -159,7 +159,7 @@ def run(destination,reference=None):
                 if engine(p) in ('colorimetric','inhibition'):
                     control=[r for r in actual if r[0]=='control'];assert len(control)==1 and math.isclose(control[0][4],90,abs_tol=1e-9)
                     assert control[0][8]=='% recovery' and all(r[8]==p['result_unit'] for r in sample)
-                    assert all(r[3]==6 for r in sample)  # 2 dilutions x 3 readings; still biological n=2.
+                    assert all(r[3]==6 for r in sample)  # 2 dilutions x 3 readings; still independent n=2.
             else:
                 summary=list(wb[sheet_name(a,'Summary')].values)[1:]
                 assert [round(r[2],9) for r in summary]==want['fractions']

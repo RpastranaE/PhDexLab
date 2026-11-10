@@ -10,5 +10,6 @@ def show_on_first_use(window):
     if seen:return False
     window.show_help()
     path.parent.mkdir(parents=True,exist_ok=True)
-    dump(path,dict(help_seen=True))
+    from . import __version__
+    dump(path,dict(help_seen=True,last_version=__version__))
     return True

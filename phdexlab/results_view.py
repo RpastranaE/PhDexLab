@@ -14,6 +14,7 @@ from .assay_engine import engine
 
 for pair in '''4   Resultados finales|4   Final results
 Resultados finales|Final results
+Abrir carpeta de figuras|Open figures folder
 Resultados calculados · revisar controles de calidad|Calculated results · review quality controls
 Guarda y actualiza el experimento para ver los resultados finales.|Save and update the experiment to view final results.
 Hay entradas modificadas. Guarda y actualiza para obtener resultados vigentes.|Inputs have changed. Save and update to obtain current results.
@@ -23,9 +24,11 @@ Calculando y exportando resultados…|Calculating and exporting results…
 No hay un resultado calculado para este ensayo.|There is no calculated result for this assay.
 No se pueden leer los resultados guardados.|Saved results could not be read.
 Valor almacenado en Excel|Value stored in Excel
-Media biológica|Biological mean
-DE biológica|Biological SD
-n biológico|Biological n
+Media ± DE|Mean ± SD
+Presentación: DE con dos cifras significativas y media redondeada al mismo decimal. Excel conserva todos los dígitos.|Display: SD with two significant figures and mean rounded to the same decimal place. Excel retains full precision.
+Media entre unidades|Mean across units
+DE entre unidades|Between-unit SD
+n independiente|Independent n
 n técnico|Technical n
 Resultado de la unidad|Unit result
 DE de la unidad|Within-unit SD
@@ -34,7 +37,7 @@ Base de masa|Mass basis
 Calibrado|Calibration
 Pendiente del calibrado|Calibration slope
 Intercepto|Intercept
-Resultados por unidad biológica|Results by biological unit
+Resultados por unidad experimental|Results by experimental unit
 Control de calidad|Quality control
 Gráficas de Origin|Origin figures
 Ampliar gráfica|Enlarge figure
@@ -48,7 +51,7 @@ El proyecto o las figuras han cambiado. Actualiza para renovar las previsualizac
 Algunas exportaciones de Origin requieren revisión.|Some Origin exports need review.
 Media técnica|Technical mean
 DE técnica|Technical SD
-Unidad biológica|Biological unit
+Unidad experimental|Experimental unit
 Unidad|Unit
 Muestra|Sample
 Ensayo|Assay
@@ -110,9 +113,14 @@ class FigurePreview(QLabel):
         else:super().keyPressEvent(event)
 
 class ResultsView(QWidget):
+    open_figures=Signal()
     def __init__(self,parent=None):
         super().__init__(parent);self._key=None;self._context=None;self.cards=[];self.previews=[];self.card_frames=[];self.card_grid=None;self._card_columns=None
         layout=QVBoxLayout(self);layout.setContentsMargins(12,12,12,12)
+        from .ui_icons import icon
+        tools=QHBoxLayout();tools.addStretch();self.figures_button=QToolButton();self.figures_button.setIcon(icon('open'));self.figures_button.setProperty('iconName','open')
+        self.figures_button.setText(t('Abrir carpeta de figuras'));self.figures_button.setToolTip(t('Abrir carpeta de figuras'));self.figures_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.figures_button.setEnabled(False);self.figures_button.clicked.connect(self.open_figures.emit);tools.addWidget(self.figures_button);layout.addLayout(tools)
         self.scroll=QScrollArea();self.scroll.setWidgetResizable(True);self.scroll.setFrameShape(QFrame.Shape.NoFrame);layout.addWidget(self.scroll)
         self.content=QWidget();self.body=QVBoxLayout(self.content);self.body.setSpacing(12);self.scroll.setWidget(self.content)
         self.message(t('Guarda y actualiza el experimento para ver los resultados finales.'))
@@ -134,6 +142,7 @@ class ResultsView(QWidget):
         self.body.addWidget(self.label(text));self.body.addStretch()
     def set_context(self,folder,assay,dirty=False,busy=False,dark=False,force=False):
         self._context=(folder,assay,dirty,busy,dark)
+        self.figures_button.setEnabled(bool(folder and assay and not busy));self.figures_button.setText(t('Abrir carpeta de figuras'));self.figures_button.setToolTip(t('Abrir carpeta de figuras'))
         from . import i18n
         def stamp(path):
             try:s=path.stat();return s.st_mtime_ns,s.st_size
@@ -179,6 +188,7 @@ class ResultsView(QWidget):
         for i,frame in enumerate(self.card_frames):self.card_grid.addWidget(frame,i//columns,i%columns)
     def render(self,assay,data,accent):
         self.clear();p=assay['protocol'];self.data=data
+        from .reporting import rounded_pair
         self.body.addWidget(self.label(assay['label'],'font-size:23px;font-weight:700'))
         self.body.addWidget(self.label(t('Resultados calculados · revisar controles de calidad'),'font-weight:600;color:'+accent))
         if data.get('issue'):self.body.addWidget(self.label(str(data['issue'])))
@@ -186,9 +196,13 @@ class ResultsView(QWidget):
         for i,row in enumerate(data['summary']):
             frame=QFrame();frame.setObjectName('resultCard');box=QVBoxLayout(frame);box.setContentsMargins(16,14,16,14)
             box.addWidget(self.label(str(row[0]),'font-size:15px;font-weight:600'))
-            value=QLineEdit(display(row[2]));value.setObjectName('resultValue');value.setReadOnly(True);value.setToolTip(t('Valor almacenado en Excel'));box.addWidget(value)
+            mean_text,sd_text=rounded_pair(row[2],row[3]);shown=(mean_text or t('No estimable'))+(' ± '+sd_text if mean_text is not None and sd_text is not None else '')
+            value=QLineEdit(shown);value.setObjectName('resultValue');value.setReadOnly(True);value.setCursorPosition(0)
+            value.setStyleSheet('font-size:'+str(23 if len(shown)<19 else 19 if len(shown)<27 else 15)+'px')
+            value.setToolTip(t('Valor almacenado en Excel')+': '+display(row[2])+'\n'+t('DE entre unidades')+': '+display(row[3])+'\n'+t('Presentación: DE con dos cifras significativas y media redondeada al mismo decimal. Excel conserva todos los dígitos.'));box.addWidget(value)
+            box.addWidget(self.label(t('Media ± DE'),'font-weight:600'))
             box.addWidget(self.label(p['result_unit'].replace('umol','µmol'),'font-weight:600'))
-            box.addWidget(self.label(t('DE biológica')+': '+short(row[3])+'    ·    '+t('n biológico')+': '+short(row[1])))
+            box.addWidget(self.label(t('DE entre unidades')+': '+(sd_text if sd_text is not None else t('No estimable'))+'    ·    '+t('n independiente')+': '+short(row[1])))
             grid.addWidget(frame,i//2,i%2);self.cards.append(value);self.card_frames.append(frame)
         self.card_grid=grid;self.arrange_cards()
         self.body.addWidget(cards)
@@ -204,13 +218,15 @@ class ResultsView(QWidget):
             basis=t(dict(ENUMS['calibration_basis'])[p['calibration_basis']])
             box.addWidget(self.label(p['equivalent']+' · '+p['concentration_unit']+' · '+basis))
             self.body.addWidget(frame)
-        details=QToolButton();details.setText(t('Resultados por unidad biológica'));details.setCheckable(True);details.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon);details.setArrowType(Qt.ArrowType.RightArrow);details.setToolTip(t('Resultados por unidad biológica'));self.body.addWidget(details)
+        details=QToolButton();details.setText(t('Resultados por unidad experimental'));details.setCheckable(True);details.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon);details.setArrowType(Qt.ArrowType.RightArrow);details.setToolTip(t('Resultados por unidad experimental'));self.body.addWidget(details)
         rows=[r for r in data['results'] if r[0]=='sample'];self.details=QTableWidget(len(rows),6)
-        self.details.setHorizontalHeaderLabels([t(s) for s in ('Muestra','Unidad biológica','Resultado de la unidad','DE de la unidad','n técnico','Unidad')]);self.details.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.details.setHorizontalHeaderLabels([t(s) for s in ('Muestra','Unidad experimental','Resultado de la unidad','DE de la unidad','n técnico','Unidad')]);self.details.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.details.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch);self.details.setMaximumHeight(270);self.details.setMinimumHeight(160);self.details.setAlternatingRowColors(True)
         for r,row in enumerate(rows):
-            for c,value in enumerate((row[1],row[2],row[4],row[5],row[3],row[8])):
-                item=QTableWidgetItem(display(value) if c in (2,3,4) else str(value));item.setToolTip(item.text());self.details.setItem(r,c,item)
+            shown_mean,shown_sd=rounded_pair(row[4],row[5])
+            for c,value in enumerate((row[1],row[2],shown_mean,shown_sd,row[3],row[8])):
+                item=QTableWidgetItem((value or t('No estimable')) if c in (2,3) else display(value) if c==4 else str(value))
+                exact=row[4] if c==2 else row[5] if c==3 else value;item.setToolTip(display(exact) if c in (2,3,4) else str(exact));self.details.setItem(r,c,item)
         self.body.addWidget(self.details);self.details.hide()
         def expand(checked):self.details.setVisible(checked);details.setArrowType(Qt.ArrowType.DownArrow if checked else Qt.ArrowType.RightArrow)
         details.toggled.connect(expand)
@@ -222,7 +238,7 @@ class ResultsView(QWidget):
             panel=QWidget();plots=QGridLayout(panel);plots.setContentsMargins(0,0,0,0);plots.setSpacing(12)
             from .ui_icons import icon
             for i,(title,path) in enumerate(data['figures']):
-                frame=QFrame();frame.setObjectName('resultCard');box=QVBoxLayout(frame);top=QHBoxLayout();top.addWidget(self.label(t(title),'font-weight:700'));top.addStretch()
+                frame=QFrame();frame.setObjectName('resultCard');box=QVBoxLayout(frame);top=QHBoxLayout();title_label=self.label(t(title),'font-weight:700');title_label.setWordWrap(False);top.addWidget(title_label);top.addStretch()
                 zoom=QToolButton();zoom.setIcon(icon('plots'));zoom.setProperty('iconName','plots');zoom.setToolTip(t('Ampliar gráfica'));zoom.setAccessibleName(t('Ampliar gráfica'));top.addWidget(zoom);box.addLayout(top)
                 preview=FigurePreview(path);box.addWidget(preview);self.previews.append(preview)
                 def open_image(checked=False,path=path,title=title):

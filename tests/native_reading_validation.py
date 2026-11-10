@@ -22,7 +22,7 @@ def validate(destination):
         path=destination/(label+'.xlsx');write_master(path,assays,'SYNTHETIC-EQUIVALENCE',calculated=True)
         recalculate_master(path,destination/(label+'-Excel'));books[label]=path
         print(label,'Excel recalculated',flush=True)
-    # Independent expected biological means for the synthetic designs.
+    # Independent expected mean across unitss for the synthetic designs.
     expected={'FRAP':[16,24,32],'ABTS':[12.12,24.24,36.36],'CUPRAC':[12,18,24],
         'TPC':[1.36096,1.7012,2.04144],'TFC':[.8,1.2,1.6],'DPPH':[.5,1,2],
         'HUMEDAD':[20,30,40],'MATERIA_SECA':[80,70,60],'CENIZAS':[5,6,7]}

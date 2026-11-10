@@ -15,12 +15,12 @@ from .protocols import validate
 from .ui_fields import axis_labels
 
 HEADERS = {
-    "Summary": ["Sample", "Biological n", "Mean", "Biological SD"],
+    "Summary": ["Sample", "Independent n", "Mean", "Between-unit SD"],
     "RAW": COLUMNS,
     "Parameters": ["Parámetro", "Valor"],
     "Processing": ["Record ID", "Measured response (AU)", "Corrected response (AU)", "Equivalent concentration (calibration axis)", "Sample result / control recovery (see Unit)", "Unit", "Reaction dilution correction", "Prior sample dilution factor", "Original extract concentration (axis unit)", "Total extract volume (L)", "Reference mass (g)", "Reporting / unit conversion factor", "Equivalent amount (axis unit x L)"],
     "Calibration": ["Standard concentration", "Mean response", "Technical n", "Response SD", "OLS prediction", "Residual", "", "", "Metric", "Value"],
-    "Results": ["kind", "Sample", "Biological unit", "Technical n", "Mean", "Technical SD", "CV (%)", "QC", "Unit"],
+    "Results": ["kind", "Sample", "Experimental unit", "Technical n", "Mean", "Technical SD", "CV (%)", "QC", "Unit"],
     "ReadMe": ["Concepto", "Detalle"],
 }
 
@@ -86,7 +86,7 @@ def write_book(path, rows, protocol, experiment_id):
                 cell.protection=Protection(locked=not editable)
                 cell.alignment=Alignment(vertical="top",wrap_text=True)
                 if isinstance(cell.value,(int,float)) or cell.data_type=="f":
-                    cell.number_format="0.0000"
+                    cell.number_format="General"
             ws.row_dimensions[row[0].row].height=30
         for col in ws.columns:
             ws.column_dimensions[col[0].column_letter].width=21
@@ -128,7 +128,7 @@ def write_book(path, rows, protocol, experiment_id):
     chart.width=22;chart.height=12;cal.add_chart(chart,"A12")
     summary=wb["Summary"]
     if summary.max_row>1:
-        chart=BarChart();chart.title="FRAP · biological mean ± SD";chart.y_axis.title=resultlabel;chart.x_axis.title='Sample'
+        chart=BarChart();chart.title="FRAP · mean across units ± SD";chart.y_axis.title=resultlabel;chart.x_axis.title='Sample'
         chart.add_data(Reference(summary,min_col=3,min_row=1,max_row=summary.max_row),titles_from_data=True)
         chart.set_categories(Reference(summary,min_col=1,min_row=2,max_row=summary.max_row))
         sd=NumDataSource(numRef=NumRef(f"Summary!$D$2:$D${summary.max_row}"))

@@ -1,4 +1,4 @@
-"""A small spreadsheet for one sample/standard/control and biological unit."""
+"""A small spreadsheet for one sample/standard/control and experimental unit."""
 import uuid
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence,QColor
@@ -11,7 +11,7 @@ from .data_entry import number
 from .ui_fields import FIELDS,KIND_LABELS
 
 for pair in '''Muestra / patrón|Sample / standard
-Unidad biológica / extracción|Biological unit / extraction
+Unidad experimental / extracción|Experimental unit / extraction
 Número de lecturas|Number of readings
 Tipo de lectura|Reading type
 Concentración del patrón|Standard concentration
@@ -24,10 +24,10 @@ DE conocida (opcional)|Known SD (optional)
 n conocido (opcional)|Known n (optional)
 Añadir a la tabla|Add to table
 Opcional|Optional
-Nombre y unidad biológica son obligatorios.|Name and biological unit are required.
+Nombre y unidad experimental son obligatorios.|Name and experimental unit are required.
 Introduce los datos disponibles. Las celdas pendientes se conservan como borrador.|Enter the available data. Missing values are kept as a draft.
 Las masas inicial/final son pesadas del procedimiento, no lecturas de absorbancia. No se sustituyen por una media del porcentaje final.|Initial/final masses are procedural weighings, not absorbance readings. A mean of final percentages cannot replace them.
-Una fila por fracción. Otro tamizado independiente debe usar otra unidad biológica.|One row per fraction. Use another biological unit for an independent sieving run.
+Una fila por fracción. Otro tamizado independiente debe usar otra unidad experimental.|One row per fraction. Use another experimental unit for an independent sieving run.
 Nueva entrada|New entry'''.splitlines():add(*pair.split('|',1))
 
 class EntryGrid(QTableWidget):
@@ -80,7 +80,7 @@ class MeasurementDialog(QDialog):
         for value,label in [('endpoint','Lectura única de absorbancia'),('delta','Incremento ΔA ya medido'),('paired','Pareja inicial/final (ΔA)')]:self.signal.addItem(t(label),value)
         self.signal.setCurrentIndex(self.signal.findData(signal(self.protocol)));self.signal.setEnabled(self.e=='colorimetric')
         self.count=QSpinBox();self.count.setRange(1,100);self.count.setValue(int(self.protocol.get('default_replicates',3)))
-        for title,widget in [('Tipo de lectura',self.kind),('Muestra / patrón',self.name),('Unidad biológica / extracción',self.bio)]:form.addRow(QLabel(t(title)+' <span style="color:#C73542">*</span>'),widget)
+        for title,widget in [('Tipo de lectura',self.kind),('Muestra / patrón',self.name),('Unidad experimental / extracción',self.bio)]:form.addRow(QLabel(t(title)+' <span style="color:#C73542">*</span>'),widget)
         if self.e in OPTICAL:form.addRow(t('Señal introducida'),self.signal);form.addRow(t('Origen de la lectura'),self.mode)
         self.count_label=QLabel(t('Número de fracciones' if self.e=='sieve' else 'Número de pesadas' if self.e=='gravimetric' else 'Número de lecturas'));form.addRow(self.count_label,self.count)
         self.common={};self.common_labels={}
@@ -90,7 +90,7 @@ class MeasurementDialog(QDialog):
             edit=QLineEdit('' if value is None else str(value));label=QLabel(t(FIELDS[key][0]).replace('\n',' ')+' <span style="color:#C73542">*</span>');edit.setToolTip(t(FIELDS[key][1]));form.addRow(label,edit);self.common[key]=edit;self.common_labels[key]=label
         self.plateau=QCheckBox(t('Meseta confirmada'))
         if self.e=='ec50':form.addRow('',self.plateau)
-        note=QLabel(t('No se inventan lecturas ni una DE a partir de una media. n técnico no es n biológico.') if self.e in OPTICAL else t('Una fila por fracción. Otro tamizado independiente debe usar otra unidad biológica.') if self.e=='sieve' else t('Las masas inicial/final son pesadas del procedimiento, no lecturas de absorbancia. No se sustituyen por una media del porcentaje final.'))
+        note=QLabel(t('No se inventan lecturas ni una DE a partir de una media. n técnico no es n independiente.') if self.e in OPTICAL else t('Una fila por fracción. Otro tamizado independiente debe usar otra unidad experimental.') if self.e=='sieve' else t('Las masas inicial/final son pesadas del procedimiento, no lecturas de absorbancia. No se sustituyen por una media del porcentaje final.'))
         note.setWordWrap(True);layout.addWidget(note)
         self.stack=QStackedWidget();layout.addWidget(self.stack,1);self.grid=EntryGrid();self.grid.setRowCount(self.count.value());self.stack.addWidget(self.grid)
         self.keys=['A_end','A_initial'] if self.e in OPTICAL else ['lower_um','upper_um','retained_g'] if self.e=='sieve' else ['tare_g','initial_g','final_g']+(['dry_fraction'] if self.protocol.get('quantity')=='ash' and self.protocol.get('ash_basis')=='dry' else [])
@@ -132,7 +132,7 @@ class MeasurementDialog(QDialog):
     def data(self):
         p=configure(self.protocol,legacy=False)
         if self.e=='colorimetric':p['reading_signal']=self.signal.currentData();p['response']='endpoint' if p['reading_signal']=='endpoint' else 'delta'
-        if not self.name.text().strip() or not self.bio.text().strip():raise ValueError(t('Nombre y unidad biológica son obligatorios.'))
+        if not self.name.text().strip() or not self.bio.text().strip():raise ValueError(t('Nombre y unidad experimental son obligatorios.'))
         kind=self.kind.currentData();is_mean=self.mode.currentData()=='mean';rows=[]
         indices=list(range(1 if is_mean else self.grid.rowCount()))
         if not is_mean:

@@ -27,8 +27,12 @@ class WorkspaceFeatures:
         layout=self.centralWidget().layout();heading=layout.itemAt(0).layout();bottom=layout.itemAt(3).layout()
         self.language_selector=QComboBox();self.language_selector.addItem('Español','es');self.language_selector.addItem('English','en');self.language_selector.setToolTip('Idioma de la interfaz');self.language_selector.setCurrentIndex(0 if pref['language']=='es' else 1);heading.insertWidget(heading.count()-1,self.language_selector)
         self.theme_button=self.make_button('Cambiar a modo oscuro',self.toggle_theme,'theme',heading);self.buttons.remove(self.theme_button)
-        self.templates_button=self.make_button('Plantillas de datos',lambda:None,'template',bottom);self.templates_menu=QMenu(self.templates_button)
-        self.templates_menu.addAction('Guardar plantilla de datos',lambda:self.guard(self.save_data_template));self.templates_menu.addAction('Cargar plantilla de datos',lambda:self.guard(self.load_data_template))
+        from .library_dialog import LibraryDialog
+        self.templates_button=self.make_button('Biblioteca de plantillas y protocolos',lambda:None,'template',bottom);self.templates_menu=QMenu(self.templates_button)
+        self.save_template_action=self.templates_menu.addAction('Guardar plantilla de datos',lambda:self.guard(self.save_data_template));self.load_template_action=self.templates_menu.addAction('Cargar plantilla de datos',lambda:self.guard(self.load_data_template))
+        self.templates_menu.addSeparator()
+        self.templates_menu.addAction('Gestionar plantillas de datos',lambda:self.guard(lambda:self.manage_library('data')))
+        self.templates_menu.addAction('Gestionar variantes de protocolo',lambda:self.guard(lambda:self.manage_library('protocol')))
         self.templates_button.setMenu(self.templates_menu)
         from PySide6.QtWidgets import QToolButton
         self.templates_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
@@ -50,6 +54,15 @@ class WorkspaceFeatures:
         menu=QMenu(self);menu.addAction(t('Regenerar todos los archivos'),lambda:self.guard(self.force_rebuild));menu.exec(button.mapToGlobal(point))
     def force_rebuild(self):
         self.update(force=True)
+    def manage_library(self,kind):
+        from .library_dialog import LibraryDialog
+        dialog=LibraryDialog(kind,self,self.variant_folder if kind=='protocol' else None);dialog.exec()
+        if kind=='protocol' and dialog.changed:
+            # Preserve the edited assay as-is; removing a catalogue entry never
+            # applies another protocol or changes the experiment's dirty state.
+            from .libraries import variants
+            self.variants=variants(self.variant_folder)
+            self.populate_variants(self.protocol())
     def retranslate_ui(self):
         if not getattr(self,'language_selector',None):return
         self.pathlabel.setProperty('userData',bool(self.folder))
@@ -67,6 +80,7 @@ class WorkspaceFeatures:
         self.update_current_state();self.retranslate_ui();save_preferences(i18n.LANGUAGE,'dark' if self.theme_dark else 'light')
     def apply_appearance(self):
         self.setStyleSheet(stylesheet(self.theme_dark));self.assay_list.setStyleSheet('')
+        self.metrics.apply_theme(self.theme_dark)
         for label in self.findChildren(QLabel):
             if label.text() in ('ENSAYOS DEL EXPERIMENTO','EXPERIMENT ASSAYS'):label.setStyleSheet('font-weight:700;padding:8px 0;color:'+('#83D5DA' if self.theme_dark else '#176E78'))
         if not self.theme_dark:self.assay_list.setStyleSheet('QListWidget{background:white;border:1px solid #D9E6EB;border-radius:7px} QListWidget::item{padding:12px 6px;border-bottom:1px solid #E7EFF1} QListWidget::item:selected{background:#D8EEF1;color:#123E49}')

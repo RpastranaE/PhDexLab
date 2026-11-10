@@ -92,7 +92,7 @@ def sync(folder, mode='connector'):
             bio=[r for r in data['results'] if r[1]==row[0]]
             for j,r in enumerate(bio):
                 xs.append(i+(0 if len(bio)==1 else -0.13+0.26*j/(len(bio)-1)));ys.append(r[4])
-        points.from_list(0,xs,lname='Sample position');points.from_list(1,ys,lname='Biological-unit mean')
+        points.from_list(0,xs,lname='Sample position');points.from_list(1,ys,lname='Experimental-unit mean')
         xlabel,ylabel,resultlabel=native_labels(data['protocol'])
         for sheet,name,ycol,xcol,template in (('Calibration','CalGraph',1,0,'scatter'),('Summary','ResultGraph',2,0,'column')):
             gp=op.find_graph(name);rebuild=gp is None or previous.get('style_version')!=STYLE_VERSION

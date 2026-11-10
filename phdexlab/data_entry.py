@@ -43,7 +43,7 @@ def normalize(rows, protocol):
         flexible_dilution = enabled(protocol) and d['kind']=='sample'
         if flexible_dilution:rep += (d['dilution'],)
         if rep in reps:
-            raise ValueError(f"{rid}: réplica técnica duplicada en la misma unidad biológica")
+            raise ValueError(f"{rid}: réplica técnica duplicada en la misma unidad experimental")
         reps.add(rep)
         if d["A_end"] is None or (signal(protocol) == "paired" and d["A_initial"] is None):
             raise ValueError(f"{rid}: faltan lecturas requeridas (A_end / A_initial)")

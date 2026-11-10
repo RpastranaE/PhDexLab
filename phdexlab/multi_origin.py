@@ -15,6 +15,8 @@ from .protocols import digest
 from .integration import file_hash
 from .export_cache import store,restore
 
+RENDER_VERSION=2
+
 def prepare_assay_folders(op,managed,aid):
     """One round trip instead of repeated mkdir/cd + temporary-path queries."""
     path=managed.rstrip('/')+'/'+aid+'/';data=path+'Data/';graphs=path+'Graphs/'
@@ -50,11 +52,11 @@ def move_if_needed(op,name,path,current=None):
 
 def sync(folder,assays,states,mode='connector',notify=lambda *args:None,force=False):
     import originpro as op
-    l=Layout(folder);style=for_experiment(folder);report={'mode':mode,'auto_sync_verified':False,'relative_paths_verified':False,'errors':[],'exports':[],'assays':{},'presentation':style}
+    l=Layout(folder);style=for_experiment(folder);report={'mode':mode,'auto_sync_verified':False,'relative_paths_verified':False,'errors':[],'exports':[],'assays':{},'presentation':style,'render_version':RENDER_VERSION,'export_repairs':{}}
     previous=l.meta/'origin_status.json';old_status=json.loads(previous.read_text(encoding='utf-8')) if previous.exists() else {}
     restyle=old_status.get('presentation')!=style
     project_verified=l.project.exists() and old_status.get('project_sha256')==file_hash(l.project)
-    trust=(not force and project_verified and old_status.get('master_path')==str(l.master) and old_status.get('mode')==mode)
+    trust=(not force and project_verified and old_status.get('master_path')==str(l.master) and old_status.get('mode')==mode and old_status.get('render_version')==RENDER_VERSION)
     old_paths=old_status.get('page_folders',{}) if project_verified else {}
     page_paths={}
     def existing_path(name):return old_paths.get(name) or op.pe.search(name)
@@ -136,12 +138,12 @@ def sync(folder,assays,states,mode='connector',notify=lambda *args:None,force=Fa
                 continue
             data=payload(folder,a);op.pe.cd(data_path);points_book=op.find_book('w',short+'Pts')
             points_existed=points_book is not None
-            if points_book is None:points_book=op.new_book('w',lname=a['label']+' · Biological points');points_book.name=short+'Pts'
+            if points_book is None:points_book=op.new_book('w',lname=a['label']+' · Experimental-unit points');points_book.name=short+'Pts'
             points=points_book[0];points.clear();xs=[];ys=[];point_samples=[]
             for i,row in enumerate(data['summary'],1):
                 bio=[r for r in data['results'] if r[0]=='sample' and r[1]==row[0] and finite(r[4])]
                 for j,r in enumerate(bio):xs.append(i+(0 if len(bio)==1 else -.13+.26*j/(len(bio)-1)));ys.append(r[4]);point_samples.append(i-1)
-            points.from_list(0,xs,lname='Sample position');points.from_list(1,ys,lname='Biological-unit mean')
+            points.from_list(0,xs,lname='Sample position');points.from_list(1,ys,lname='Experimental-unit mean')
             if points_existed:move_if_needed(op,points_book.name,data_path,current=existing_path(points_book.name))
             page_paths[points_book.name]=data_path
             xlab,ylab,reslab=labels(p);op.pe.cd(graphs_path)
@@ -164,7 +166,7 @@ def sync(folder,assays,states,mode='connector',notify=lambda *args:None,force=Fa
                         keys=sorted({tuple(row[:2]) for row in data['curve']})
                         for curve_index,curve_key in enumerate(keys):
                             rows=[i for i,row in enumerate(data['curve']) if tuple(row[:2])==curve_key]
-                            if rows!=list(range(rows[0],rows[-1]+1)):raise RuntimeError('Dose curve rows must be contiguous per biological unit')
+                            if rows!=list(range(rows[0],rows[-1]+1)):raise RuntimeError('Dose curve rows must be contiguous per experimental unit')
                             rg=f'{sheets[role].lt_range(False)}!(3,4,5,)[{rows[0]+1}:{rows[-1]+1}]'
                             curve=gl.add_plot(rg,type='y');curve.color=visual['colors'][curve_index%len(visual['colors'])];curve.symbol_kind=visual['symbol'];curve.symbol_interior=1 if visual['open'] else 0;curve.symbol_size=visual['size']
                             gl.lt_exec(f'range _phdex_curve={curve.lt_range()};set _phdex_curve -d {visual["line_origin"]};set _phdex_curve -wp {visual["width"]};')
@@ -220,11 +222,16 @@ def sync(folder,assays,states,mode='connector',notify=lambda *args:None,force=Fa
                 if trust and not restyle and old_graph.get('signature')==signature and restore(folder,old_graph.get('files',{})):
                     report['graphs'][key]=old_graph;report['exports'].extend(old_graph['files']);report['reused_graphs'].append(key);continue
                 graph_files=[]
-                for ext in ('png','pdf','svg'):
+                repaired=None
+                for ext in ('svg','png','pdf'):
                     dest=l.figures/aid/'Origin'/ext.upper();dest.mkdir(parents=True,exist_ok=True);path=dest/(l.stem+'_'+aid+'_'+stem+'.'+ext)
                     try:
                         tick=time.perf_counter()
-                        gp.save_fig(str(path),width=2600 if ext=='png' else 0)
+                        if not repaired or ext=='svg':gp.save_fig(str(path),width=2600 if ext=='png' else 0)
+                        if ext=='svg':
+                            from .origin_export import repair_exports
+                            repaired=repair_exports(path,('Sample' if role=='Summary' else xlab,reslab if role=='Summary' else ylab),l,aid,stem)
+                            if repaired:report['export_repairs'][key]=repaired
                         report['operation_seconds'][key+'/'+ext]=round(time.perf_counter()-tick,4)
                         if not path.exists() or path.stat().st_size==0:raise RuntimeError('No se creó el archivo')
                         report['exports'].append(str(path.relative_to(l.root)))

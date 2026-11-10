@@ -2,7 +2,20 @@
 
 [Documentation index](README.md) · [Current user manual](MANUAL.md) · [Development](DEVELOPMENT.md)
 
-Software verification with synthetic data is not analytical validation of a chemical method or matrix. The operator must review conditions, units and biological independence.
+Software verification with synthetic data is not analytical validation of a chemical method or matrix. The operator must review conditions, units and experimental independence.
+
+## 0.10.1 libraries, result precision and figure exports
+
+- The full suite passed **224 tests**. After the final compact-summary changes, **58 focused regressions passed**, including readiness counters, both languages/themes, one-time update notes, first-install Help, library operations and source optionality.
+- The **24 native Excel equation cases covering all 15 catalogue variants** passed again. Calculations are unchanged; result rounding is display-only, and Excel numeric formatting now uses General rather than a fixed four-decimal mask.
+- Library tests verify confirmed deletion, cancellation, stale-file protection, hiding/restoring bundled variants, user-data isolation and preservation of open assays, RAW observations and saved workbooks.
+- Independent display cases check two significant figures for SD, matching mean precision, carry, small/large and negative numbers, zero SD and unavailable SD. Full values remain in saved Excel and result tooltips.
+- A native source run of FRAP, ABTS, DPPH and adapted TPC produced **24 Origin + 24 Publication exports**, with blank protocol source accepted and unknown precision/no-marker styles preserved. Eight graphs had exactly two title-overline paths removed each; original SVGs were archived. SVG tests protect plot groups, fit lines and unrelated annotations and verify idempotence.
+- Export cleanup applies to SVG/PNG/PDF and app previews; the editable Origin project may retain the local native rendering defect. It is not represented as a verified native Origin font-format repair.
+- The exact final frozen executable repeated the four-assay native run: **24 Origin + 24 Publication exports**, all expected means, no-marker settings and unknown precision retained. It took 82.64 s while packaging ran concurrently; an integrity-verified unchanged repeat took 1.17 s. These fixture measurements are not performance guarantees. All four Results views matched display-rounded saved means/SDs and verified images.
+- The compiled module inventory and bundled assets matched final source. Frozen startup passed. A real frozen normal launch consumed the pending version notes; its health check left those notes unseen.
+- The exact installer passed an isolated installation, desktop/menu shortcuts and frozen startup. An isolated **0.10.0 → 0.10.1** update using the exact ZIP passed startup, retained 24 help images and preserved experiment/style sentinels and the pending version-notes state.
+
 
 ## 0.10.0 input validation and final results
 

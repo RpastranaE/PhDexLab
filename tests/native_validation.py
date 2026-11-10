@@ -41,7 +41,7 @@ def run(target):
     wb.save(Layout(folder).master);wb.close()
     report=refresh(folder,'connector');assert report['state']=='complete',report
     rs=values(Layout(folder).master,'Results');summary=values(Layout(folder).master,'Summary')
-    # B1: 400*4*.01/.5=32; B2=24; B3:500*2*.01/.5=20; equal weight biological mean.
+    # B1: 400*4*.01/.5=32; B2=24; B3:500*2*.01/.5=20; equal weight mean across units.
     close(rs[1][4],32);close(summary[1][2],76/3);assert summary[1][1]==3
     assert (Layout(folder).meta/'raw.initial.json').read_bytes()==initial
     verify(folder);record('Excel manual edit + appended rows + existing Origin refresh',expected_mean=76/3,origin=report['origin'])

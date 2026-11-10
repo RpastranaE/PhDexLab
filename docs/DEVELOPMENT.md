@@ -44,7 +44,7 @@ Para cambiar concentraciones, unidades o condiciones de un cálculo existente, p
 
 Un método nuevo necesita: fuente original y condiciones explícitas, campos y unidades, validaciones, fórmulas auditables de Excel, resultados y controles de calidad, gráficos, traducciones, una demostración y comprobaciones independientes. No reutilices automáticamente una fórmula de equivalentes para un porcentaje de inhibición o un EC50. No presentes condiciones incompletas como un método validado.
 
-Prueba también dos ensayos en un mismo experimento, varias muestras con calibración común, réplicas técnicas y biológicas y la reapertura de un trabajo anterior.
+Prueba también dos ensayos en un mismo experimento, varias muestras con calibración común, réplicas técnicas y experimentales y la reapertura de un trabajo anterior.
 
 ## Uso programático y comandos
 
@@ -134,6 +134,8 @@ Proyecto personal de RpastranaE, creado con asistencia de ChatGPT/Codex. Contact
 
 ## Validación y vista de resultados desde 0.10.0
 
+Desde 0.10.1, `libraries` gestiona únicamente entradas del directorio de usuario: eliminación de archivos personales con comprobación de cambios, y ocultación/restauración de protocolos incluidos mediante preferencias independientes. `library_dialog` presenta búsqueda y confirmación. Al cerrar el gestor se reconstruye el catálogo del selector sin modificar el protocolo/RAW del ensayo, su estado de cambios ni los snapshots del experimento. `PHDEXLAB_DATA_DIR` también controla la biblioteca de variantes.
+
 `input_validation` reutiliza los campos requeridos del motor; `validation_dialog` presenta los problemas sin iniciar el proceso de cálculo salvo elección explícita de continuar con ensayos completos. `workspace.update` confirma el editor activo y guarda antes de validar/iniciar el worker; el guardado mantiene la comprobación del hash del Excel abierto.
 
 `results_view` lee únicamente los valores calculados del Excel (`data_only`) y los PNG de Origin registrados con sus hashes en el estado de generación. No contiene ecuaciones químicas. La lectura de hojas se limita al ensayo seleccionado; el monitor solo está activo mientras la pestaña está visible. Cambios de entradas/libro impiden mostrar resultados viejos; cambios de estilo/proyecto/figuras invalidan las previsualizaciones. Las pruebas GUI mantienen un único QApplication durante la sesión, como la aplicación real.
@@ -152,3 +154,7 @@ $env:PYTHONPATH = (Get-Location).Path
 ```
 
 El destino debe ser nuevo o vacío. La prueba compara diez métodos y tres variantes, lecturas individuales, medias con/sin precisión y ΔA directo, usando valores esperados independientes; guarda `validation.json`. No requiere Origin para esta comparación numérica. La generación completa del proyecto se comprueba por separado.
+
+### Release highlights
+
+`release_notes.py` bundles ES/EN highlights for offline use. Update those notes with each release. `onboarding.json` retains the last version shown: a fresh install opens Help and records the current version; an upgrade displays the highlights once. Legacy installations with Help already seen and no recorded version display the current notes once. Health checks construct the GUI without consuming this state.

@@ -24,7 +24,8 @@ from .i18n import ActivityLog
 class Window(QMainWindow):
     def __init__(self):
         super().__init__();self.folder=None;self.open_hash=None;self.proc=None;self.dirty=False;self.loading=False
-        self.variant_folder=Path.home()/"Documents"/"PhDexLab"/"protocol_variants"
+        from .data_templates import user_data_dir
+        self.variant_folder=user_data_dir()/"protocol_variants"
         self.setWindowTitle("PhDexLab");self.resize(1480,920)
         self.setWindowIcon(QIcon(str(Path(__file__).parent/'assets'/'phdexlab.ico')))
         self.setStyleSheet(STYLE)
@@ -52,7 +53,8 @@ class Window(QMainWindow):
         self.origin_mode=QComboBox();self.origin_mode.addItem("Origin: Excel Connector","connector");self.origin_mode.addItem("Origin: valores Excel","values");self.origin_mode.addItem("Solo Excel","none");bar.addWidget(self.origin_mode)
         self.tabs=QTabWidget();layout.addWidget(self.tabs,1)
         data_page=QWidget();data_layout=QVBoxLayout(data_page)
-        self.metrics=QLabel('Una fila = una lectura · Los identificadores se generan automáticamente');self.metrics.setObjectName('metrics');data_layout.addWidget(self.metrics)
+        from .entry_summary import EntrySummary
+        self.metrics=EntrySummary();data_layout.addWidget(self.metrics)
         self.raw=RawTable();data_layout.addWidget(self.raw,1);self.tabs.addTab(data_page,"1   Lecturas experimentales")
         self.roles_path=self.variant_folder.parent/'_internal'/'entry_types.json'
         if self.roles_path.exists():
@@ -82,14 +84,14 @@ class Window(QMainWindow):
             "El refresco es explícito. La sincronización automática y rutas relativas no se dan por verificadas.")
         self.help_dialog=QDialog(self);self.help_dialog.setWindowTitle('Ayuda de PhDexLab');self.help_dialog.resize(800,650)
         help_layout=QVBoxLayout(self.help_dialog);help_layout.addWidget(helptext)
-        helptext.setPlainText("PROTOCOLOS\nPulsa el libro con + junto a Variante. Elige una base FRAP, asigna un nombre y edita las condiciones en la pestaña Protocolo. Guarda con el icono de copiar/+ de la barra inferior para añadir la versión al catálogo. No es necesario editar JSON. Solo están implementadas variantes FRAP Fe(II) y Trolox; otro ensayo requiere desarrollar y verificar su módulo de cálculo.\n\nVARIEDADES Y CALIBRACIÓN COMPARTIDA\nEn el icono de tubos de ensayo elige Tres variedades. Carga un único conjunto de blancos, patrones y control, más Variety A, B y C. Cada nombre de muestra genera un resultado separado. B1–B3 identifican unidades biológicas dentro de cada variedad; 1–3 identifican sus lecturas técnicas. Guarda el experimento y actualiza: la figura FRAP results mostrará las tres variedades con media, DE y puntos biológicos. Las medias sintéticas esperadas son 16, 24 y 32 µmol eq Fe(II)/g (DE 1,6; n=3).\n\n"+helptext.toPlainText())
+        helptext.setPlainText("PROTOCOLOS\nPulsa el libro con + junto a Variante. Elige una base FRAP, asigna un nombre y edita las condiciones en la pestaña Protocolo. Guarda con el icono de copiar/+ de la barra inferior para añadir la versión al catálogo. No es necesario editar JSON. Solo están implementadas variantes FRAP Fe(II) y Trolox; otro ensayo requiere desarrollar y verificar su módulo de cálculo.\n\nVARIEDADES Y CALIBRACIÓN COMPARTIDA\nEn el icono de tubos de ensayo elige Tres variedades. Carga un único conjunto de blancos, patrones y control, más Variety A, B y C. Cada nombre de muestra genera un resultado separado. B1–B3 identifican unidades experimentales dentro de cada variedad; 1–3 identifican sus lecturas técnicas. Guarda el experimento y actualiza: la figura FRAP results mostrará las tres variedades con media, DE y puntos experimentales. Las medias sintéticas esperadas son 16, 24 y 32 µmol eq Fe(II)/g (DE 1,6; n=3).\n\n"+helptext.toPlainText())
         bottom=QHBoxLayout();layout.addLayout(bottom)
         self.row_count=QSpinBox();self.row_count.setRange(1,10000);self.row_count.setValue(10);self.row_count.setSuffix(' filas');self.row_count.setToolTip('Número de filas vacías que añadir');bottom.addWidget(self.row_count)
         button("Añadir el número de filas indicado",self.add_rows,'rows',bottom)
         button("Añadir lecturas o una media",self.add_sample,'measure',bottom)
         self.demo_button=button("Datos sintéticos: elegir una muestra o tres variedades",lambda:None,'demo',bottom)
         self.demo_menu=QMenu(self.demo_button)
-        self.demo_menu.addAction('Una muestra · dos unidades biológicas',lambda:self.guard(self.load_demo))
+        self.demo_menu.addAction('Una muestra · dos unidades experimentales',lambda:self.guard(self.load_demo))
         self.demo_menu.addAction('Tres variedades · una calibración compartida',lambda:self.guard(lambda:self.load_demo(True)))
         self.demo_button.setMenu(self.demo_menu);self.demo_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         button("Guardar protocolo como nueva variante versionada",self.save_variant,'variant',bottom)
@@ -189,9 +191,9 @@ class Window(QMainWindow):
         if not ok or not name.strip():return
         name=name.strip();rows=self.raw.records()
         if any(d['kind']=='sample' and d['sample_id']==name for d in rows):raise ValueError('Ese nombre de muestra ya existe. Edita sus filas o elige otro nombre.')
-        bio,ok=QInputDialog.getInt(self,'Réplicas biológicas','Número de unidades biológicas independientes:',3,1,100)
+        bio,ok=QInputDialog.getInt(self,'Réplicas experimentales','Número de unidades experimentales independientes:',3,1,100)
         if not ok:return
-        tech,ok=QInputDialog.getInt(self,'Réplicas técnicas','Lecturas por cada unidad biológica:',3,1,100)
+        tech,ok=QInputDialog.getInt(self,'Réplicas técnicas','Lecturas por cada unidad experimental:',3,1,100)
         if not ok:return
         if len(rows)+bio*tech>10000:raise ValueError('Máximo: 10000 lecturas')
         for b in range(1,bio+1):
@@ -203,7 +205,7 @@ class Window(QMainWindow):
     def load_demo(self,multivariety=False):
         if self.new() is False:return
         self.loading=True
-        self.variant.setCurrentIndex(0);self.set_protocol(FE);self.raw.load(demo_varieties() if multivariety else demo_rows());self.update_metrics();self.log.appendPlainText("SINTÉTICO: tres variedades, una calibración; medias esperadas 16, 24 y 32; DE 1,6; n biológico=3." if multivariety else "Datos SINTÉTICOS cargados. Ningún resultado experimental real.");self.loading=False;self.dirty=False
+        self.variant.setCurrentIndex(0);self.set_protocol(FE);self.raw.load(demo_varieties() if multivariety else demo_rows());self.update_metrics();self.log.appendPlainText("SINTÉTICO: tres variedades, una calibración; medias esperadas 16, 24 y 32; DE 1,6; n independiente=3." if multivariety else "Datos SINTÉTICOS cargados. Ningún resultado experimental real.");self.loading=False;self.dirty=False
     def load_folder(self,path):
         verify(path);layout=migrate_legacy(path);rows,p=read_inputs(layout.master)
         self.loading=True
@@ -333,7 +335,7 @@ class Window(QMainWindow):
                 kind=item.data(Qt.ItemDataRole.UserRole) or item.text()
                 if kind in counts:counts[kind]+=1
                 if kind=='sample' and self.raw.item(r,2):samples.add(self.raw.item(r,2).text().strip())
-        self.metrics.setText(f"{sum(counts.values())} lecturas   ·   {counts['blank']} blancos   ·   {counts['standard']} patrones   ·   {counts['control']} controles   ·   {len(samples-{''})} muestras distintas ({counts['sample']} lecturas)   |   Una fila = una lectura")
+        self.metrics.set_counts(counts,len(samples-{''}))
     def add_kind(self):
         label,ok=QInputDialog.getText(self,'Añadir tipo de lectura','Nombre visible (ej.: Control fortificado)')
         if not ok:return
@@ -353,8 +355,8 @@ def run():
     configure_font(app)
     from .workspace import Window as ExperimentWindow
     w=ExperimentWindow();w.show()
-    from .onboarding import show_on_first_use
-    QTimer.singleShot(0,lambda:show_on_first_use(w))
+    from .release_notes import show_on_launch
+    QTimer.singleShot(0,lambda:show_on_launch(w))
     return app.exec()
 
 def configure_font(app):

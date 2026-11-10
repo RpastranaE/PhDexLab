@@ -104,7 +104,7 @@ def refresh(folder,origin_mode='connector',edited_rows=None,edited_protocol=None
                     if not isinstance(slope,(int,float)) or slope<=0:errors.append('Calibración con pendiente no positiva o caché ausente')
                 status.update(state='invalid' if errors else 'calculated',issue='; '.join(sorted(set(errors))))
                 summ=values(staged,sheet_name(a,'Summary'))
-                if not errors and any(row[2]=='#N/A' for row in summ[1:]):status.update(state='needs_review',issue='Hay unidades sin resultado: revisar EC50/mesetas/rango. No se eliminan del cálculo biológico.')
+                if not errors and any(row[2]=='#N/A' for row in summ[1:]):status.update(state='needs_review',issue='Hay unidades sin resultado: revisar EC50/mesetas/rango. No se eliminan del cálculo experimental.')
             if file_hash(l.master)!=before:raise RuntimeError('El Excel fue modificado durante el cálculo; no se sobrescribe')
             replacement=l.documents/(l.stem+'.next.xlsx');shutil.copy2(staged,replacement)
             assert_available(l.master)

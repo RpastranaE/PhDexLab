@@ -11,7 +11,7 @@ from .excel import text_cell,HEADERS
 from .assay_engine import columns,engine,state,cell_plan
 
 ROLES=['RAW','Parameters','Calibration','Processing','Results','Summary','ReadMe','DoseCurve','MassBalance']
-HEADERS=dict(HEADERS,DoseCurve=['Sample','Biological unit','Dose (mg/mL final)','Inhibition (%)','Technical SD','Technical n','Local EC50 bracket','Decreasing segment'],MassBalance=['Sample','Biological unit','Loaded (g)','Recovered (g)','Lost (g)','Recovery (%)','QC'])
+HEADERS=dict(HEADERS,DoseCurve=['Sample','Experimental unit','Dose (mg/mL final)','Inhibition (%)','Technical SD','Technical n','Local EC50 bracket','Decreasing segment'],MassBalance=['Sample','Experimental unit','Loaded (g)','Recovered (g)','Lost (g)','Recovery (%)','QC'])
 COLORS={'FRAP':'177E89','ABTS':'4C78A8','CUPRAC':'C17B31','DPPH':'8064A2','TPC':'4A8755','TFC':'B35B75'}
 
 def sheet_name(assay,role):return assay['id']+'_'+role
@@ -32,7 +32,7 @@ def summary_count(rows,p):
 def write_master(path,assays,experiment_id,calculated=False):
     validate_ids(assays);wb=Workbook();wb.remove(wb.active)
     index=wb.create_sheet('Index');index.append(['Assay ID','Assay / protocol','Method','State','Information / next step','Source','Result unit'])
-    overall=wb.create_sheet('ExperimentSummary');overall.append(['Assay ID','Method','Sample','Biological n','Mean','Biological SD','Unit'])
+    overall=wb.create_sheet('ExperimentSummary');overall.append(['Assay ID','Method','Sample','Independent n','Mean','Between-unit SD','Unit'])
     registry=wb.create_sheet('Samples');registry.append(['Sample ID','Assays using this ID'])
     meta=wb.create_sheet('_PhDexLab');meta.append(['schema',3,'experiment_id',experiment_id]);meta.append(['Assay ID','Label'])
     sample_ids={}
@@ -63,7 +63,7 @@ def write_master(path,assays,experiment_id,calculated=False):
                 ['Record ID','Background-corrected absorbance (AU)','Inhibition (%)','Dose (mg extract/mL final)','Time (min)','Operator-confirmed plateau','Matched radical control (AU)'])
             for col,label in enumerate(headers,1):wb[names['Processing']].cell(1,col,label)
         wb[names['Summary']]['C1']='Mean ('+p['result_unit']+')'
-        wb[names['Summary']]['D1']='Biological SD ('+p['result_unit']+')'
+        wb[names['Summary']]['D1']='Between-unit SD ('+p['result_unit']+')'
         ws=wb[names['RAW']]
         raw_columns=columns(p)
         for r,d in enumerate(rows,2):
@@ -87,7 +87,7 @@ def write_master(path,assays,experiment_id,calculated=False):
                         ('Reference mass','RAW mass_g is in grams of the material represented by the total extract. Match the recorded mass basis. Extraction volume is total recovered/reconstituted volume, not reaction aliquot.'),
                         ('Reporting factor',str(p['report_factor'])+'; includes the stated unit conversion and/or expression per 100 g. A per-100-g result is not a percentage.'),
                         ('Control recovery','Control rows are calibration quality checks: C_axis / expected x 100, unit % recovery. They are not FRAP/TPC/etc. sample results and are excluded from Summary and sample figures.'),
-                        ('Dilution replicates','Individual readings at several prior dilutions may share the same sample and biological-unit IDs. Each is normalised separately, then all readings are averaged within the unit with equal weight. Do not count dilutions as biological replicates. One supplied mean per biological unit is supported; do not combine unreported means from different dilutions.')]:wb[names['ReadMe']].append(pair)
+                        ('Dilution replicates','Individual readings at several prior dilutions may share the same sample and experimental-unit IDs. Each is normalised separately, then all readings are averaged within the unit with equal weight. Do not count dilutions as independent replicates. One supplied mean per experimental unit is supported; do not combine unreported means from different dilutions.')]:wb[names['ReadMe']].append(pair)
             else:
                 for r in range(2,result.max_row+1):result.cell(r,9,p['result_unit'])
             if 'Calibration' in names:
@@ -101,17 +101,17 @@ def write_master(path,assays,experiment_id,calculated=False):
             add_charts(wb,names,p,clean)
         readme=wb[names['ReadMe']]
         if p.get('reading_schema')==2 and engine(p) in ('gravimetric','sieve'):
-            readme.append(('Data entry','Raw weighings or mass fractions; no absorbance or precomputed percentage substitution. Independent aliquots/runs need distinct biological-unit IDs.'))
+            readme.append(('Data entry','Raw weighings or mass fractions; no absorbance or precomputed percentage substitution. Independent aliquots/runs need distinct experimental-unit IDs.'))
         if p.get('reading_schema')==2 and engine(p) in ('colorimetric','inhibition','ec50'):
             from .reading_design import signal,mean
-            for pair in [('Entered signal',signal(p)),('Reference signal',p.get('reference_signal','not applicable')),('Signal adaptation','Operator-selected adaptation; document compatibility' if signal(p)!=p.get('reference_signal',signal(p)) else 'Reference signal retained'),('Sample background',p.get('matrix_mode','not applicable')),('Reagent blank',p.get('blank_handling','measured radical control' if engine(p) in ('inhibition','ec50') else 'not applicable')),('Data entry','Individual readings OR one supplied mean per biological unit/condition. No artificial replicates.'),('Supplied means',sum(mean(d) for d in rows)),('Technical precision','For supplied means, n and response SD are operator-reported and optional. Unknown n/SD remain NA; paired SD is SD of paired differences. Biological n counts independent units only.')]:readme.append(pair)
+            for pair in [('Entered signal',signal(p)),('Reference signal',p.get('reference_signal','not applicable')),('Signal adaptation','Operator-selected adaptation; document compatibility' if signal(p)!=p.get('reference_signal',signal(p)) else 'Reference signal retained'),('Sample background',p.get('matrix_mode','not applicable')),('Reagent blank',p.get('blank_handling','measured radical control' if engine(p) in ('inhibition','ec50') else 'not applicable')),('Data entry','Individual readings OR one supplied mean per experimental unit/condition. No artificial replicates.'),('Supplied means',sum(mean(d) for d in rows)),('Technical precision','For supplied means, n and response SD are operator-reported and optional. Unknown n/SD remain NA; paired SD is SD of paired differences. Independent n counts independent units only.')]:readme.append(pair)
             if engine(p) in ('colorimetric','inhibition','ec50'):
                 rawws=wb[names['RAW']];schema=columns(p)
                 if 'A_initial' in schema:rawws.column_dimensions['H'].hidden=signal(p)!='paired'
                 from openpyxl.utils import get_column_letter
                 rawws.column_dimensions[get_column_letter(schema.index('matrix_blank_delta')+1)].hidden=p.get('matrix_mode')=='none'
 
-        for pair in [('Experiment',experiment_id),('Assay',assay['id']),('Protocol',p['name']),('State',p.get('status')),('Source',p.get('source')),('Notes',p.get('notes')),('Reagents',p.get('reagents')),('Mass basis',p.get('mass_basis')),('Calculation','Excel is the sole production calculation engine; Origin imports saved values.'),('Draft',issue),('Replicates','Average technical readings within each biological unit first. Different sample IDs remain separate.'),('Editing','Edit RAW and Parameters only; save and close Excel, then update. Worksheet names and column keys are managed.'),('Limitations','Draft method transfer; no inferred independence, metrological uncertainty or automatic significance test.')]:readme.append(pair)
+        for pair in [('Experiment',experiment_id),('Assay',assay['id']),('Protocol',p['name']),('State',p.get('status')),('Source',p.get('source')),('Notes',p.get('notes')),('Reagents',p.get('reagents')),('Mass basis',p.get('mass_basis')),('Calculation','Excel is the sole production calculation engine; Origin imports saved values.'),('Draft',issue),('Replicates','Average technical readings within each experimental unit first. Different sample IDs remain separate.'),('Editing','Edit RAW and Parameters only; save and close Excel, then update. Worksheet names and column keys are managed.'),('Limitations','Draft method transfer; no inferred independence, metrological uncertainty or automatic significance test.')]:readme.append(pair)
         index.cell(index.max_row,2).hyperlink=f"#'{names['RAW']}'!A1";index.cell(index.max_row,2).style='Hyperlink'
     for c,label in enumerate(('RAW','Conditions','Calibration / balance','Results','Summary','Method'),8):index.cell(1,c,label)
     for r,assay in enumerate(assays,2):
@@ -130,7 +130,7 @@ def write_master(path,assays,experiment_id,calculated=False):
             for cell in row:
                 editable=israw or isparam and cell.column==2
                 cell.font=Font(name='Calibri',size=11,color='145B9B' if editable else '26373D');cell.fill=PatternFill('solid',fgColor='EAF4FC' if editable else 'F3F7F8' if cell.row%2==0 else 'FFFFFF');cell.alignment=Alignment(wrap_text=True,vertical='top')
-                if cell.data_type=='f' or isinstance(cell.value,(int,float)):cell.number_format='0.0000'
+                if cell.data_type=='f' or isinstance(cell.value,(int,float)):cell.number_format='General'
             ws.row_dimensions[row[0].row].height=29
         for column in ws.columns:ws.column_dimensions[column[0].column_letter].width=22
         if ws.title.endswith('_Processing'):
@@ -162,7 +162,7 @@ def add_charts(wb,names,p,rows):
         fit=Series(Reference(ws,min_col=5,min_row=2,max_row=last),Reference(ws,min_col=1,min_row=2,max_row=last),title='OLS fit');chart.series.append(fit);chart.width=22;chart.height=12;ws.add_chart(chart,'A12')
     ws=wb[names['Summary']]
     if ws.max_row>1:
-        chart=BarChart();chart.title=p['method']+' | biological mean ± SD';chart.y_axis.title=p['result_unit'];chart.x_axis.title='Sample';chart.add_data(Reference(ws,min_col=3,min_row=1,max_row=ws.max_row),titles_from_data=True);chart.set_categories(Reference(ws,min_col=1,min_row=2,max_row=ws.max_row));chart.legend=None;chart.width=22;chart.height=12
+        chart=BarChart();chart.title=p['method']+' | mean across units ± SD';chart.y_axis.title=p['result_unit'];chart.x_axis.title='Sample';chart.add_data(Reference(ws,min_col=3,min_row=1,max_row=ws.max_row),titles_from_data=True);chart.set_categories(Reference(ws,min_col=1,min_row=2,max_row=ws.max_row));chart.legend=None;chart.width=22;chart.height=12
         sd=NumDataSource(numRef=NumRef(f"'{ws.title}'!$D$2:$D${ws.max_row}"));chart.series[0].errBars=ErrorBars(errDir='y',errBarType='both',errValType='cust',plus=sd,minus=sd);chart.series[0].graphicalProperties.solidFill='B5D5E5';ws.add_chart(chart,'A'+str(max(7,ws.max_row+3)))
 
 def groups_local(rows,kinds):
@@ -184,8 +184,9 @@ def read_master(path):
             for ws in (pws,rws):
                 if any(c.data_type=='f' for row in ws for c in row):raise ValueError('RAW y Parameters deben contener valores, no fórmulas')
             p={r[0]:r[1] for r in pws.iter_rows(min_row=2,values_only=True) if r[0]}
-            missing={'method','name','id','version','source','result_unit','concentration_unit','response'}-set(p)
+            missing={'method','name','id','version','result_unit','concentration_unit','response'}-set(p)
             if missing:raise ValueError('Faltan claves en Parameters: '+', '.join(sorted(missing))+'. Editar valores; no borrar filas de parámetros.')
+            p.setdefault('source','')
             from .assay_engine import NUMERIC_PARAMS,yes
             from .data_entry import number
             for key in NUMERIC_PARAMS & set(p):

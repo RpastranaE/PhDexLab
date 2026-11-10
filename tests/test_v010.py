@@ -127,7 +127,8 @@ def test_result_cards_preserve_excel_values_and_hide_stale_data(tmp_path):
     data=dict(state='ready',summary=[['Variety A',3,value,.1]],results=[['sample','Variety A','B1',3,value,.01,1,'OK',a['protocol']['result_unit']]],calibration=dict(slope=.001,intercept=.01,r2=.999),figures=[],figure_state='missing')
     view=ResultsView()
     with patch('phdexlab.results_view.snapshot',return_value=data) as reader:
-        view.set_context(root,a);assert view.cards[0].text()==str(value) and view.cards[0].isReadOnly()
+        view.set_context(root,a);assert view.cards[0].text()=='1.23 ± 0.10' and view.cards[0].isReadOnly()
+        assert str(value) in view.cards[0].toolTip()
         view.set_context(root,a);assert reader.call_count==1
         old_frames=list(view.card_frames)
         view.set_context(root,a,dirty=True);assert not view.cards and view.data is None

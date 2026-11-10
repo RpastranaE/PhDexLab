@@ -79,7 +79,7 @@ def plan(rows, p):
             precision=('reported technical SD' if d.get('technical_sd') is not None else 'technical SD unavailable')+('; technical n unknown' if d.get('technical_n') is None else '')
             precision_qc=f',IFERROR(G{r}>{par("cv_max_percent")},TRUE)' if d.get('technical_sd') is not None else ''
             put("Results",f"H{r}",f'IF(OR({low},{high}),"OUT OF RANGE",IF(OR(Calibration!$J$3<=0,Calibration!$J$5<{par("r2_min")}{recovery}{precision_qc}),"REVIEW QC; PRECOMPUTED MEAN","PRECOMPUTED MEAN; {precision}; review QC"))')
-    # Biological units first averaged over technical readings; never pool technical readings as biological n.
+    # Experimental units first averaged over technical readings; never pool technical readings as independent n.
     samples = sorted({sid for kind,sid,bio in results if kind=="sample"})
     for r,sid in enumerate(samples,2):
         positions=[i for i,((kind,s,bio),_) in enumerate(results.items(),2) if kind=="sample" and s==sid]

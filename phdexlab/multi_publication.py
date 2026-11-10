@@ -41,11 +41,11 @@ def payload(folder,assay):
     return result
 
 def captions(data,show_markers=True):
-    points='dots are individual biological units.' if show_markers else 'individual biological-unit markers are hidden by the selected style.'
+    points='dots are individual experimental units.' if show_markers else 'individual experimental-unit markers are hidden by the selected style.'
     supplied=data.get('input_provenance',{})
-    provenance=(f"Supplied mean records: {supplied.get('mean_records',0)}; unknown technical n: {supplied.get('unknown_n',0)}; unknown technical SD: {supplied.get('unknown_sd',0)}. Original readings are not reconstructed; reported technical precision is distinct from biological replication. " if supplied.get('mean_records') else '')
-    p=data['protocol'];return (provenance+f"{p['method']}. Source: {p['source']}. Protocol: {p['name']}.\n"
-        'Results: biological-unit means after averaging technical measurements. Error bars are biological SD; '+points+' '
+    provenance=(f"Supplied mean records: {supplied.get('mean_records',0)}; unknown technical n: {supplied.get('unknown_n',0)}; unknown technical SD: {supplied.get('unknown_sd',0)}. Original readings are not reconstructed; reported technical precision is distinct from independent replication. " if supplied.get('mean_records') else '')
+    p=data['protocol'];return (provenance+f"{p['method']}. Source: {p.get('source') or 'Not provided'}. Protocol: {p['name']}.\n"
+        'Results: experimental-unit means after averaging technical measurements. Error bars are between-unit SD; '+points+' '
         'No significance test or automatic exclusion. Missing estimates remain explicit; SD is not invented for n<2. '
         'Calibration (where used): technical means ± SD and unweighted OLS with free intercept, computed in Excel. '
         'DPPH EC50 (where used): technical plateau means by dose followed by local linear interpolation around 50%; no extrapolation. '

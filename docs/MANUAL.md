@@ -46,7 +46,7 @@ Para continuar un trabajo, abre su carpeta raíz desde la aplicación. **Cerrar 
 
 ### Lecturas individuales o una media
 
-Pulsa **Añadir lecturas o una media / Add readings or a mean**, el botón de pipeta sobre la tabla. Elige tipo de lectura, muestra/patrón y unidad biológica. Puedes introducir 3, 5 o más absorbancias, o elegir **Media ya calculada / Precomputed mean** y escribir solo esa media. Las casillas vacías que sobren no se cuentan como medidas; una pareja parcialmente rellenada sigue pendiente.
+Pulsa **Añadir lecturas o una media / Add readings or a mean**, el botón de pipeta sobre la tabla. Elige tipo de lectura, muestra/patrón y unidad experimental. Puedes introducir 3, 5 o más absorbancias, o elegir **Media ya calculada / Precomputed mean** y escribir solo esa media. Las casillas vacías que sobren no se cuentan como medidas; una pareja parcialmente rellenada sigue pendiente.
 
 ![Entrada de lecturas individuales](readings-en-v092.png)
 
@@ -54,7 +54,7 @@ Para una media, n técnico y DE de respuesta son opcionales: déjalos vacíos si
 
 ![Entrada de una media](mean-en-v092.png)
 
-Usa un modo por unidad biológica y condición: no mezcles una media con sus propias lecturas. Puedes tener una unidad con lecturas individuales y otra con una media. Una media global de 27 lecturas no se convierte en 27 unidades biológicas. El menú sintético incluye **Demo con medias ya calculadas** para practicar.
+Usa un modo por unidad experimental y condición: no mezcles una media con sus propias lecturas. Puedes tener una unidad con lecturas individuales y otra con una media. Una media global de 27 lecturas no se convierte en 27 unidades experimentales. El menú sintético incluye **Demo con medias ya calculadas** para practicar.
 
 ### Qué significa la señal
 
@@ -74,8 +74,8 @@ Las ayudas de las cabeceras explican qué introducir. No confundas un campo vac�
 | Campo | Qué significa |
 | --- | --- |
 | Muestra / Sample | Nombre que agrupa los resultados de esa muestra o variedad. |
-| Réplica biológica | Identifica muestras biológicas independientes. |
-| Réplica técnica | Lecturas repetidas del mismo material biológico. |
+| Réplica experimental | Identifica muestras experimentales independientes. |
+| Réplica técnica | Lecturas repetidas del mismo material experimental. |
 | Concentración del patrón | Concentración en las unidades del protocolo, utilizada para la calibración. |
 | Dilución | Factor adimensional: 1 es sin diluir; 2 significa llevar una parte de extracto a dos partes de volumen total. No escribas una razón como `1:2`. |
 | Volumen de extracto | Volumen total de extracción en mL, cuando el cálculo lo requiere; no el volumen de una alícuota. |
@@ -86,9 +86,9 @@ Las ayudas de las cabeceras explican qué introducir. No confundas un campo vac�
 
 Usa nombres distintos en **Muestra**, por ejemplo `Variety A` y `Variety B`, dentro del mismo ensayo. Comparten la calibración de ese ensayo y se presentan como resultados separados. Para otra calibración, crea otro ensayo.
 
-Las réplicas técnicas se agrupan antes de resumir las biológicas. Tres lecturas de una misma extracción no equivalen a tres muestras biológicas independientes. Las demostraciones con variedades permiten comprobar esta diferencia. El mismo nombre en FRAP y TPC no mezcla sus resultados ni sus unidades.
+Las réplicas técnicas se agrupan antes de resumir las experimentales. Tres lecturas de una misma extracción no equivalen a tres muestras experimentales independientes. Las demostraciones con variedades permiten comprobar esta diferencia. El mismo nombre en FRAP y TPC no mezcla sus resultados ni sus unidades.
 
-Puedes medir una extracción a varias diluciones y mantener el mismo nombre y unidad biológica. Cada lectura individual lleva su factor de dilución; el programa la corrige **antes** de promediar. Puedes repetir los números de réplica técnica en otra dilución. La masa y el volumen total representado deben seguir siendo los de la misma extracción. Si introduces medias en lugar de lecturas individuales, conserva una sola media por unidad: no se mezclan medias de diferentes diluciones sin sus observaciones originales.
+Puedes medir una extracción a varias diluciones y mantener el mismo nombre y unidad experimental. Cada lectura individual lleva su factor de dilución; el programa la corrige **antes** de promediar. Puedes repetir los números de réplica técnica en otra dilución. La masa y el volumen total representado deben seguir siendo los de la misma extracción. Si introduces medias en lugar de lecturas individuales, conserva una sola media por unidad: no se mezclan medias de diferentes diluciones sin sus observaciones originales.
 
 ### Resultado por masa y recuperación de un control
 
@@ -116,7 +116,17 @@ La ficha de metodología incluye las fuentes originales. Una adaptación bibliog
 
 Las **plantillas de datos** reutilizan el diseño: nombres de muestras, patrones y réplicas. Comprueba si al guardarlas has elegido incluir medidas. En una plantilla para nuevas medidas conviene dejar absorbancias y masas medidas vacías. Al cargarla, revisa su compatibilidad con el método seleccionado.
 
+### Gestionar y eliminar plantillas o variantes
+
+![Biblioteca de variantes](library-protocol-es-v0101.png)
+
+Abre el icono de cuadrícula **Biblioteca de plantillas y protocolos / Template and protocol library** y elige **Gestionar plantillas de datos** o **Gestionar variantes de protocolo**. Está disponible incluso sin un experimento abierto. Busca por nombre o método, selecciona la entrada y pulsa **Eliminar de la biblioteca**. La confirmación identifica qué se va a eliminar.
+
+Las entradas personales se eliminan de su biblioteca; los protocolos incluidos con el programa se ocultan del catálogo y pueden recuperarse con **Restaurar protocolo incluido**. Los experimentos existentes conservan sus copias de datos y protocolo, y eliminar una variante no sustituye las condiciones editadas del ensayo actual. Para modificar condiciones, utiliza el ensayo y guarda una versión nueva si quieres reutilizarla.
+
 Crear una variante desde la interfaz sirve para modificar condiciones de un cálculo existente. Incorporar un motor de cálculo distinto requiere modificar el código; se explica en [Desarrollo](DEVELOPMENT.md).
+
+**Fuente del protocolo** es opcional: puedes dejarla vacía. Las referencias que aportes se conservan en el experimento. Esto no cambia las condiciones necesarias para definir un método operativo.
 
 ### Blanco de reactivos y corrección de muestra
 
@@ -126,13 +136,21 @@ Ejemplo de lectura única: 0,620 de muestra − 0,020 de reactivos − 0,030 de 
 
 Si el instrumento ya puso a cero las lecturas con el blanco de reactivos, los métodos colorimétricos permiten declararlo expresamente. No se inventa una medida de blanco y no se vuelve a restar. ABTS y DPPH siguen necesitando su control radical. Si hay correcciones no nulas guardadas, desactivarlas no elimina ni ignora esos valores: debes revisarlos.
 
+### Patrón cero (P0) y blanco (RB)
+
+P0 define un nivel de calibración a concentración cero; RB proporciona la señal de fondo que se resta. Pueden proceder de los mismos pocillos cuando su preparación y condiciones son equivalentes según el protocolo. El [manual Zen-Bio AOX-11, páginas 6–7](https://www.zen-bio.com/pdf/cell-manuals/ZBM0119.pdf) usa el patrón sin Fe(II) como blanco. En su ejemplo, 0,2102; 0,2106 y 0,2102 son **tres observaciones**, aunque el banco de pruebas actual las represente bajo ambos roles para conservar el nivel cero y la corrección. No son seis réplicas independientes.
+
+Excel calcula la media RB (0,210333…), la resta **una sola vez** a cada patrón/muestra y ajusta los niveles de calibración, incluido P0. La media corregida de P0 queda aproximadamente en cero; esto no obliga a que el intercepto de la recta completa sea cero. Los blancos RB no se añaden como otro nivel de calibración.
+
+Tener la misma absorbancia no basta para fusionar observaciones de preparaciones diferentes. Revisa disolvente, reactivos, volúmenes y tiempo de lectura; no inventes un blanco copiando un patrón distinto. Este ejemplo documental no sustituye una calibración medida para tu experimento.
+
 ## 7. Guardar, recalcular y exportar
 
 **Guardar** conserva los datos y condiciones del experimento, incluso incompletos. Tras crear una carpeta nueva, puedes elegir calcular y exportar inmediatamente o seguir editando. **Actualizar y exportar** guarda primero las entradas y condiciones actuales en el Excel maestro, incluida una celda que esté en edición; si el experimento es nuevo, pide su carpeta. Después valida los datos, recalcula mediante Excel, comprueba los resultados, actualiza Origin si está habilitado y exporta las figuras.
 
 Las celdas obligatorias empiezan con asterisco y sin fondo rojo. Si faltan datos al intentar actualizar, el borrador queda guardado y aparece un aviso con ensayo, fila, campo y problema. Las celdas pendientes se resaltan en rojo y se limpian al corregirlas. **Ir al primer problema** o doble clic en el aviso lleva a su posición. Por defecto no se exporta hasta corregirlo; si hay ensayos completos, puedes elegir expresamente calcular solo esos ensayos. Los ensayos incompletos siguen como borrador.
 
-![Aviso de entradas pendientes](validation-es-v010.png)
+![Aviso de entradas pendientes](validation-es-v0101.png)
 
 Cierra el libro del experimento en Excel y su proyecto en Origin antes de actualizar. Si estás abriendo el Excel, espera, guarda y ciérralo. El programa evita sobrescribir un libro en uso. La barra integrada muestra las fases; el registro aporta detalles cuando una fase falla.
 
@@ -150,13 +168,19 @@ No se promete sincronización permanente al escribir en Excel. La acción fiable
 
 ### Ver los resultados en la aplicación
 
-Selecciona un ensayo y abre **4 Resultados finales / Final results**. Cada cuadro muestra la media guardada en Excel, su unidad, DE y n biológico. Puedes seleccionar y copiar el valor exacto del cuadro. El calibrado muestra pendiente, intercepto y R²; pasa el ratón para consultar el coeficiente completo. Despliega **Resultados por unidad biológica** para consultar el detalle. Una precisión desconocida no se sustituye por cero.
+Selecciona un ensayo y abre **4 Resultados finales / Final results**. Cada cuadro muestra **media ± DE**, unidad y n independiente. La DE se presenta con dos cifras significativas y la media se redondea hasta la misma posición decimal; por ejemplo, 45,196560… y DE 2,385833… se presentan como **45,2 ± 2,4**. Excel conserva toda la precisión; pasa el ratón por el cuadro para consultar los valores completos. El redondeo es solo una convención de presentación y no una estimación de incertidumbre metrológica.
+
+Sin DE estimable no se inventa una: se muestra la media con cuatro cifras significativas y «No estimable» para la DE. Si la DE guardada es exactamente cero, se indica cero y la media usa cuatro cifras significativas. El calibrado muestra pendiente, intercepto y R², con coeficientes completos en sus ayudas emergentes. Despliega **Resultados por unidad experimental** para consultar el detalle de las preparaciones.
+
+El botón **Abrir carpeta de figuras / Open figures folder** está en la propia pestaña. Abre la carpeta general con varios ensayos; si solo hay uno y tiene figuras, abre la de ese ensayo.
 
 Debajo aparecen las figuras PNG realmente exportadas por Origin, incluido calibrado y curva de dosis cuando corresponde. Pulsa una imagen para ampliar su resolución original. El proyecto continúa editable en Origin; esta vista es una previsualización de sus exportaciones. Sin exportaciones de Origin no se presenta una figura alternativa como si procediera de Origin.
 
+Cuando el renderizador de Origin añade una línea espuria encima del título, la exportación elimina únicamente esa línea en el SVG y genera el PNG y PDF a partir de sus vectores. El original se conserva en la trazabilidad interna. Esta limpieza se aplica a las exportaciones y previsualizaciones; el proyecto nativo sigue editable y puede conservar el defecto de representación de la instalación de Origin.
+
 La pestaña lee el Excel ya calculado y no repite las ecuaciones. Si editas entradas o cambia el Excel externamente, oculta los valores antiguos hasta actualizar. Si cambian el estilo, el proyecto o las imágenes, pide renovar las figuras. Revisa también los controles de calidad en el Excel y el registro.
 
-![Resultados finales con figuras de Origin](results-en-v010.png)
+![Resultados finales con figuras de Origin](results-en-v0101.png)
 
 ## 8. Dónde están los archivos
 
@@ -222,3 +246,13 @@ Las capturas de la ayuda están disponibles en mayor resolución: pulsa una imag
 Proyecto personal de **RpastranaE**, desarrollado con asistencia de inteligencia artificial (ChatGPT/Codex), sin afiliación oficial con OpenAI, Microsoft u OriginLab. Contacto: **rpe10@alu.ua.es**.
 
 El código se publica bajo [licencia MIT](../LICENSE). Consulta [los avisos de terceros](../THIRD_PARTY_NOTICES.md) y las licencias incluidas en la distribución. Excel y OriginPro son productos independientes y requieren sus propias licencias. La licencia del programa no sustituye la revisión científica de los protocolos.
+
+### Novedades después de actualizar
+
+Después de una actualización, la primera apertura muestra una ventana con las novedades de la versión instalada y un enlace a GitHub. Solo aparece una vez por versión y no necesita conexión para mostrar el resumen. La primera instalación sigue abriendo la ayuda.
+
+El resumen sobre la tabla separa los contadores de lecturas, blancos, patrones, controles y muestras. **Listo para calcular** aparece en verde cuando las entradas están completas; no certifica la validez analítica ni sustituye a revisar los controles de calidad.
+
+![Resumen de lecturas y estado](summary-es-v0101.png)
+
+![Novedades después de actualizar](whats-new-es-v0101.png)

@@ -18,7 +18,7 @@ El cálculo necesita **Microsoft Excel de escritorio**. Para generar el proyecto
 
 La aplicación empieza sin un método seleccionado. Cada ensayo mantiene su calibración y sus resultados; distintas muestras pueden compartir la calibración de ese ensayo. El menú de datos sintéticos permite practicar sin utilizar mediciones reales.
 
-![PhDexLab: inicio sin ensayos](docs/interface-v091.png)
+![PhDexLab: inicio sin ensayos](docs/interface-v0101.png)
 
 ## Una documentación, según lo que necesites
 
@@ -35,7 +35,7 @@ La documentación principal está en español y utiliza los nombres de los contr
 ## Qué incluye
 
 - FRAP, ABTS, CUPRAC, TPC, TFC, DPPH cinético/EC50, humedad, materia seca, cenizas y granulometría, con variantes de protocolo.
-- Entrada guiada de lecturas individuales o medias, pegado de datos, réplicas técnicas/biológicas separadas y plantillas reutilizables.
+- Entrada guiada de lecturas individuales o medias, pegado de datos, repeticiones técnicas y unidades experimentales separadas, con plantillas reutilizables y gestionables.
 - Un Excel con hojas por ensayo, fórmulas visibles, resultados y controles de calidad.
 - Un proyecto Origin organizado por ensayo y exportaciones PNG/PDF/SVG; estilos de resultados, calibración y curvas de dosis personalizables.
 - Actualización explícita de resultados, interfaz español/inglés, modo claro/oscuro y ayuda ilustrada.

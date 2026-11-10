@@ -31,13 +31,13 @@ Tratamiento del blanco|Reagent blank handling
 Dilución previa por defecto|Default prior dilution
 Volumen de extracto por defecto · mL|Default extract volume · mL
 Masa de referencia por defecto · g|Default reference mass · g
-No se inventan lecturas ni una DE a partir de una media. n técnico no es n biológico.|Individual readings and SD are not reconstructed from a mean. Technical n is not biological n.
+No se inventan lecturas ni una DE a partir de una media. n técnico no es n independiente.|Individual readings and SD are not reconstructed from a mean. Technical n is not independent n.
 Solo se requiere la lectura inicial si eliges pareja inicial/final. Cambiar de señal respecto a la referencia es una adaptación que debes documentar.|An initial reading is required only for paired initial/final input. Changing the reference signal is an adaptation that must be documented.
 El blanco de reactivos se aplica una sola vez. Este campo es solo el fondo ADICIONAL de la muestra, medido sin el cromóforo y ya corregido por su propio blanco. Ejemplo: 0,620 − 0,020 de reactivos − 0,030 de fondo neto = 0,570 AU. Si no lo has medido, selecciona Sin corrección adicional.|The reagent blank is applied once. This field is only the ADDITIONAL sample background, measured without the chromophore and already corrected against its own blank. Example: 0.620 − 0.020 reagent blank − 0.030 net sample background = 0.570 AU. If you have not measured it, select No additional correction.
 El número propuesto solo prepara la tabla: puedes añadir cualquier número de lecturas. No obliga a medir por triplicado.|This number only prepares the entry table: any number of readings is allowed. Triplicate measurement is not mandatory.
-Elige lecturas individuales o una media por unidad biológica y condición; no ambas. Una media puede tener n y DE conocidos, pero no se crean réplicas ficticias.|Choose individual readings or one mean per biological unit and condition, never both. A mean may include known n and SD, but no artificial replicates are created.
+Elige lecturas individuales o una media por unidad experimental y condición; no ambas. Una media puede tener n y DE conocidos, pero no se crean réplicas ficticias.|Choose individual readings or one mean per experimental unit and condition, never both. A mean may include known n and SD, but no artificial replicates are created.
 DE técnica de la señal elegida. En modo pareja es la DE de las diferencias pareadas, no la DE final; no se deduce sin los pares originales.|Technical SD of the chosen signal. For paired input it is the SD of paired differences, not the final-reading SD; it cannot be inferred without the original pairs.
-Opcional; no es el número de unidades biológicas. Si no se conoce, déjalo vacío.|Optional; this is not the number of biological units. Leave blank if unknown.
+Opcional; no es el número de unidades experimentales. Si no se conoce, déjalo vacío.|Optional; this is not the number of experimental units. Leave blank if unknown.
 Solo para instrumentos que ya se pusieron a cero con el blanco. Se registra una sustracción adicional de cero, sin crear una medición ficticia. El control radical de ABTS/DPPH siempre sigue siendo necesario.|Only for instruments already zeroed against the blank. Additional subtraction is explicitly zero without inventing a blank measurement. ABTS/DPPH radical controls are still required.
 Ya hay lecturas: para cambiar su significado, crea otro ensayo o borra explícitamente las medidas primero.|Readings already exist: create another assay or explicitly clear the measurements before changing their meaning.
 Factor de dilución propuesto al preparar una muestra; es editable por muestra.|Proposed dilution factor for a sample; editable for each sample.
@@ -148,8 +148,8 @@ def absorbance_formula(p,row):
     return f'RAW!G{row}-RAW!H{row}' if signal(p)=='paired' else f'RAW!G{row}'
 
 FIELDS={
- 'reading_basis':('Origen de la lectura','Elige lecturas individuales o una media por unidad biológica y condición; no ambas. Una media puede tener n y DE conocidos, pero no se crean réplicas ficticias.'),
- 'technical_n':('n técnico de la media','Opcional; no es el número de unidades biológicas. Si no se conoce, déjalo vacío.'),
+ 'reading_basis':('Origen de la lectura','Elige lecturas individuales o una media por unidad experimental y condición; no ambas. Una media puede tener n y DE conocidos, pero no se crean réplicas ficticias.'),
+ 'technical_n':('n técnico de la media','Opcional; no es el número de unidades experimentales. Si no se conoce, déjalo vacío.'),
  'technical_sd':('DE de la respuesta · AU','DE técnica de la señal elegida. En modo pareja es la DE de las diferencias pareadas, no la DE final; no se deduce sin los pares originales.'),
 }
 PARAMETERS={

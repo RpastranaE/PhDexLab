@@ -64,10 +64,10 @@ Cambios sin guardar|Unsaved changes
 Hay cambios en la tabla o el protocolo. ¿Descartarlos?|There are unsaved table or protocol changes. Discard them?
 Preparar muestra|Prepare sample
 Nombre único de muestra o variedad (resultados separados):|Unique sample or variety name (separate results):
-Réplicas biológicas|Biological replicates
-Número de unidades biológicas independientes:|Number of independent biological units:
+Réplicas experimentales|Independent replicates
+Número de unidades experimentales independientes:|Number of independent experimental units:
 Réplicas técnicas|Technical replicates
-Lecturas por cada unidad biológica:|Readings per biological unit:
+Lecturas por cada unidad experimental:|Readings per experimental unit:
 Carpeta que contendrá el experimento|Folder that will contain the experiment
 Nombre de carpeta nueva|New folder name
 Seleccionar carpeta del experimento|Select experiment folder
@@ -173,6 +173,7 @@ Sin lecturas|No readings
 Método no implementado|Method not implemented
 Motor de cálculo desconocido|Unknown calculation engine
 Nombre y fuente del protocolo obligatorios|Protocol name and source are required
+Nombre del protocolo obligatorio|Protocol name is required
 Completar norma, temperatura y criterio final para esta adaptación|Complete the standard reference, temperature and endpoint criterion for this adaptation
 Registrar duración de incineración|Record ashing duration
 ABTS usa absorbancia final y calcula la inhibición frente al control radical|ABTS uses final absorbance and calculates inhibition against the radical control
@@ -199,14 +200,14 @@ Marcar una sola meseta por dosis y réplica técnica|Confirm one plateau per dos
 Cada unidad necesita mesetas confirmadas en al menos dos dosis para EC50|Each unit needs confirmed plateaus at two or more doses for EC50
 Hay series cinéticas sin meseta confirmada|Some kinetic series lack a confirmed plateau
 La masa cargada debe coincidir en todas las fracciones de una unidad|Loaded mass must match across all fractions of one unit
-Una masa por fracción y unidad; otro tamizado utiliza otra unidad biológica|One mass per fraction and unit; an independent sieving run needs another biological unit
+Una masa por fracción y unidad; otro tamizado utiliza otra unidad experimental|One mass per fraction and unit; an independent sieving run needs another experimental unit
 Intervalos granulométricos solapados|Overlapping particle-size intervals
 Máximo 10000 lecturas por ensayo|Maximum 10000 readings per assay
 Máximo: 10000 lecturas|Maximum: 10000 readings
 Máximo: 10000 filas|Maximum: 10000 rows
 Respuesta corregida → calibración OLS → concentración equivalente → dilución previa × volumen de extracto / masa. La concentración final de reacción se convierte a alícuota una sola vez.|Corrected response → OLS calibration → equivalent concentration → previous dilution × extract volume / mass. Final-mixture concentration is converted to aliquot concentration once.
 Inhibición (%) = 100 × (A_control radical − A_muestra corregida) / A_control radical. Calibrar con Trolox. No restar de nuevo el control como blanco.|Inhibition (%) = 100 × (radical control A − corrected sample A) / radical control A. Calibrate with Trolox. Do not subtract the control again as a blank.
-Mesetas confirmadas por el operador → media técnica por dosis y unidad → interpolación local alrededor de 50% → media y DE biológica de EC50. Sin extrapolación ni meseta automática.|Operator-confirmed plateaus → technical mean by dose and unit → local interpolation around 50% → biological mean and SD of EC50. No extrapolation or automatic plateau detection.
+Mesetas confirmadas por el operador → media técnica por dosis y unidad → interpolación local alrededor de 50% → media y DE entre unidades de EC50. Sin extrapolación ni meseta automática.|Operator-confirmed plateaus → technical mean by dose and unit → local interpolation around 50% → mean across units and SD of EC50. No extrapolation or automatic plateau detection.
 Humedad = 100(m1−m2)/(m1−m0). Materia seca = 100(m2−m0)/(m1−m0). Cenizas = 100(m2−m0)/masa neta inicial; la base seca exige la fracción seca correspondiente.|Moisture = 100(m1−m2)/(m1−m0). Dry matter = 100(m2−m0)/(m1−m0). Ash = 100(m2−m0)/initial net mass; a dry basis requires the corresponding dry fraction.
 Retenido (%) = 100 × masa de fracción / masa cargada. Recuperación = 100 × suma de fracciones / masa cargada. No se normaliza al 100%.|Retained (%) = 100 × fraction mass / loaded mass. Recovery = 100 × sum of fractions / loaded mass. No renormalisation to 100%.'''
 for line in MORE.splitlines():
@@ -273,3 +274,13 @@ for pair in """Experimento guardado|Experiment saved
 ¿Quieres calcular y exportar los resultados ahora o seguir editando?|Would you like to calculate and export results now or continue editing?
 Actualizar y exportar ahora|Update and export now
 Seguir editando|Continue editing""".splitlines():add(*pair.split("|",1))
+
+for pair in '''Lecturas|Readings
+Muestras|Samples
+Lecturas totales|Total readings
+Blancos|Blanks
+Patrones|Standards
+Controles|Controls
+Muestras distintas|Distinct samples
+Lecturas de muestras|Sample readings
+Revisar entradas|Review inputs'''.splitlines():add(*pair.split('|',1))

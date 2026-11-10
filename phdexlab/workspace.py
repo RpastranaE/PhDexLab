@@ -34,12 +34,8 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
     def __init__(self):
         self._workspace_ready=False;self.assays=[];self.active_id=None;self.saved_states={};self.next_assay_number=1;self._validation_requested=False
         super().__init__()
-        self.variants=copy.deepcopy(ALL)
-        if self.variant_folder.exists():
-            for path in self.variant_folder.glob('*.json'):
-                try:
-                    p=json.loads(path.read_text(encoding='utf-8'));validate_protocol(p);self.variants.append(p)
-                except (ValueError,KeyError):pass
+        from .libraries import variants
+        self.variants=variants(self.variant_folder)
         layout=self.centralWidget().layout();layout.removeWidget(self.tabs)
         self.splitter=QSplitter();left=QWidget();left_layout=QVBoxLayout(left);left_layout.setContentsMargins(0,0,6,0)
         caption=QLabel('ENSAYOS DEL EXPERIMENTO');caption.setStyleSheet('font-weight:700;color:#176E78;padding:8px 0');left_layout.addWidget(caption)
@@ -89,6 +85,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         self.raw.rows_edited.connect(lambda:self.raw_changed(None))
         from .results_view import ResultsView
         self.results_view=ResultsView(self);self.tabs.addTab(self.results_view,'4   Resultados finales');localize(self)
+        self.results_view.open_figures.connect(lambda:self.guard(lambda:self.open_location('origin')))
         self.tabs.currentChanged.connect(lambda index:self.refresh_result_context())
     def mark_dirty(self):
         super().mark_dirty()
@@ -131,7 +128,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         previous_loading=self.loading;self.loading=True
         locked={'method','id','engine','quantity','concentration_unit','report_factor','result_unit','blocked_reason'}
         if p.get('method')!='TFC':locked.add('equivalent')
-        mandatory={'name','source'}
+        mandatory={'name'}
         if engine(p) in ('colorimetric','inhibition'):mandatory|={'aliquot_uL','reagent_uL','water_uL','time_min','wavelength_nm','calibration_basis'}
         if p.get('blocked_reason'):mandatory|={'operational_confirmed','standard_reference','endpoint_note','temperature_C'}
         for r in range(self.parameters.rowCount()):
@@ -211,14 +208,15 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         from PySide6.QtCore import QUrl
         from PySide6.QtGui import QDesktopServices
         value=self.parameters.item(row,1).text().strip()
+        if not value:self.parameter_help('source');return
         if not value.startswith(('https://','http://')):raise ValueError(t('Introduce un enlace web para la fuente.'))
         QDesktopServices.openUrl(QUrl(value))
     def update_guide(self,p):
         if not hasattr(self,'method_guide'):return
-        source=html.escape(str(p.get('source','')));e=engine(p)
+        source=html.escape(str(p.get('source') or ''));e=engine(p)
         equations={'colorimetric':'Respuesta corregida → calibración OLS → concentración equivalente → dilución previa × volumen de extracto / masa. La concentración final de reacción se convierte a alícuota una sola vez.',
             'inhibition':'Inhibición (%) = 100 × (A_control radical − A_muestra corregida) / A_control radical. Calibrar con Trolox. No restar de nuevo el control como blanco.',
-            'ec50':'Mesetas confirmadas por el operador → media técnica por dosis y unidad → interpolación local alrededor de 50% → media y DE biológica de EC50. Sin extrapolación ni meseta automática.',
+            'ec50':'Mesetas confirmadas por el operador → media técnica por dosis y unidad → interpolación local alrededor de 50% → media y DE entre unidades de EC50. Sin extrapolación ni meseta automática.',
             'gravimetric':'Humedad = 100(m1−m2)/(m1−m0). Materia seca = 100(m2−m0)/(m1−m0). Cenizas = 100(m2−m0)/masa neta inicial; la base seca exige la fracción seca correspondiente.',
             'sieve':'Retenido (%) = 100 × masa de fracción / masa cargada. Recuperación = 100 × suma de fracciones / masa cargada. No se normaliza al 100%.'}
         value=lambda key:html.escape(str(display_value(key,p.get(key,''))))
@@ -226,7 +224,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         if p.get('reading_schema')==2:
             from .reading_design import signal,PARAMETERS as ENTRY_PARAMETERS
             label={'endpoint':'Lectura única de absorbancia','delta':'Incremento ΔA ya medido','paired':'Pareja inicial/final (ΔA)'}[signal(p)]
-            entry='<h3>'+t('Entrada de datos')+'</h3><p>'+t(label)+'</p><p>'+t('No se inventan lecturas ni una DE a partir de una media. n técnico no es n biológico.')+'</p>' if e in ('colorimetric','inhibition','ec50') else ''
+            entry='<h3>'+t('Entrada de datos')+'</h3><p>'+t(label)+'</p><p>'+t('No se inventan lecturas ni una DE a partir de una media. n técnico no es n independiente.')+'</p>' if e in ('colorimetric','inhibition','ec50') else ''
             if e in ('colorimetric','inhibition','ec50') and p.get('matrix_mode')=='net':entry+='<p>'+t(ENTRY_PARAMETERS['matrix_mode'][1])+'</p>'
             if e=='colorimetric' and signal(p)!=p.get('reference_signal',signal(p)):entry+='<p><b>'+t('Señal adaptada respecto a la referencia: documentar y comprobar compatibilidad.')+'</b></p>'
         self.method_guide.setHtml(entry+'<h2>'+value('name')+'</h2><h3>'+t('Qué se calcula')+'</h3><p>'+t(equations[e])+'</p><h3>'+t('Condiciones y reactivos')+'</h3><p>'+value('reagents')+'<br>'+value('notes')+'</p><h3>'+t('Estado')+'</h3><p>'+value('status')+'<br>'+value('blocked_reason')+'</p><h3>'+t('Referencia bibliográfica')+'</h3><p><a href="'+source+'">'+source+'</a></p>')
@@ -256,7 +254,9 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
             needs=icon in ('measure','save','refresh','rows','type','excel','origin','plots','protocol','protocol-save','template','variant','close') or (icon=='sample' and button is not self.add_assay_button)
             if needs:button.setEnabled(active and not busy)
         self.variant.setEnabled(active and not busy);self.origin_mode.setEnabled(active and not busy);self.row_count.setEnabled(active and not busy)
-        if hasattr(self,'templates_button'):self.templates_button.setEnabled(active and not busy)
+        if hasattr(self,'templates_button'):
+            self.templates_button.setEnabled(not busy)
+            self.save_template_action.setEnabled(active and not busy);self.load_template_action.setEnabled(active and not busy)
     def item_text(self,a):
         status,issue,_=state(a);label='Listo para calcular' if status=='ready' else 'Borrador'
         cached=self.saved_states.get(a['id'],{}) if not self.dirty else {}
@@ -292,7 +292,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         self.commit_active();index=self.assay_list.currentRow()
         if 0<=index<len(self.assays):
             a=self.assays[index];self.raw.configure_view(a['protocol']);self.update_guide(a['protocol']);status,issue,_=state(a);item=self.assay_list.item(index);item.setText(self.item_text(a));item.setToolTip(t(issue or 'Entradas completas. Guardar y actualizar para calcular.'))
-            super().update_metrics();self.metrics.setText(a['id']+' · '+self.metrics.text()+('   |   '+issue if issue else '   |   Listo para calcular'))
+            super().update_metrics();self.metrics.set_status(a['id'],status=='ready',issue)
             self.metrics.setToolTip(issue)
             localize(self) if hasattr(self,'language_selector') else None
         self.refresh_result_context()
@@ -315,9 +315,12 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
             for index,p in enumerate(self.variants):
                 if p['method']==method.currentData():variant.addItem(display_value('name',p['name']),index)
             name.setText(t(METHOD_NAMES[method.currentData()]))
+            variant.setToolTip(t('No hay variantes visibles para este método. Restaura una desde la biblioteca.') if not variant.count() else '')
+            if hasattr(dialog,'add_button'):dialog.add_button.setEnabled(variant.count()>0)
         method.currentIndexChanged.connect(fill);fill();note=QLabel('Cada ensayo conserva sus datos y calibración. Puedes añadir otro ensayo del mismo método para una variante o lote distinto.');note.setWordWrap(True);layout.addWidget(note)
         buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Ok|QDialogButtonBox.StandardButton.Cancel);buttons.button(QDialogButtonBox.StandardButton.Ok).setText('Añadir ensayo');buttons.accepted.connect(dialog.accept);buttons.rejected.connect(dialog.reject);layout.addWidget(buttons);dialog.resize(680,240)
-        if dialog.exec()==QDialog.DialogCode.Accepted:self.append_assay(self.variants[variant.currentData()],name.text().strip() or METHOD_NAMES[method.currentData()])
+        dialog.add_button=buttons.button(QDialogButtonBox.StandardButton.Ok);dialog.add_button.setEnabled(variant.count()>0)
+        if dialog.exec()==QDialog.DialogCode.Accepted and variant.count():self.append_assay(self.variants[variant.currentData()],name.text().strip() or METHOD_NAMES[method.currentData()])
     def append_assay(self,p,label,rows=None):
         self.commit_active();a=dict(id=new_id(self.assays,p['method'],self.next_assay_number),label=label,protocol=copy.deepcopy(p),rows=copy.deepcopy(rows or []));self.next_assay_number=int(a['id'].split('_')[0][1:])+1;self.assays.append(a);self.set_assays(self.assays,len(self.assays)-1);self.dirty=True;return a['id']
     def duplicate_assay(self):
