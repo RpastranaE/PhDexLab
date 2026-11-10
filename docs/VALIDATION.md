@@ -17,6 +17,8 @@ Software verification with synthetic data is not analytical validation of a chem
 - The exact installer passed an isolated installation, desktop/menu shortcuts and frozen startup. An isolated **0.10.0 → 0.10.1** update using the exact ZIP passed startup, retained 24 help images and preserved experiment/style sentinels and the pending version-notes state.
 
 
+- After publication, all four GitHub asset SHA-256 digests matched the tested local files. The installed 0.10.1 executable verified HTTPS and reported itself current; the 0.10.0 executable detected 0.10.1 as newer. Isolated uninstallation removed its managed shortcuts and retained experiment/style sentinels.
+
 ## 0.10.0 input validation and final results
 
 - **204 automated tests passed**, including delayed missing-cell highlighting, clearing highlights after correction, multi-assay issue locations, zero/false values, optional mean precision, autosave of dirty tables and the active cell editor, cancellation of first-save dialogs, protection against external workbook changes, explicit partial-export choice and stale-result/figure checks. The GUI test harness now destroys test windows between cases so old Qt event filters/timers cannot be collected inside a later modal loop.
