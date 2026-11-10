@@ -18,6 +18,8 @@ Software verification with synthetic data is not analytical validation of a chem
 
 - The exact final installer passed isolated installation, desktop/menu shortcut and startup checks. The installed executable matched the final build. The exact ZIP passed an isolated **0.10.1 → 0.11.0** update, retaining 24 help images, experiment/style sentinels and the unseen update-notes state.
 
+- After publication, all four GitHub asset SHA-256 digests matched the tested files. The installed 0.11.0 executable verified HTTPS and reported itself current; 0.10.1 detected 0.11.0 as newer. Isolated uninstallation removed managed shortcuts and retained experiment/style sentinels.
+
 ## 0.10.1 libraries, result precision and figure exports
 
 - The full suite passed **224 tests**. After the final compact-summary changes, **58 focused regressions passed**, including readiness counters, both languages/themes, one-time update notes, first-install Help, library operations and source optionality.
