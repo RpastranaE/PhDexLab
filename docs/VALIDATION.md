@@ -13,6 +13,9 @@ Software verification with synthetic data is not analytical validation of a chem
 - The exact frozen executable generated **24 Origin + 24 Publication exports** for FRAP, ABTS, DPPH and TPC. All eight Origin SVGs passed the exponent check, including Origin’s per-character coordinate lists. Native chart caches, means, SD handling, no-marker options and the custom violet workbook formatting passed. The first run took **79.89 s** during concurrent packaging; an unchanged integrity-verified repeat took **1.11 s**.
 - A real **0.11.0 → 0.11.1** package update passed startup verification and preserved experiment and preference sentinels. All compiled modules and bundled assets matched source.
 
+- The installer created working desktop/menu shortcuts and passed frozen startup. Its isolated uninstall removed the application and shortcuts while retaining experiment/style sentinels. The published installer SHA-256 is `31f4faf6f60ace181670be94d1a816498296c61740bf41677a7ecd00efeb27a5`; the update ZIP is `2ea1b1795ffe41670f42ffa3abc01b8c5224fe679a879088d8df5492b21f973d`.
+- All four published GitHub assets matched local sizes and SHA-256 digests. The actual installed 0.11.1 app verified HTTPS and reported itself current; the previous 0.11.0 executable detected 0.11.1 as newer.
+
 ## 0.11.0 spreadsheet editing and compact Excel
 
 - **240 automated tests passed**; **57 focused regressions passed** after the final table/layout changes. Coverage includes drag filling, decimal and padded-name series, fill shortcuts, selected-range paste, undo/redo, numbering/grouping of repeated readings, preservation of source values/IDs, rejection of artificial replicates from a mean, old/new workbook round trips and configurable workbook styles.
