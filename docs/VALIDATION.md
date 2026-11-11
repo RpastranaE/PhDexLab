@@ -174,3 +174,20 @@ El botón Entrada de datos se ubica a la derecha de las pestañas, con espacio r
 Verificación de entrega: 268 pruebas aprobadas; seis comprobaciones adicionales a escala 150 %. Código compilado comparado con las fuentes, recursos comparados byte a byte y arranque del ejecutable verificado. Instalación aislada con accesos directos y actualización real 0.12.0 → 0.12.1 conservando experimento, estilo y preferencias de prueba. Paquete ZIP: SHA-256 `015f9d2d5fd5054a5b0c0e4a01682e1a09aa833d4859051070b731483cdef3c0`. Instalador: SHA-256 `bbe10a0c8f88758421cb7e4ee83bc4edeaff8b4bc8dd122e5d33676f6041e9ee`.
 
 Después de publicar: los cuatro archivos de GitHub coinciden en tamaño y SHA-256 con los probados. El ejecutable 0.12.0 detecta 0.12.1 como actualización y el instalador 0.12.1 confirma que está al día; ambas consultas HTTPS verifican TLS. Desinstalación aislada comprobada: elimina aplicación y accesos directos y conserva experimento y estilo de prueba.
+
+
+## 0.12.2 — importador adaptado al protocolo
+
+33 pruebas nuevas cubren categorías cortas ES/EN, encabezados con unidades, µ/μ/u y ×/x, distinción entre instrumento y modo individual/media, campos de los 15 protocolos, lectura única/parejas/ΔA, arrastre iniciado desde cabeceras o celdas y recepción sobre etiqueta o lista, mensajes con fila/campo/valor, archivos binarios/vacíos, comillas y columnas desiguales. También se comprueba el rechazo atómico de un error después de las primeras 100 filas y que un error de formato no permita importar datos anteriores.
+
+Un CSV de prueba aportado se verificó localmente en ambos idiomas: 23 filas (12 patrones, 8 lecturas de muestras y 3 blancos), 11 columnas asignadas y valores originales de absorbancia, dilución, volumen, masa y concentración conservados. El archivo aportado no se incluye en el repositorio. Las regresiones de arrastre automatizadas cubren inicio y destinos mediante eventos Qt.
+
+Los cálculos, unidades del protocolo y conectores Excel/Origin no cambian. Importar los datos no valida la compatibilidad entre calibrante, base de concentración y protocolo: deben coincidir antes del cálculo. Las capturas de la guía utilizan datos sintéticos independientes.
+
+La suite completa de 0.12.2 supera 301 pruebas. Los avisos de obsolescencia proceden de constructores de eventos Qt empleados por las pruebas; no son errores de importación.
+
+Entrega 0.12.2: código compilado comparado con fuentes, recursos comparados byte a byte y arranque del ejecutable verificado. Instalación aislada y accesos directos comprobados; actualización real desde 0.12.1 conserva experimento, estilo y preferencias de prueba.
+
+PhDexLab-Windows-x64.zip: SHA-256 `da2bf2c4f2a04fb81346e687a0cd8e53177013b93c1765dd973b818ce781f52a`.
+
+PhDexLab-Setup-0.12.2.exe: SHA-256 `4ff5e84df6781c765f7c752b8d2d27c8305b524032162579a326440148db1764`.

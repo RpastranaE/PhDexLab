@@ -79,9 +79,11 @@ Para importar un archivo, pulsa **Entrada de datos → Importar archivo…**. Ad
 
 Si no asignas tipo y unidad, se usan los valores indicados en el formulario. Si no asignas repetición, la numeración continúa dentro de cada muestra/unidad/condición. Una unidad común no implica que existan preparaciones independientes. Asigna una columna de unidades si el archivo distingue preparaciones. Los valores ausentes permanecen pendientes; no se fabrican medidas. Las convenciones de importación y la huella del archivo quedan en el registro al guardar.
 
-![Asignación de columnas](import-columns-en-v012.png)
+Los campos disponibles siguen el protocolo: la absorbancia inicial solo aparece con parejas inicial/final. Se reconocen tipos cortos como Patrón, Blanco, Muestra y Control en ambos idiomas. El campo de lectura individual/media no representa el nombre del equipo. Los avisos señalan la **fila de datos** (sin contar encabezados), el campo y una corrección breve; un archivo con errores no se añade parcialmente.
 
-![Vista previa en PhDexLab](import-preview-en-v012.png)
+![Asignación de columnas](import-columns-en-v0122.png)
+
+![Vista previa en PhDexLab](import-preview-en-v0122.png)
 
 Las ayudas de las cabeceras explican qué introducir. No confundas un campo vacío con un cero medido. Usa valores numéricos y las unidades indicadas; el programa admite coma o punto decimal en la entrada manual.
 

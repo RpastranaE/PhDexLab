@@ -8,12 +8,16 @@ from .updater import version,REPO_URL
 
 NOTES={
     'es':[
-        'Entrada de datos está a la derecha de las pestañas. Pulsa cualquier parte del botón para abrir el menú e importar un archivo.',
-        'Ayuda actualizada con las instrucciones de importación y el recorrido de cálculo de Excel.'
+        'Importación: reconoce Patrón, Blanco, Muestra y Control en español e inglés.',
+        'Los errores indican fila, campo y una corrección breve.',
+        'Los campos de importación se adaptan a la señal y las condiciones del protocolo.',
+        'Arrastra encabezados o columnas hasta su campo de destino, o utiliza las listas.'
     ],
     'en':[
-        'Data entry is on the right of the tabs. Click anywhere on the button to open its menu and import a file.',
-        'Updated help with file import instructions and the Excel calculation route.'
+        'Import recognises short Spanish and English names for standards, blanks, samples and controls.',
+        'Errors identify the row, field and a short suggested fix.',
+        'Import fields follow the protocol signal and conditions.',
+        'Drag headers or columns onto their destination field, or use the lists.'
     ]}
 
 

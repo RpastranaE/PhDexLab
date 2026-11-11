@@ -2,6 +2,14 @@
 
 Para instalar y utilizar PhDexLab, consulta el [manual vigente](docs/MANUAL.md). Esta página explica la evolución; las instrucciones actuales no están repartidas entre versiones.
 
+## 0.12.2
+
+- Importación: reconoce Patrón, Blanco, Muestra y Control, además de sus nombres completos e ingleses, independientemente del idioma de la app.
+- Detecta encabezados con unidades del protocolo, µ/μ/u y ×/x. Origen de la lectura no se asigna automáticamente al modo individual/media, evitando confundir el equipo con el tipo de dato.
+- Avisos breves con fila de datos, campo, valor y corrección para tipos desconocidos, números/separadores, comillas, codificación y filas desiguales. No se importan parcialmente archivos con errores.
+- La asignación y la vista previa muestran solo los campos aplicables al protocolo: inicial solo en parejas, corrección de muestra solo si está activada y fracción seca solo cuando procede.
+- Arrastre también desde las celdas de origen y sobre las listas de destino; indicación más clara. Se conserva la asignación manual por listas.
+
 ## 0.12.1
 
 - Entrada de datos tiene su propio espacio a la derecha de las pestañas y abre el menú completo con un clic en cualquier parte. Importar archivo ya no depende de una flecha pequeña junto a las pestañas.
