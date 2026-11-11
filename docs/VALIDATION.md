@@ -15,6 +15,9 @@ Software verification with synthetic data is not analytical validation of a chem
 - The final frozen application generated **24 Origin + 24 Publication exports** for FRAP, ABTS, DPPH and TPC in **69.50 s** during concurrent packaging. An unchanged, integrity-verified repeat took **1.34 s**. Native chart caches, means/SD handling, SVG superscripts, nine visible workbook tabs, Overview activation and unfrozen panes passed. All eight graph pages recorded Page View with zoom 100 and unchanged physical dimensions.
 - The compiled-module inventory and bundled assets matched final source. An isolated installer test verified desktop/menu shortcuts and frozen startup. A real **0.11.1 → 0.12.0** package upgrade preserved experiment/style/preferences sentinels and all 24 help images.
 
+- The four published GitHub assets matched local sizes and SHA-256 digests. The installed **0.12.0** executable verified HTTPS and reported itself current; the previous **0.11.1** executable detected 0.12.0 as newer. Isolated uninstall removed the test application/shortcuts and retained user-file sentinels.
+- Published installer SHA-256: `b8e9f77439df228f10453a9c944695d32b1ffc91e93bc9d98d5767362dbcbfc6`. Update ZIP: `dec15b87fcfe84035bd4df7f30107dd985c2bd974c8a886683027e1933ca0791`.
+
 ## 0.11.1 Excel appearance and SVG superscripts
 
 - **247 automated tests passed**; **43 focused regressions passed** after the final SVG positioning adjustment, including new preview-to-workbook checks for colours, borders, alignment, header height and font sizes. Logical input values and formulas remain identical when appearance changes. Invalid style settings are rejected; older settings receive compatible defaults.
