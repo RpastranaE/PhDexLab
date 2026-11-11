@@ -46,7 +46,7 @@ Para continuar un trabajo, abre su carpeta raíz desde la aplicación. **Cerrar 
 
 ### Lecturas individuales o una media
 
-Pulsa **Añadir lecturas o una media / Add readings or a mean**, el botón de pipeta sobre la tabla. Elige tipo de lectura, muestra/patrón y unidad experimental. Puedes introducir 3, 5 o más absorbancias, o elegir **Media ya calculada / Precomputed mean** y escribir solo esa media. Las casillas vacías que sobren no se cuentan como medidas; una pareja parcialmente rellenada sigue pendiente.
+Pulsa **Entrada de datos / Data entry**, el botón de pipeta sobre la tabla. Elige tipo de lectura, muestra/patrón y unidad experimental. Puedes introducir 3, 5 o más absorbancias, o elegir **Media ya calculada / Precomputed mean** y escribir solo esa media. Las casillas vacías que sobren no se cuentan como medidas; una pareja parcialmente rellenada sigue pendiente.
 
 ![Entrada de lecturas individuales](readings-en-v092.png)
 
@@ -68,6 +68,18 @@ El FRAP Fe(II) de referencia conserva el incremento definido en el protocolo ori
 En RAW, cada fila representa una lectura original o una media aportada identificada como tal. Las pesadas y fracciones usan sus campos específicos. El tipo de lectura se elige de una lista: patrón, blanco, control o muestra, según el método. Puedes añadir nombres personalizados vinculados a esas categorías. Los identificadores internos se generan automáticamente.
 
 Un clic selecciona la celda. Escribir sustituye su contenido; F2 o doble clic permite editar el texto existente. Supr deja vacías las celdas seleccionadas. Ctrl+C, Ctrl+X y Ctrl+V permiten copiar, cortar y pegar. El menú con clic derecho permite insertar una cantidad de filas, eliminar las seleccionadas, copiar filas completas y pegarlas como filas nuevas; estas reciben identificadores internos nuevos. Puedes pegar una tabla de Excel con tabulaciones desde la celda seleccionada. Añade las filas necesarias con el control de cantidad de filas. Los asteriscos rojos indican campos obligatorios para la categoría y el protocolo de esa fila. Las columnas atenuadas no se utilizan en ese contexto.
+
+Para importar un archivo, abre la flecha de **Entrada de datos → Importar archivo…**. Admite CSV, TXT, TSV y otros textos delimitados:
+
+1. Revisa separador, decimal, miles, codificación, comillas y líneas iniciales.
+2. Arrastra un encabezado del archivo al campo correspondiente de PhDexLab, o selecciónalo en su lista. El orden del archivo es libre. Las columnas sin asignar se omiten.
+3. Revisa **Vista en PhDexLab** y pulsa **Importar**. Se añaden filas al ensayo actual; no se sustituyen las existentes.
+
+Si no asignas tipo y unidad, se usan los valores indicados en el formulario. Si no asignas repetición, la numeración continúa dentro de cada muestra/unidad/condición. Una unidad común no implica que existan preparaciones independientes. Asigna una columna de unidades si el archivo distingue preparaciones. Los valores ausentes permanecen pendientes; no se fabrican medidas. Las convenciones de importación y la huella del archivo quedan en el registro al guardar.
+
+![Asignación de columnas](import-columns-en-v012.png)
+
+![Vista previa en PhDexLab](import-preview-en-v012.png)
 
 Las ayudas de las cabeceras explican qué introducir. No confundas un campo vacío con un cero medido. Usa valores numéricos y las unidades indicadas; el programa admite coma o punto decimal en la entrada manual.
 
@@ -218,6 +230,16 @@ EXP_001/
 |---|---|
 | `…_Data` | Lecturas originales, condiciones y método. Los enlaces superiores llevan a cada sección. |
 | `…_Analysis` | Resultados finales y por unidad, calibración o curva de dosis, balance y cálculos auditables. |
+
+En **Analysis**, el recorrido de cálculo lleva a calibración, lecturas individuales, resultados por unidad y resultados finales. Las filas de cálculo muestran muestra/unidad/repetición. Dentro de una misma hoja, las fórmulas usan direcciones locales como `A5`; las referencias a otra hoja conservan su nombre. Al seleccionar la celda puedes inspeccionar la fórmula y sus entradas; los comentarios indican el paso de cálculo.
+
+Ejemplo con datos sintéticos:
+
+![Recorrido de cálculo](excel-route-v012.png)
+
+![Lecturas y resultados intermedios](excel-readings-v012.png)
+
+El índice queda al principio, sin filas ni columnas fijadas. El libro se guarda en **Overview**, también después de recalcular. En Origin se guarda la vista de página completa; las dimensiones físicas de exportación se conservan.
 
 Las fórmulas se conservan una sola vez. La hoja técnica oculta contiene únicamente el índice interno de bloques. Los experimentos anteriores se abren y adoptan este formato al guardar o actualizar; el Excel anterior queda en el historial. El nuevo formato requiere **PhDexLab 0.11.0 o posterior**. Origin mantiene las carpetas por ensayo. `_internal` conserva versiones, estado y trazabilidad: no necesitas editarlo para usar el programa, pero forma parte del experimento.
 

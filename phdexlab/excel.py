@@ -17,11 +17,11 @@ from .ui_fields import axis_labels
 HEADERS = {
     "Summary": ["Sample", "Independent n", "Mean", "Between-unit SD"],
     "RAW": COLUMNS,
-    "Parameters": ["Parámetro", "Valor"],
+    "Parameters": ["Parameter", "Value"],
     "Processing": ["Record ID", "Measured response (AU)", "Corrected response (AU)", "Equivalent concentration (calibration axis)", "Sample result / control recovery (see Unit)", "Unit", "Reaction dilution correction", "Prior sample dilution factor", "Original extract concentration (axis unit)", "Total extract volume (L)", "Reference mass (g)", "Reporting / unit conversion factor", "Equivalent amount (axis unit x L)"],
     "Calibration": ["Standard concentration", "Mean response", "Technical n", "Response SD", "OLS prediction", "Residual", "", "", "Metric", "Value"],
     "Results": ["kind", "Sample", "Experimental unit", "Technical n", "Mean", "Technical SD", "CV (%)", "QC", "Unit"],
-    "ReadMe": ["Concepto", "Detalle"],
+    "ReadMe": ["Topic", "Detail"],
 }
 
 def text_cell(cell, value):
@@ -71,7 +71,7 @@ def write_book(path, rows, protocol, experiment_id):
     for values in readme:
         wb["ReadMe"].append(values)
     for ws in wb:
-        ws.freeze_panes="A2"; ws.auto_filter.ref=ws.dimensions
+        ws.freeze_panes=None; ws.auto_filter.ref=ws.dimensions
         ws.sheet_view.showGridLines=False
         ws.row_dimensions[1].height=36
         for cell in ws[1]:

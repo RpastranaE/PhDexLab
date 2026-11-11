@@ -99,6 +99,11 @@ def write_master(path,assays,experiment_id,calculated=False,compact_layout=True,
             for r in range(2,summ.max_row+1):
                 overall.append([assay['id'],p['method'],f"='{summ.title}'!A{r}",f"='{summ.title}'!B{r}",f"='{summ.title}'!C{r}",f"='{summ.title}'!D{r}",p['result_unit']])
             add_charts(wb,names,p,clean)
+        processing=wb[names['Processing']]
+        processing.cell(1,1,'Reading (sample / unit / repeat)')
+        for i,d in enumerate(rows,2):
+            if processing.cell(i,1).value is not None:
+                processing.cell(i,1,f"='{names['RAW']}'!C{i}&\" / \"&'{names['RAW']}'!D{i}&\" / \"&'{names['RAW']}'!E{i}")
         readme=wb[names['ReadMe']]
         if p.get('reading_schema')==2 and engine(p) in ('gravimetric','sieve'):
             readme.append(('Data entry','Raw weighings or mass fractions; no absorbance or precomputed percentage substitution. Independent aliquots/runs need distinct experimental-unit IDs.'))
@@ -123,7 +128,7 @@ def write_master(path,assays,experiment_id,calculated=False,compact_layout=True,
         if sid:registry.append([sid,', '.join(sorted(ids))])
     for ws in wb:
         if ws==meta:continue
-        ws.freeze_panes='A2';ws.auto_filter.ref=ws.dimensions;ws.sheet_view.showGridLines=False;ws.row_dimensions[1].height=34
+        ws.freeze_panes=None;ws.auto_filter.ref=ws.dimensions;ws.sheet_view.showGridLines=False;ws.row_dimensions[1].height=34
         israw=ws.title.endswith('_RAW');isparam=ws.title.endswith('_Parameters')
         if not compact_layout:
             for cell in ws[1]:cell.fill=PatternFill('solid',fgColor='173E4A');cell.font=Font(name='Calibri',size=11,bold=True,color='FFFFFF');cell.alignment=Alignment(wrap_text=True,vertical='center')
@@ -260,7 +265,10 @@ def recalculate_master(path,export_folder):
                     logical=ws.Name.removesuffix('_Analysis')+'_Summary';block=layout.get(logical)
                     if block and block['rows']>1:
                         following=min((b['row']-2 for b in layout.values() if b['sheet']==ws.Name and b['row']>block['row']),default=block['row']+block['rows']+25)
-                        target=export_folder/(logical+'.pdf');ws.Range(f'A1:M{following}').ExportAsFixedFormat(0,str(target.resolve()));exports.append(target)
+                        target=export_folder/(logical+'.pdf');ws.Range(f'A{max(1,block["row"]-1)}:M{following}').ExportAsFixedFormat(0,str(target.resolve()));exports.append(target)
+        if layout:
+            book.Worksheets("Overview").Activate();book.Worksheets("Overview").Range("A1").Select()
+            book.Windows(1).ScrollRow=1;book.Windows(1).ScrollColumn=1
         book.Save()
         return exports
     finally:

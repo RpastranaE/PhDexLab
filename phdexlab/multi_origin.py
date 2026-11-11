@@ -15,7 +15,7 @@ from .protocols import digest
 from .integration import file_hash
 from .export_cache import store,restore
 
-RENDER_VERSION=4
+RENDER_VERSION=5
 
 def prepare_assay_folders(op,managed,aid):
     """One round trip instead of repeated mkdir/cd + temporary-path queries."""
@@ -256,6 +256,16 @@ def sync(folder,assays,states,mode='connector',notify=lambda *args:None,force=Fa
                     except Exception as error:report['errors'].append(f'{aid}/{ext}: {error}')
                 if len(graph_files)==3:report['graphs'][key]=dict(signature=signature,dose_layout=dose_layout,files=store(folder,graph_files))
             dest=l.figures/aid/'Origin';(dest/(l.stem+'_'+aid+'_captions.txt')).write_text(captions(data,style['results']['marker']!='none'),encoding='utf-8')
+        report['graph_views']={}
+        for name,path in page_paths.items():
+            if not name.endswith(('CalG','ResG','DoseG')):continue
+            gp=op.find_graph(name)
+            if gp is None:continue
+            before=(gp.get_float('width'),gp.get_float('height'));gp.activate()
+            gp.lt_exec('page.viewmode=2;page.zoomWhole=1;')
+            after=(gp.get_float('width'),gp.get_float('height'))
+            if before!=after:raise RuntimeError('Graph view changed publication dimensions')
+            report['graph_views'][name]=dict(zoom=gp.get_float('zoom'),viewmode=gp.get_float('viewmode'),page_dimensions=after)
         report['removed_empty_default_books']=remove_empty_default_book(op);report['removed_empty_starter_folders']=remove_empty_starter_folders(op);op.pe.cd(managed);op.save(str(l.project));report['project_saved']=l.project.exists()
         report['root_folders']=[child.GetPath() for child in op.pe.root_folder().obj.GetFolders()]
         saved_root=op.pe.root_folder().path

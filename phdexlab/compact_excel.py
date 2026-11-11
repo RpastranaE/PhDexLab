@@ -63,7 +63,7 @@ def shift_address(address,row,col):
     return re.sub(r'(\$?)([A-Z]{1,3})(\$?)(\d+)',shift,address)
 
 
-def rewrite(formula,layout,origin=None):
+def rewrite(formula,layout,origin=None,local=False):
     tokens=Tokenizer(formula).items
     for token in tokens:
         if token.type!='OPERAND' or token.subtype!='RANGE':continue
@@ -72,7 +72,8 @@ def rewrite(formula,layout,origin=None):
         else:sheet,address=origin,token.value
         if sheet not in layout:continue
         place=layout[sheet];target=place['sheet'].replace("'","''")
-        token.value="'"+target+"'!"+shift_address(address,place['row']-1,place['col']-1)
+        prefix="" if local and origin in layout and place["sheet"]==layout[origin]["sheet"] else "'"+target+"'!"
+        token.value=prefix+shift_address(address,place['row']-1,place['col']-1)
     return '='+''.join(token.value for token in tokens)
 
 
@@ -100,8 +101,8 @@ def compact(wb,assays,style):
         aid=assay['id'];data=aid+'_Data';analysis=aid+'_Analysis';raw=source[aid+'_RAW']
         place(aid+'_RAW',data,4);place(aid+'_Parameters',data,4,raw.max_column+3)
         place(aid+'_ReadMe',data,source[aid+'_Parameters'].max_row+9,raw.max_column+3)
-        cursor=4
-        for role in ('Summary','Results','Calibration','DoseCurve','MassBalance','Processing'):
+        cursor=12
+        for role in ('Calibration','DoseCurve','MassBalance','Processing','Results','Summary'):
             logical=aid+'_'+role
             if logical not in source:continue
             place(logical,analysis,cursor);ws=source[logical]
@@ -113,7 +114,7 @@ def compact(wb,assays,style):
         for row in old:
             for cell in row:
                 if cell.value is None:continue
-                dest=new.cell(cell.row+dr,cell.column+dc, rewrite(cell.value,layout,logical) if cell.data_type=='f' else cell.value)
+                dest=new.cell(cell.row+dr,cell.column+dc, rewrite(cell.value,layout,logical,local=True) if cell.data_type=='f' else cell.value)
                 if cell.data_type=='s':dest.data_type='s'
                 dest._style=copy.copy(cell._style);dest.alignment=copy.copy(cell.alignment)
                 if cell.comment:dest.comment=copy.copy(cell.comment)
@@ -125,6 +126,7 @@ def compact(wb,assays,style):
         for number,dimension in old.row_dimensions.items():new.row_dimensions[number+dr].height=dimension.height
         for key,dimension in old.column_dimensions.items():
             target=get_column_letter(column_index_from_string(key)+dc);new.column_dimensions[target].width=max(new.column_dimensions[target].width or 0,dimension.width or 0)
+            if dimension.hidden:new.column_dimensions[target].hidden=True
         for validation in old.data_validations.dataValidation:
             moved=copy.deepcopy(validation);moved.sqref=MultiCellRange(' '.join(shift_address(str(area),dr,dc) for area in validation.sqref.ranges));new.add_data_validation(moved)
         for chart in old._charts:
@@ -144,7 +146,7 @@ def compact(wb,assays,style):
         role=logical.rsplit('_',1)[-1] if logical not in ('Index','ExperimentSummary','Samples') else logical
         heading=new.cell(entry['row']-1,entry['col'],labels[role]);heading.font=Font(name=style['font'],size=style['section_size'],bold=True,color=style['accent'][1:])
         nav=new.cell(1,len([c for c in new[1] if c.value])+1,labels[role]);nav.hyperlink=f"#'{new.title}'!{get_column_letter(entry['col'])}{entry['row']-1}";nav.style='Hyperlink'
-        new.sheet_properties.tabColor=style['accent'][1:];new.freeze_panes='A5';new.sheet_view.showGridLines=style['gridlines']
+        new.sheet_properties.tabColor=style['accent'][1:];new.freeze_panes=None;new.sheet_view.showGridLines=style['gridlines']
         new.sheet_properties.pageSetUpPr.fitToPage=True;new.page_setup.orientation='landscape';new.page_setup.paperSize=new.PAPERSIZE_A3;new.page_setup.fitToWidth=1;new.page_setup.fitToHeight=0
         for row in range(entry['row'],entry['row']+entry['rows']):
             new.row_dimensions[row].height=style['row_height'] if row!=entry['row'] else style['header_height']
@@ -157,6 +159,8 @@ def compact(wb,assays,style):
                 cell.border=Border(bottom=edge) if style['border']=='horizontal' else Border(left=edge,right=edge,top=edge,bottom=edge) if style['border']=='all' else Border()
         if role=='RAW':new.column_dimensions[get_column_letter(entry['col'])].hidden=True
         if role=='RAW':new.auto_filter.ref=f"{get_column_letter(entry['col'])}{entry['row']}:{get_column_letter(entry['col']+entry['cols']-1)}{entry['row']+entry['rows']-1}"
+    from .workbook_guide import add_guides
+    add_guides(targets,layout,assays,style)
     for ws in targets.values():
         assay=next((a for a in assays if ws.title in (a['id']+'_Data',a['id']+'_Analysis')),None)
         title=ws.cell(2,1,assay['label'] if assay else 'Experiment overview');title.font=Font(name=style['font'],size=style['title_size'],bold=True,color=style['accent'][1:]);ws.row_dimensions[2].height=max(28,style['title_size']*1.6)
@@ -172,5 +176,6 @@ def compact(wb,assays,style):
         ref=f"'{entry['sheet']}'!${get_column_letter(entry['col'])}${entry['row']}:${get_column_letter(entry['col']+entry['cols']-1)}${entry['row']+entry['rows']-1}"
         wb.defined_names.add(DefinedName('phdex_'+logical,attr_text=ref))
     wb._sheets=[targets['Overview']]+[targets[a['id']+suffix] for a in assays for suffix in ('_Data','_Analysis')]+[meta]
-    wb.active=0
+    for ws in targets.values():ws.sheet_view.tabSelected=False;ws.sheet_view.topLeftCell='A1'
+    targets['Overview'].sheet_view.tabSelected=True;wb.active=0;wb.views[0].activeTab=0;wb.views[0].firstSheet=0
     return layout

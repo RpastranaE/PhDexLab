@@ -2,6 +2,15 @@
 
 Para instalar y utilizar PhDexLab, consulta el [manual vigente](docs/MANUAL.md). Esta página explica la evolución; las instrucciones actuales no están repartidas entre versiones.
 
+## 0.12.0
+
+- Excel con recorrido de cálculo enlazado, pasos numerados y lecturas identificadas por muestra/unidad/repetición. Referencias locales cuando los datos están en la misma hoja; comentarios de fórmula y resultados destacados.
+- Sin paneles fijados. Overview se restaura antes de guardar el recálculo. Los PDF de resumen exportan solo su sección.
+- Entrada de datos sustituye al nombre anterior del botón. Nueva importación de textos delimitados: CSV/TXT/TSV/DAT/ASC, separadores, decimal, miles, comillas, codificación, cabeceras y líneas iniciales.
+- Asignación interactiva arrastrando encabezados o mediante listas, búsqueda de campos y vista previa del resultado. Se conservan nombres e IDs con ceros iniciales; los números incompatibles se rechazan. Se añaden lecturas sin reemplazar las existentes; se conservan los datos pendientes como borrador.
+- Procedencia del archivo, huella y opciones de importación registradas al guardar.
+- Origin conserva vista de página completa al reabrir sin cambiar dimensiones de las figuras. Ayuda y manual actualizados.
+
 ## 0.11.1
 
 - Estilos Excel ampliados: seis paletas, colores de texto y fondos, bordes horizontales o completos, alineación, tamaños independientes de encabezados/secciones/título, altura de encabezados, anchura de columnas y cuadrícula.

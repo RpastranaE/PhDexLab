@@ -8,16 +8,18 @@ from .updater import version,REPO_URL
 
 NOTES={
     'es':[
-        'Excel: seis paletas y nuevos controles de texto, fondos, bordes, alineación, tamaños y anchura de columnas.',
-        'Vista previa organizada en Colores y Distribución, con estilos personales reutilizables.',
-        'SVG: superíndices compatibles para que −1 se vea correctamente en las unidades.',
-        'Actualiza y exporta los experimentos existentes para regenerar las figuras corregidas.'
+        'Excel: recorrido de cálculo con enlaces, filas identificadas por muestra y referencias locales más sencillas.',
+        'Sin filas fijadas. Overview vuelve a ser la hoja inicial después de calcular.',
+        'Entrada de datos: importa CSV, TXT, TSV y otros textos delimitados con separadores y codificación configurables.',
+        'Asigna columnas arrastrando sus encabezados o con listas y revisa el resultado antes de importar.',
+        'Origin: vista de página completa guardada, sin modificar las dimensiones de las figuras.'
     ],
     'en':[
-        'Excel: six palettes and new controls for text, backgrounds, borders, alignment, sizes and column widths.',
-        'Live preview organised into Colours and Layout, with reusable personal presets.',
-        'SVG: portable superscripts so −1 displays correctly in scientific units.',
-        'Update and export existing experiments to regenerate corrected figures.'
+        'Excel: linked calculation route, sample-labelled readings and simpler local cell references.',
+        'No frozen rows. Overview is restored as the initial sheet after calculation.',
+        'Data entry: import CSV, TXT, TSV and other delimited text with configurable separators and encoding.',
+        'Map columns by dragging headers or using lists, then preview the result before importing.',
+        'Origin: saved whole-page view, preserving publication dimensions.'
     ]}
 
 

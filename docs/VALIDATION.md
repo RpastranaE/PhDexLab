@@ -4,6 +4,17 @@
 
 Software verification with synthetic data is not analytical validation of a chemical method or matrix. The operator must review conditions, units and experimental independence.
 
+## 0.12.0 workbook navigation and interactive text import
+
+- **262 automated tests passed** and **49 focused final regressions passed**. Import coverage includes drag/drop MIME events onto arbitrary destination fields, preview/accept, reordered columns, UTF-16 BOM, quoted separators, skipped lines, leading-zero IDs, decimal/thousands conventions, rejection of invalid or non-finite numbers, repeat numbering across numeric type changes, draft preservation and saved source-hash/mapping provenance.
+- The **24 independent desktop Excel equation cases across all 15 catalogue variants passed** after reorganising references. Production equations remain in Excel. Same-sheet references are local; chart references and cross-sheet references retain the required worksheet qualifier.
+- Native Excel verification confirmed Overview is active after recalculation, all panes are unfrozen, charts still have valid data, and the calculation route and sample/unit/repeat labels render correctly. Header notes explain stages without adding a note to every formula in a large import. The summary PDF now exports its own section.
+- Native OriginPro 2024 probing verified a saved whole-page zoom of **100**, compared with **38** in the previous fixture. Reopening restored the full-page view. Physical page dimensions stayed **2468 × 1889** device units; Window View was rejected because it changed those dimensions. The final app uses Page View and `page.zoomWhole`, documented in the [Origin page reference](https://docs.originlab.com/labtalk/ref/page-obj/).
+- Help screenshots were refreshed from the application and the new importer was reviewed in both languages with high-resolution captures.
+
+- The final frozen application generated **24 Origin + 24 Publication exports** for FRAP, ABTS, DPPH and TPC in **69.50 s** during concurrent packaging. An unchanged, integrity-verified repeat took **1.34 s**. Native chart caches, means/SD handling, SVG superscripts, nine visible workbook tabs, Overview activation and unfrozen panes passed. All eight graph pages recorded Page View with zoom 100 and unchanged physical dimensions.
+- The compiled-module inventory and bundled assets matched final source. An isolated installer test verified desktop/menu shortcuts and frozen startup. A real **0.11.1 → 0.12.0** package upgrade preserved experiment/style/preferences sentinels and all 24 help images.
+
 ## 0.11.1 Excel appearance and SVG superscripts
 
 - **247 automated tests passed**; **43 focused regressions passed** after the final SVG positioning adjustment, including new preview-to-workbook checks for colours, borders, alignment, header height and font sizes. Logical input values and formulas remain identical when appearance changes. Invalid style settings are rejected; older settings receive compatible defaults.

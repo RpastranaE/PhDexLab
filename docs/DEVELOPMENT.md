@@ -164,3 +164,10 @@ El destino debe ser nuevo o vacío. La prueba compara diez métodos y tres varia
 `compact_excel.py` maps logical tables onto Overview plus Data/Analysis per assay. It moves cell and chart references (including absolute references) without changing the equation engine, preserves validation and adds managed defined names so native Excel structural edits can update block positions. Schema 3 books remain readable. Values/API readers address logical tables through the adapter; Origin uses tested partial imports of the physical blocks. Do not restore hidden calculation sheets or copy formula results into a second production engine.
 
 `excel_styles.py` and `excel_style_dialog.py` store workbook appearance independently of Origin. The Excel style hash participates in update-cache validation. `spreadsheet_fill.py` provides series dragging, fill shortcuts and cell/row undo history; history is reset between assays. Changes to repeat numbering must never manufacture measured absorbances or promote a supplied mean into independent readings.
+
+
+### Text import and workbook readability (0.12.0)
+
+`delimited_import.py` parses plain delimited text and normalises numeric conventions; `import_dialog.py` handles draggable column mapping and preview. Imports append draft-safe records and keep internal IDs stable; source name/hash, mapping and conventions are written to the experiment audit when saved. No external spreadsheet formulas are evaluated as input.
+
+`compact_excel.rewrite(..., local=True)` removes a qualifier only when source and destination physically share a worksheet. Chart references remain qualified. `workbook_guide.py` adds visible navigation and column-level notes; it never calculates chemical results. Desktop Excel restores Overview before saving. Origin viewport adjustment runs after figure export and checks that physical page dimensions have not changed.

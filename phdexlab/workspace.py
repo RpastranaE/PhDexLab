@@ -8,6 +8,7 @@ from .protocols import FE,digest,save_variant
 from .method_catalog import ALL,METHOD_NAMES
 from .assay_engine import engine,state,NUMERIC_PARAMS,validate_protocol
 from .data_entry import demo_rows,demo_varieties,number
+from .import_dialog import ImportDialog
 from .experiments import new_id
 from . import experiments
 from .integration import file_hash
@@ -66,8 +67,8 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         self.save_variant_button=self.make_button('Guardar protocolo como nueva variante versionada',self.save_variant,'protocol-save',bar)
         bar.removeWidget(self.save_variant_button);bar.insertWidget(bar.count()-1,self.save_variant_button)
         self.measure_button=next(b for b in self.buttons if b.property('iconName')=='measure')
-        layout.itemAt(3).layout().removeWidget(self.measure_button);self.measure_button.setText('Añadir lecturas o una media');self.measure_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon);self.measure_button.setFixedWidth(250);self.tabs.setCornerWidget(self.measure_button,Qt.Corner.TopRightCorner)
-        entry_menu=QMenu(self.measure_button);entry_menu.addAction(t('Numerar repeticiones'),lambda:self.guard(self.raw.number_repeated_readings));entry_menu.addAction(t('Añadir repeticiones…'),lambda:self.guard(self.raw.add_repeated_readings));entry_menu.addAction(t('Configurar entrada en Protocolo y condiciones'),lambda:self.guard(self.configure_input_options));self.measure_button.setMenu(entry_menu);self.measure_button.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
+        layout.itemAt(3).layout().removeWidget(self.measure_button);self.measure_button.setText('Entrada de datos');self.measure_button.setToolTip('Nueva muestra o patrón');self.measure_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon);self.measure_button.setFixedWidth(250);self.tabs.setCornerWidget(self.measure_button,Qt.Corner.TopRightCorner)
+        entry_menu=QMenu(self.measure_button);entry_menu.addAction(t('Nueva muestra o patrón'),lambda:self.guard(self.add_sample));entry_menu.addAction(t('Importar archivo…'),lambda:self.guard(self.import_readings));entry_menu.addSeparator();entry_menu.addAction(t('Numerar repeticiones'),lambda:self.guard(self.raw.number_repeated_readings));entry_menu.addAction(t('Añadir repeticiones…'),lambda:self.guard(self.raw.add_repeated_readings));entry_menu.addAction(t('Configurar entrada en Protocolo y condiciones'),lambda:self.guard(self.configure_input_options));self.measure_button.setMenu(entry_menu);self.measure_button.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
         self.method_guide=QTextBrowser();self.method_guide.setOpenExternalLinks(True);self.tabs.addTab(self.method_guide,'3   Metodología')
         self.help_dialog.close();self.help_dialog.deleteLater();self.help_dialog=HelpDialog(self)
         self.demo_menu.clear()
@@ -184,6 +185,17 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         for r in range(self.parameters.rowCount()):
             if self.parameters.item(r,0).data(Qt.ItemDataRole.UserRole) in ('reading_signal','default_replicates'):
                 self.parameters.scrollToItem(self.parameters.item(r,0));break
+    def import_readings(self):
+        if not self.assays:return
+        path,_=QFileDialog.getOpenFileName(self,t('Importar datos'),'',t('Archivos de texto delimitado (*.csv *.txt *.tsv *.dat *.asc);;Todos los archivos (*)'))
+        if not path:return
+        rows=self.raw.records();dialog=ImportDialog(path,self.protocol(),rows,self)
+        if dialog.exec()!=QDialog.DialogCode.Accepted:return
+        if len(rows)+len(dialog.result_rows)>10000:raise ValueError('Maximum: 10000 readings')
+        self.raw.load(rows+dialog.result_rows);self.mark_dirty();self.update_current_state()
+        entry=dict(assay=self.active_id,count=len(dialog.result_rows),record_ids=[r['record_id'] for r in dialog.result_rows],**dialog.provenance())
+        self._pending_imports=getattr(self,'_pending_imports',[])+[entry]
+
     def add_sample(self):
         from .measurement_entry import MeasurementDialog
         from .reading_design import validate_groups,unit_key
@@ -334,22 +346,27 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         if ok and name.strip():a['label']=name.strip();self.dirty=True;self.update_current_state()
     def clear_experiment(self):
         if not self._workspace_ready:return super().clear_experiment()
+        self._pending_imports=[]
         self._excel_launch=None
         if hasattr(self,'_excel_launch_timer'):self._excel_launch_timer.stop()
         from .excel_styles import selection as excel_selection
         self.excel_style=excel_selection();self.graph_style=DEFAULT;self.next_assay_number=1;self.saved_states={};self.folder=None;self.open_hash=None;self.active_id=None;self.set_assays([]);self.pathlabel.setText(t('Nuevo experimento sin guardar'));self.dirty=False;self.progress_panel.hide()
     def load_demo(self,multivariety=False):
         if not self.confirm_discard():return
+        self._pending_imports=[]
         self.next_assay_number=1;self.saved_states={};self.folder=None;self.open_hash=None;self.active_id=None;self.set_assays([dict(id='A01_FRAP',label='FRAP · SINTÉTICO',protocol=copy.deepcopy(FE),rows=demo_varieties() if multivariety else demo_rows())]);self.pathlabel.setText(t('Demostración sin guardar'));self.dirty=False;self.log.appendPlainText('Datos sintéticos FRAP cargados; no son resultados experimentales.')
     def load_multi_demo(self,extended=False):
         if not self.confirm_discard():return
+        self._pending_imports=[]
         self.next_assay_number=1;self.saved_states={};self.folder=None;self.open_hash=None;self.active_id=None;self.set_assays(multi_demo(extended));self.pathlabel.setText(t('Experimento multimétodo · SINTÉTICO'));self.dirty=False;self.log.appendPlainText('Demostración sintética con varios ensayos y las mismas tres variedades. Un Excel y un Origin; cada ensayo mantiene su propia calibración y unidad.')
     def load_mean_demo(self):
         if not self.confirm_discard():return
+        self._pending_imports=[]
         from .demonstrations import mean_demo
         self.next_assay_number=1;self.saved_states={};self.folder=None;self.open_hash=None;self.active_id=None;self.set_assays(mean_demo());self.dirty=False
         self.pathlabel.setText(t('Demostración de medias · SINTÉTICO'))
     def load_folder(self,path):
+        self._pending_imports=[]
         self._validation_requested=False;self.raw.set_validation_visible(False)
         from .graph_styles import selection
         self.graph_style=selection(read_presentation(path))
@@ -365,6 +382,7 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
             for i,a in enumerate(self.assays):
                 s=report.get('assays',{}).get(a['id'],{});self.assay_list.item(i).setToolTip(t(s.get('issue','')))
     def save(self,prompt_after_create=True):
+        pending_imports=list(getattr(self,'_pending_imports',[]))
         if not self.assays:raise ValueError(t('Añade un ensayo antes de guardar.'))
         self.commit_active()
         was_validating=self._validation_requested
@@ -377,6 +395,10 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
             if not name or name in ('.','..') or any(c in name for c in '<>:"/\\|?*'):raise ValueError('Nombre de carpeta inválido')
             path=experiments.create(Path(parent)/name,self.assays,excel_style=self.excel_style);save_presentation(path,self.graph_style);self.load_folder(path)
         else:experiments.save(self.folder,self.assays,self.open_hash,excel_style=self.excel_style);save_presentation(self.folder,self.graph_style);self.load_folder(self.folder)
+        if self.folder and pending_imports:
+            from .integration import audit
+            for entry in pending_imports:audit(self.folder,'imported_delimited',**entry)
+            self._pending_imports=[]
         if was_validating:self._validation_requested=True;self.raw.set_validation_visible(True)
         self.log.appendPlainText('Guardadas las entradas de todos los ensayos. Actualizar para calcular y exportar los completos.')
         if created and prompt_after_create:

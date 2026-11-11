@@ -39,7 +39,7 @@ def test_master_isolation_roundtrip_and_draft_preservation(tmp_path):
     assert table_values(wb,'Index')[5][3]=='DRAFT'
     assert 'A01_FRAP_Data' in wb and 'A02_ABTS_Data' in wb
     formula=table_values(wb,'A02_ABTS_Processing')[4][2]
-    assert 'A02_ABTS_Analysis' in formula and 'A01_FRAP' not in formula
+    assert '!' not in formula and 'A01_FRAP' not in formula  # same-sheet references are local
     assert len(table_values(wb,'A05_TFC_Results'))==1
     wb.close();verify(root)
 

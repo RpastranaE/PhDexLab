@@ -71,7 +71,7 @@ class MeasurementDialog(QDialog):
     def __init__(self,protocol,parent=None,existing_rows=None,roles=None):
         super().__init__(parent);self.protocol=configure(protocol,legacy=not enabled(protocol));self.e=engine(self.protocol)
         self.existing_rows=existing_rows or []
-        self.setWindowTitle(t('Añadir lecturas o una media'));self.resize(980,740);layout=QVBoxLayout(self);form=QFormLayout();layout.addLayout(form)
+        self.setWindowTitle(t('Nueva muestra o patrón'));self.resize(980,740);layout=QVBoxLayout(self);form=QFormLayout();layout.addLayout(form)
         self.kind=QComboBox();allowed=('sample',) if self.e in ('gravimetric','sieve') else ('sample','blank') if self.e=='ec50' else ('sample','standard','blank','control')
         for kind in allowed:
             label='Control radical sin antioxidante' if kind=='blank' and self.e in ('inhibition','ec50') else KIND_LABELS[kind]
