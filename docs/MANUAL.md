@@ -46,7 +46,7 @@ Para continuar un trabajo, abre su carpeta raíz desde la aplicación. **Cerrar 
 
 ### Lecturas individuales o una media
 
-Pulsa **Entrada de datos / Data entry**, el botón de pipeta sobre la tabla. Elige tipo de lectura, muestra/patrón y unidad experimental. Puedes introducir 3, 5 o más absorbancias, o elegir **Media ya calculada / Precomputed mean** y escribir solo esa media. Las casillas vacías que sobren no se cuentan como medidas; una pareja parcialmente rellenada sigue pendiente.
+Pulsa **Entrada de datos / Data entry → Nueva muestra o patrón / New sample or standard**, el botón de pipeta a la derecha de las pestañas. Elige tipo de lectura, muestra/patrón y unidad experimental. Puedes introducir 3, 5 o más absorbancias, o elegir **Media ya calculada / Precomputed mean** y escribir solo esa media. Las casillas vacías que sobren no se cuentan como medidas; una pareja parcialmente rellenada sigue pendiente.
 
 ![Entrada de lecturas individuales](readings-en-v092.png)
 
@@ -69,7 +69,9 @@ En RAW, cada fila representa una lectura original o una media aportada identific
 
 Un clic selecciona la celda. Escribir sustituye su contenido; F2 o doble clic permite editar el texto existente. Supr deja vacías las celdas seleccionadas. Ctrl+C, Ctrl+X y Ctrl+V permiten copiar, cortar y pegar. El menú con clic derecho permite insertar una cantidad de filas, eliminar las seleccionadas, copiar filas completas y pegarlas como filas nuevas; estas reciben identificadores internos nuevos. Puedes pegar una tabla de Excel con tabulaciones desde la celda seleccionada. Añade las filas necesarias con el control de cantidad de filas. Los asteriscos rojos indican campos obligatorios para la categoría y el protocolo de esa fila. Las columnas atenuadas no se utilizan en ese contexto.
 
-Para importar un archivo, abre la flecha de **Entrada de datos → Importar archivo…**. Admite CSV, TXT, TSV y otros textos delimitados:
+![Menú Entrada de datos](data-entry-es-v0121.png)
+
+Para importar un archivo, pulsa **Entrada de datos → Importar archivo…**. Admite CSV, TXT, TSV y otros textos delimitados:
 
 1. Revisa separador, decimal, miles, codificación, comillas y líneas iniciales.
 2. Arrastra un encabezado del archivo al campo correspondiente de PhDexLab, o selecciónalo en su lista. El orden del archivo es libre. Las columnas sin asignar se omiten.
@@ -120,7 +122,7 @@ La nueva plantilla TFC utiliza **extracto seco**, como su fuente operativa. Si y
 
 - Selecciona `P0` y `P1` y arrastra el cuadrado de la esquina inferior derecha para obtener `P2`, `P3`… También funciona con concentraciones, números y nombres como `E01`.
 - `Ctrl+D` copia hacia abajo y `Ctrl+R` hacia la derecha. Al pegar un único valor sobre un rango seleccionado, se rellena todo el rango. `Ctrl+Z` y `Ctrl+Y` deshacen y rehacen.
-- **Numerar repeticiones**, en el clic derecho o la flecha de la pipeta, completa las filas seleccionadas por muestra y unidad, sin cambiar mediciones.
+- **Numerar repeticiones**, en el clic derecho o Entrada de datos, completa las filas seleccionadas por muestra y unidad, sin cambiar mediciones.
 - **Añadir repeticiones** crea filas del mismo diseño, numera sus repeticiones y deja vacías las absorbancias. No convierte una media en lecturas individuales.
 - Al editar un nombre de muestra o unidad se sugieren nombres ya presentes en la columna.
 
@@ -130,7 +132,7 @@ En **Protocolo y condiciones / Protocol and conditions** revisa unidades, concen
 
 El número de lecturas prepara el formulario y es editable por entrada; no impone triplicados. El TPC base propone duplicados; en gravimetría se propone una fila por unidad para no presentar alícuotas independientes como técnicas de la misma unidad.
 
-Para activar estas opciones en un experimento anterior, pulsa la flecha de la pipeta → **Configurar entrada en Protocolo y condiciones**. Se conservan sus lecturas y señal; guarda para conservar la activación. Las plantillas de datos antiguas compatibles se pueden cargar sin copiar medidas ni inventar precisión. Los experimentos con el diseño nuevo requieren 0.9.2 o posterior para abrirse; las versiones anteriores no conocen sus columnas de procedencia. Guardar una variante crea una versión para reutilizar esas condiciones; el experimento conserva la versión que utilizó. No cambia retrospectivamente todos los experimentos anteriores.
+Para activar estas opciones en un experimento anterior, pulsa Entrada de datos → **Configurar entrada en Protocolo y condiciones**. Se conservan sus lecturas y señal; guarda para conservar la activación. Las plantillas de datos antiguas compatibles se pueden cargar sin copiar medidas ni inventar precisión. Los experimentos con el diseño nuevo requieren 0.9.2 o posterior para abrirse; las versiones anteriores no conocen sus columnas de procedencia. Guardar una variante crea una versión para reutilizar esas condiciones; el experimento conserva la versión que utilizó. No cambia retrospectivamente todos los experimentos anteriores.
 
 La ficha de metodología incluye las fuentes originales. Una adaptación bibliográfica no implica que las condiciones hayan sido validadas para tu matriz. Los métodos con condiciones pendientes requieren completarlas. No interpretes un resultado de equivalentes, un porcentaje de inhibición y un EC50 como magnitudes intercambiables. En dosis-respuesta, revisa la definición de dosis y la cobertura del intervalo: no fuerces una extrapolación fuera de los datos.
 
@@ -288,7 +290,7 @@ El código se publica bajo [licencia MIT](../LICENSE). Consulta [los avisos de t
 
 Después de una actualización, la primera apertura muestra una ventana con las novedades de la versión instalada y un enlace a GitHub. Solo aparece una vez por versión y no necesita conexión para mostrar el resumen. La primera instalación sigue abriendo la ayuda.
 
-El resumen sobre la tabla separa los contadores de lecturas, blancos, patrones, controles y muestras. **Listo para calcular** aparece en verde cuando las entradas están completas; no certifica la validez analítica ni sustituye a revisar los controles de calidad.
+El resumen a la derecha de las pestañas separa los contadores de lecturas, blancos, patrones, controles y muestras. **Listo para calcular** aparece en verde cuando las entradas están completas; no certifica la validez analítica ni sustituye a revisar los controles de calidad.
 
 ![Resumen de lecturas y estado](summary-es-v0101.png)
 

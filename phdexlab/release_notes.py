@@ -8,18 +8,12 @@ from .updater import version,REPO_URL
 
 NOTES={
     'es':[
-        'Excel: recorrido de cálculo con enlaces, filas identificadas por muestra y referencias locales más sencillas.',
-        'Sin filas fijadas. Overview vuelve a ser la hoja inicial después de calcular.',
-        'Entrada de datos: importa CSV, TXT, TSV y otros textos delimitados con separadores y codificación configurables.',
-        'Asigna columnas arrastrando sus encabezados o con listas y revisa el resultado antes de importar.',
-        'Origin: vista de página completa guardada, sin modificar las dimensiones de las figuras.'
+        'Entrada de datos está a la derecha de las pestañas. Pulsa cualquier parte del botón para abrir el menú e importar un archivo.',
+        'Ayuda actualizada con las instrucciones de importación y el recorrido de cálculo de Excel.'
     ],
     'en':[
-        'Excel: linked calculation route, sample-labelled readings and simpler local cell references.',
-        'No frozen rows. Overview is restored as the initial sheet after calculation.',
-        'Data entry: import CSV, TXT, TSV and other delimited text with configurable separators and encoding.',
-        'Map columns by dragging headers or using lists, then preview the result before importing.',
-        'Origin: saved whole-page view, preserving publication dimensions.'
+        'Data entry is on the right of the tabs. Click anywhere on the button to open its menu and import a file.',
+        'Updated help with file import instructions and the Excel calculation route.'
     ]}
 
 

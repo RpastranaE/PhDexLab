@@ -2,6 +2,11 @@
 
 Para instalar y utilizar PhDexLab, consulta el [manual vigente](docs/MANUAL.md). Esta página explica la evolución; las instrucciones actuales no están repartidas entre versiones.
 
+## 0.12.1
+
+- Entrada de datos tiene su propio espacio a la derecha de las pestañas y abre el menú completo con un clic en cualquier parte. Importar archivo ya no depende de una flecha pequeña junto a las pestañas.
+- Ayuda actualizada con las instrucciones de importación y del recorrido de cálculo.
+
 ## 0.12.0
 
 - Excel con recorrido de cálculo enlazado, pasos numerados y lecturas identificadas por muestra/unidad/repetición. Referencias locales cuando los datos están en la misma hoja; comentarios de fórmula y resultados destacados.

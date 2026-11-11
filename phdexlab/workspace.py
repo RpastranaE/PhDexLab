@@ -67,8 +67,23 @@ class Window(WorkspaceFeatures,SingleAssayWindow):
         self.save_variant_button=self.make_button('Guardar protocolo como nueva variante versionada',self.save_variant,'protocol-save',bar)
         bar.removeWidget(self.save_variant_button);bar.insertWidget(bar.count()-1,self.save_variant_button)
         self.measure_button=next(b for b in self.buttons if b.property('iconName')=='measure')
-        layout.itemAt(3).layout().removeWidget(self.measure_button);self.measure_button.setText('Entrada de datos');self.measure_button.setToolTip('Nueva muestra o patrón');self.measure_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon);self.measure_button.setFixedWidth(250);self.tabs.setCornerWidget(self.measure_button,Qt.Corner.TopRightCorner)
-        entry_menu=QMenu(self.measure_button);entry_menu.addAction(t('Nueva muestra o patrón'),lambda:self.guard(self.add_sample));entry_menu.addAction(t('Importar archivo…'),lambda:self.guard(self.import_readings));entry_menu.addSeparator();entry_menu.addAction(t('Numerar repeticiones'),lambda:self.guard(self.raw.number_repeated_readings));entry_menu.addAction(t('Añadir repeticiones…'),lambda:self.guard(self.raw.add_repeated_readings));entry_menu.addAction(t('Configurar entrada en Protocolo y condiciones'),lambda:self.guard(self.configure_input_options));self.measure_button.setMenu(entry_menu);self.measure_button.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
+        layout.itemAt(3).layout().removeWidget(self.measure_button)
+        # Reserve the corner width even when the tab labels need scrolling.
+        # The entire button opens the menu; no small split-arrow target is needed.
+        self.measure_button.clicked.disconnect()
+        self.measure_button.setText('Entrada de datos');self.measure_button.setToolTip('Entrada de datos')
+        self.measure_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.measure_button.setFixedWidth(190)
+        self.measure_button.setFixedHeight(30)
+        self.tabs.setUsesScrollButtons(True)
+        self.tabs.tabBar().setExpanding(False)
+        # QTabWidget measures sizeHint(), which differs from a fixed-width
+        # QToolButton's hint. A layout-backed corner reserves its actual width.
+        self.entry_corner=QWidget()
+        corner_layout=QHBoxLayout(self.entry_corner);corner_layout.setContentsMargins(0,0,0,0)
+        corner_layout.addWidget(self.measure_button)
+        self.tabs.setCornerWidget(self.entry_corner,Qt.Corner.TopRightCorner)
+        entry_menu=QMenu(self.measure_button);entry_menu.addAction('Nueva muestra o patrón',lambda:self.guard(self.add_sample));entry_menu.addAction('Importar archivo…',lambda:self.guard(self.import_readings));entry_menu.addSeparator();entry_menu.addAction('Numerar repeticiones',lambda:self.guard(self.raw.number_repeated_readings));entry_menu.addAction('Añadir repeticiones…',lambda:self.guard(self.raw.add_repeated_readings));entry_menu.addAction('Configurar entrada en Protocolo y condiciones',lambda:self.guard(self.configure_input_options));self.measure_button.setMenu(entry_menu);self.measure_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.method_guide=QTextBrowser();self.method_guide.setOpenExternalLinks(True);self.tabs.addTab(self.method_guide,'3   Metodología')
         self.help_dialog.close();self.help_dialog.deleteLater();self.help_dialog=HelpDialog(self)
         self.demo_menu.clear()
