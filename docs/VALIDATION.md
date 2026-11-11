@@ -191,3 +191,5 @@ Entrega 0.12.2: código compilado comparado con fuentes, recursos comparados byt
 PhDexLab-Windows-x64.zip: SHA-256 `da2bf2c4f2a04fb81346e687a0cd8e53177013b93c1765dd973b818ce781f52a`.
 
 PhDexLab-Setup-0.12.2.exe: SHA-256 `4ff5e84df6781c765f7c752b8d2d27c8305b524032162579a326440148db1764`.
+
+Después de publicar: los cuatro archivos de GitHub coinciden en tamaño y SHA-256 con los probados. El ejecutable 0.12.1 detecta 0.12.2 como actualización y el 0.12.2 confirma estar al día, con TLS verificado. La desinstalación aislada elimina aplicación/accesos directos y conserva experimento y estilo de prueba.
